@@ -7,8 +7,7 @@
 structure sat :> sat =
 struct   
 
-open HolKernel Abbrev boolLib aiLib kernel graph nauty rconfig bossLib
-  ramseySyntax
+open HolKernel Abbrev boolLib bossLib aiLib kernel graph nauty syntax
 val ERR = mk_HOL_ERR "sat"
 
 fun debug_mat m = if !debug_flag then graph.print_mat m else ()

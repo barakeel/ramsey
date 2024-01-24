@@ -1,11 +1,8 @@
 structure enump :> enump =
 struct   
 
-open HolKernel Abbrev boolLib aiLib kernel 
-rconfig graph nauty ramseySyntax sat enum gen
+open HolKernel Abbrev boolLib aiLib kernel graph nauty syntax sat enum gen
 val ERR = mk_HOL_ERR "enump"
-
-
 
 fun create_pard size (bluen,redn) = 
   let val parl = read_par size (bluen,redn) in

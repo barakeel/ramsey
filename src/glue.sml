@@ -1,8 +1,8 @@
 structure glue :> glue =
 struct   
 
-open HolKernel Abbrev boolLib aiLib kernel rconfig graph sat gen cone
-ramseySyntax minisatProve
+open HolKernel Abbrev boolLib aiLib kernel graph sat gen cone syntax
+  minisatProve
 val ERR = mk_HOL_ERR "glue"
 
 
@@ -165,7 +165,7 @@ end (* struct *)
 
 (*
 PolyML.print_depth 0;
-load "glue"; load "gen"; open aiLib kernel graph rconfig sat gen glue ramseySyntax;
+load "glue"; load "gen"; open aiLib kernel config graph sat gen glue ramseySyntax;
 PolyML.print_depth 10;
 
 
@@ -182,7 +182,7 @@ write_gluescripts "RamseyGlueAlt" 50 true (4,4,11) (3,5,13) (4,5);
 
 (*
 PolyML.print_depth 0;
-load "glue"; load "gen"; open aiLib kernel graph rconfig sat gen glue ramseySyntax;
+load "glue"; load "gen"; open aiLib kernel config graph  sat gen glue ramseySyntax;
 PolyML.print_depth 10;
 
 val size44 = 14;

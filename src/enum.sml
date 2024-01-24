@@ -1,7 +1,7 @@
 structure enum :> enum =
 struct   
 
-open HolKernel Abbrev boolLib aiLib kernel graph nauty rconfig sat
+open HolKernel Abbrev boolLib aiLib kernel graph nauty sat
 val ERR = mk_HOL_ERR "enum"
 
 (* -------------------------------------------------------------------------
@@ -79,8 +79,7 @@ fun parallel_extend ncore expname br set =
     val _ = mkDir_err (selfdir ^ "/exp")
     val _ = clean_dir dir
     val _ = clean_dir (dir ^ "/graphs")
-    val _ = smlExecScripts.buildheap_options :=  "--maxheap " ^ its 
-      (string_to_int (dfind "search_memory" configd) handle NotFound => 12000) 
+    val _ = smlExecScripts.buildheap_options :=  "--maxheap " ^ its memory 
     val _ = smlExecScripts.buildheap_dir := dir
     val batchl = number_fst 0 (cut_n (3 * ncore) (elist set))
     val _ = clean_dir (selfdir ^ "/parallel_search")

@@ -5,8 +5,7 @@
 structure cone :> cone =
 struct   
 
-open HolKernel Abbrev boolLib aiLib kernel 
-  rconfig graph nauty sat ramseySyntax gen
+open HolKernel Abbrev boolLib aiLib kernel graph nauty sat syntax gen
 val ERR = mk_HOL_ERR "cone"
 type vleafs = int * int * (IntInf.int * int list) list  
 
@@ -150,9 +149,7 @@ fun cones45 ncore size (bluen,redn) =
     val dir = expdir ^ "/cone" ^ s
     val _ = app mkDir_err [expdir,dir]
     val _ = smlExecScripts.buildheap_dir := dir
-    val _ = smlExecScripts.buildheap_options :=  "--maxheap " ^ its 
-      (string_to_int (dfind "search_memory" configd) handle 
-       NotFound => 10000) 
+    val _ = smlExecScripts.buildheap_options :=  "--maxheap " ^ its memory
     val par = read_par size (bluen,redn)
     val parn = length par
     val _ = log ("par : " ^ its parn)
@@ -166,7 +163,7 @@ fun cones45 ncore size (bluen,redn) =
 (*
 PolyML.print_depth 0;
 load "gen"; load "sat"; load "cone";
-open aiLib kernel graph sat nauty gen rconfig cone;
+open aiLib kernel config graph sat nauty gen cone;
 PolyML.print_depth 10;
 
 val ncore = 60;
@@ -185,12 +182,6 @@ load "glue"; open glue;
 val t1 = snd (add_time (glue true (4,5) mati) mat2i);
 val t2 = snd (add_time (glue true (4,5) mat2i) mati);
 
-
-
-
-
-
-
 range (12,13, fn i => cones45 ncore i (3,5));
 
 *)
@@ -199,7 +190,7 @@ range (12,13, fn i => cones45 ncore i (3,5));
 (* cone proof 
 PolyML.print_depth 0;
 load "gen"; load "sat"; load "cone";
-open aiLib kernel graph sat nauty gen rconfig cone ramseySyntax;
+open aiLib kernel config graph sat nauty gen cone ramseySyntax;
 PolyML.print_depth 10;
 
 val mati = hd (read_par 14 (4,4));

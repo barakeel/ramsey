@@ -1,4 +1,4 @@
-signature ramseySyntax =
+signature syntax =
 sig
   
   include Abbrev

@@ -5,7 +5,7 @@
 structure gen :> gen =
 struct   
 
-open HolKernel Abbrev boolLib aiLib kernel graph nauty rconfig ramseySyntax
+open HolKernel Abbrev boolLib aiLib kernel graph nauty syntax
 val ERR = mk_HOL_ERR "gen"
 type vleafs = int * int * (IntInf.int * int list) list  
 
@@ -280,8 +280,7 @@ fun compute_scover_para ncore size (bluen,redn) =
     val id = its bluen ^ its redn ^ its size
     val file = selfdir ^ "/ramsey_data/enum" ^ id
     val uset = enew IntInf.compare (map stinf (readl file));
-    val _ = smlExecScripts.buildheap_options :=  "--maxheap " ^ its 
-      (string_to_int (dfind "search_memory" configd) handle NotFound => 12000)
+    val _ = smlExecScripts.buildheap_options :=  "--maxheap " ^ its memory
   in
     loop_scover_para ncore (bluen,redn) uset []
   end

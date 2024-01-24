@@ -1,8 +1,8 @@
-structure ramseySyntax :> ramseySyntax =
+structure syntax :> syntax =
 struct   
 
-open HolKernel Abbrev boolLib aiLib kernel graph nauty rconfig
-val ERR = mk_HOL_ERR "ramseySyntax"
+open HolKernel Abbrev boolLib aiLib kernel graph nauty
+val ERR = mk_HOL_ERR "syntax"
 
 fun debug_mat m = if !debug_flag then graph.print_mat m else ()
 
