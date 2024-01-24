@@ -6,7 +6,7 @@ This repository contains the software accompanying the paper
 The following installation instructions are for the Ubuntu OS.
 
 ### Install dependencies: polyml + HOL
-This takes about 15 min to complete. The first following comman is optional.
+This takes about 15 min to complete. The first following command is optional.
 ``` 
 sudo apt install -y libgmp-dev rlwrap
 sh install_dep.sh
