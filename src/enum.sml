@@ -1,13 +1,12 @@
+(* =========================================================================
+   Enumerate R(a,b,k) graphs (in particular R(3,5,k) and R(4,4,k))
+   ========================================================================= *)
+   
 structure enum :> enum =
 struct   
 
 open HolKernel Abbrev boolLib aiLib kernel graph nauty sat
 val ERR = mk_HOL_ERR "enum"
-
-(* -------------------------------------------------------------------------
-   Parallel bottom-up enumeration without proof for 
-   R,bluen,redn,size graphs.
-   ------------------------------------------------------------------------- *)
 
 fun add_vertex (bluen,redn) set graphi =
   let
@@ -16,7 +15,8 @@ fun add_vertex (bluen,redn) set graphi =
     val _ = (disable_log := true; debug_flag := false)
     val _ = (iso_flag := false;  proof_flag := false)
     val graphl = sat_solver_edgecl (mat_to_edgecl graph) size (bluen,redn)
-    val il = map (zip_mat o nauty.normalize_nauty) graphl  
+    val il = map (zip_mat o nauty.normalize_nauty) graphl
+    val _ = disable_log := false
   in
     set := eaddl il (!set)
   end
@@ -31,7 +31,6 @@ fun enum_worker br (i,il) =
     (writel file (map IntInf.toString (elist (!set)))
      handle SysErr _ => raise ERR "enum_worker" file)
   end
-  
 
 fun merge_one set file = 
   set := eaddl (map stinf (readl file)) (!set)
@@ -83,6 +82,7 @@ fun parallel_extend ncore expname br set =
     val _ = smlExecScripts.buildheap_dir := dir
     val batchl = number_fst 0 (cut_n (3 * ncore) (elist set))
     val _ = clean_dir (selfdir ^ "/parallel_search")
+    val _ = smlParallel.parmap_queue_extern ncore enumspec br batchl
   in
     merge_graphs (dir ^ "/graphs")
   end
@@ -94,56 +94,52 @@ fun serial_extend br set =
 
 fun write_enum size (bluen,redn) il =
   let 
-    val dir = selfdir ^ "/ramsey_data"
+    val dir = selfdir ^ "/enum"
     val enumname = "enum" ^ its bluen ^ its redn ^ its size
     val sl = map infts il
   in
     mkDir_err dir;
     writel (dir ^ "/" ^ enumname) sl;
-    print_endline ("Stored: " ^ enumname)
+    log ("Stored: " ^ enumname)
   end
   
 fun read_enum size (bluen,redn) =
   let 
-    val dir = selfdir ^ "/ramsey_data"
+    val dir = selfdir ^ "/enum"
     val enumname = "enum" ^ its bluen ^ its redn ^ its size
   in
     map stinf (readl (dir ^ "/" ^ enumname))
-  end  
+  end
   
-fun extend_loop ncore size (br as (bluen,redn)) set = 
+fun extend_loop size (br as (bluen,redn)) set = 
   let
     val expname = "R" ^ its bluen ^ its redn ^ its size
     val newset = 
       let val n = Int.min (ncore,elength set) in
         if n <= 1
-        then serial_extend br set
-        else parallel_extend n expname br set
+        then (log "serial extension"; serial_extend br set)
+        else (log ("parallel extension: " ^ its n); 
+              parallel_extend n expname br set)
       end
     val _ = write_enum size br (elist newset)
   in
     if elength newset <= 0 then () else 
-    extend_loop ncore (size+1) (bluen,redn) newset
+    extend_loop (size+1) (bluen,redn) newset
   end;
   
-fun enum ncore (bluen,redn) = 
+fun enum (bluen,redn) = 
   let val set = enew IntInf.compare [zip_mat (Array2.array (1,1,0))] in
-    extend_loop ncore 2 (bluen,redn) set
+    extend_loop 2 (bluen,redn) set
   end
     
 end (* struct *)
 
 (*
 PolyML.print_depth 0;
-load "enum"; open sat aiLib graph gen enum;
+load "enum"; open sat aiLib graph enum;
 PolyML.print_depth 10;
 
-enum 2 (4,4);
-enum 2 (3,5);
-*)
-
-    
-
-(*
-
+kernel.store_log := true;
+enum (4,4);
+enum (3,5);
 *)

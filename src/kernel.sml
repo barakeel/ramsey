@@ -39,7 +39,7 @@ val ncore = (string_to_int (dfind "ncore" configd) handle NotFound => 32)
 
 val disable_log = ref false
 
-val logfile = ref (selfdir ^ "/log")
+val logfile = ref (selfdir ^ "/aaa_log")
 val store_log = ref false
 
 fun log s = 

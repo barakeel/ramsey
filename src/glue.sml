@@ -1,10 +1,13 @@
+(* =========================================================================
+   Glue generalized graphs with the help of cone clauses.
+   ========================================================================= *)
+   
 structure glue :> glue =
 struct   
 
 open HolKernel Abbrev boolLib aiLib kernel graph sat gen cone syntax
   minisatProve
 val ERR = mk_HOL_ERR "glue"
-
 
 (* -------------------------------------------------------------------------
    Create diagonal by block matrix and reduce the set of ramsey clauses

@@ -21,6 +21,9 @@ sh install.sh
 After updating the repository (git pull), the command `sh install.sh` needs to be run again.
 
 ## Verifying the proof in HOL4 (wip)
+Please edit the config file: 
+- choose and appropriate number of cores (default is 40)
+- memory per core in megabyte (default is 8000)
 
 The creation of a HOL4 proof is divided in multiple steps.
 
