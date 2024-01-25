@@ -285,7 +285,7 @@ fun loop_scover_para ncore (bluen,redn) uset result =
 fun compute_scover_para ncore size (bluen,redn) = 
   let
     val id = its bluen ^ its redn ^ its size
-    val file = selfdir ^ "/ramsey_data/enum" ^ id
+    val file = selfdir ^ "/enum/enum" ^ id
     val uset = enew IntInf.compare (map stinf (readl file));
     val _ = smlExecScripts.buildheap_options :=  "--maxheap " ^ its memory
   in
@@ -298,7 +298,7 @@ fun compute_scover_para ncore size (bluen,redn) =
 
 fun read_cover size (bluen,redn) =
   let 
-    val file = selfdir ^ "/ramsey_data/gen" ^ 
+    val file = selfdir ^ "/gen/gen" ^ 
       its bluen ^ its redn ^ its size
     val sl = readl file
     fun f s = 
@@ -315,7 +315,7 @@ fun read_cover size (bluen,redn) =
   
 fun read_par size (bluen,redn) =
   let 
-    val file = selfdir ^ "/ramsey_data/gen" ^ 
+    val file = selfdir ^ "/gen/gen" ^ 
       its bluen ^ its redn ^ its size
     val sl = readl file
     fun f s = 
@@ -328,7 +328,7 @@ fun read_par size (bluen,redn) =
 
 fun write_cover size (bluen,redn) cover = 
   let 
-    val dir = selfdir ^ "/ramsey_data"
+    val dir = selfdir ^ "/gen"
     val file = dir ^ "/gen" ^ its bluen ^ its redn ^ its size
     fun f (p,cperml) = 
       let fun g (c,perm) = infts c ^ "_" ^ 
@@ -359,9 +359,7 @@ fun gen (bluen,redn) (minsize,maxsize) =
   end
   
 (*
-PolyML.print_depth 0;
 load "gen"; open sat aiLib kernel graph gen;
-PolyML.print_depth 10;
 
 select_number1 := 313;
 select_number2 := 1;
