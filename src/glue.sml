@@ -88,8 +88,6 @@ fun horizontal_cone_clauses_ground (bluen,redn) m1i m2i =
   in
     map (mk_cone_clause conel) rows 
   end
-  
-  
 
 val both_flag = ref false
 
@@ -167,25 +165,20 @@ fun write_gluescripts dirname batchsize cone_flag
 end (* struct *)
 
 (*
-PolyML.print_depth 0;
-load "glue"; load "gen"; open aiLib kernel config graph sat gen glue ramseySyntax;
-PolyML.print_depth 10;
+load "glue"; open aiLib kernel graph syntax sat gen glue;
 
-
-write_gluescripts "RamseyGlue" 1 true (4,4,17) (3,5,7) (4,5);
-write_gluescripts "RamseyGlue" 1 true (4,4,16) (3,5,8) (4,5);
-write_gluescripts "RamseyGlue" 50 true (4,4,15) (3,5,9) (4,5);
-write_gluescripts "RamseyGlue" 50 true (4,4,14) (3,5,10) (4,5);
-
-write_gluescripts "RamseyGlueAlt" 50 true (4,4,12) (3,5,12) (4,5);
-write_gluescripts "RamseyGlueAlt" 50 true (4,4,11) (3,5,13) (4,5);
-
+val dirname = "glue";
+write_gluescripts dirname 1 true (4,4,17) (3,5,7) (4,5);
+write_gluescripts dirname 1 true (4,4,16) (3,5,8) (4,5);
+write_gluescripts dirname 50 true (4,4,15) (3,5,9) (4,5);
+write_gluescripts dirname 50 true (4,4,14) (3,5,10) (4,5);
+write_gluescripts dirname 50 true (4,4,12) (3,5,12) (4,5);
+write_gluescripts dirname 50 true (4,4,11) (3,5,13) (4,5);
 *)
 
 
-(*
-PolyML.print_depth 0;
-load "glue"; load "gen"; open aiLib kernel config graph  sat gen glue ramseySyntax;
+(* test
+load "glue"; open aiLib kernel graph syntax sat gen glue;
 PolyML.print_depth 10;
 
 val size44 = 14;

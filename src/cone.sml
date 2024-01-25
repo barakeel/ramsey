@@ -99,12 +99,9 @@ fun gen_cone (bluen,redn) mati =
   let
     val mat = unzip_mat mati
     val size = mat_size mat
-    val _ = (disable_log := true;
-             iso_flag := false; proof_flag := false; 
-             debug_flag := false; conegen_flag := true)    
+    val _ = (iso_flag := false; proof_flag := false; conegen_flag := true)    
     val _ = sat_solver_edgecl (mat_to_edgecl mat) (size+1) (bluen,redn)
     val _ = conegen_flag := false
-    val _ = disable_log := false
     val coneset = !coneset_glob
     val _ = log ("cones: " ^ its (elength coneset))
     val conel3 = ccover_loop coneset
@@ -164,20 +161,23 @@ fun cones45 size (bluen,redn) =
 load "gen"; load "sat"; load "cone";
 open aiLib kernel graph sat nauty gen cone;
 
-range (11,12, fn i => cones45 i (4,4));
-range (14,17, fn i => cones45 i (4,4));
+store_log := true;
+val (_,t) = add_time range (11,17, fn i => if i = 13 then () else cones45 i (4,4));
+t;
+
 *)
 
 
-(*
+(* glueing test
+load "gen"; load "sat"; load "cone";
+open aiLib kernel graph sat nauty gen cone;
+
 val mati = hd (read_par 11 (4,4));
 number_of_holes (unzip_mat mati);
 val mat2i = last (read_par 13 (3,5));
-val _ = gen_cone (4,5) mati;
+number_of_holes (unzip_mat mat2i);
 load "glue"; open glue;
-val t1 = snd (add_time (glue true (4,5) mati) mat2i);
-val t2 = snd (add_time (glue true (4,5) mat2i) mati);
-range (12,13, fn i => cones45 ncore i (3,5));
+val t = snd (add_time (glue true (4,5) mati) mat2i);
 *)
 
 
@@ -193,7 +193,6 @@ val size = mat_size mat;
 val cone = read_cone (4,5) mati; 
 val conegen = map fst cone;
 val _ = conep_flag := true;
-
 
 fun create_parconethmd (bluen,redn) mi = 
   let 
@@ -216,8 +215,6 @@ fun create_parconethmd (bluen,redn) mi =
   end
 
 val parconethmd = create_parconethmd (4,5) mati;
-
-
 
 val _ = (disable_log := true;conep_flag := true;
          iso_flag := false; proof_flag := true; debug_flag := false);

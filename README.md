@@ -5,7 +5,7 @@ This repository contains the software accompanying the paper
 
 The following installation instructions are for the Ubuntu OS.
 
-### Install dependencies: polyml + HOL
+### Install dependencies: polyml + HOL4
 This takes about 15 min to complete. The first following command is optional.
 ``` 
 sudo apt install -y libgmp-dev rlwrap
@@ -74,13 +74,51 @@ To exit, ``ctrl + D``.
 The results are stored in the directory ``gen``. 
 They can be read using the function ``gen.read_cover``.
 
+### Cone (2 hours)
+
+This code create both the cones and the cone generalizations.
+
+```
+load "gen"; load "sat"; load "cone";
+open aiLib kernel graph sat nauty gen cone;
+store_log := true;
+val (_,tcone) = add_time 
+ range (11,17, fn i => if i = 13 then () else cones45 i (4,4));
+```
+
+The results are stored in the directory ``cone``. 
+
+### Glueing (A very long time)
+
+The first step is to generate some proof scripts:
+
+```
+load "glue"; open aiLib kernel graph syntax sat gen glue;
+val dirname = "glue";
+write_gluescripts dirname 1 true (4,4,17) (3,5,7) (4,5);
+write_gluescripts dirname 1 true (4,4,16) (3,5,8) (4,5);
+write_gluescripts dirname 50 true (4,4,15) (3,5,9) (4,5);
+write_gluescripts dirname 50 true (4,4,14) (3,5,10) (4,5);
+write_gluescripts dirname 50 true (4,4,12) (3,5,12) (4,5);
+write_gluescripts dirname 50 true (4,4,11) (3,5,13) (4,5);
+```
+
+The files in the directory ``glue`` are the generated proof scripts.
+The glueing calls an external minisat on many problems and might take a very long time:
+```
+cd glue
+cp ../def/Holmakefile Holmakefile
+../../HOL/bin/Holmake -j 40 --maxheap=8000 | tee aaa_log_glue
+```
+
+
 ### Definition (10 min)
 One can create definitions for the generalizations and their relation with
 the set of clauses C(a,b,k) defining R(a,b,k)
 
 ```
 cd def
-../../HOL/bin/Holmake
+../../HOL/bin/Holmake 
 cd ..
 ```
 
@@ -93,13 +131,13 @@ val thm1 = DB.fetch "ramseyDef" "C4416r_DEF";
 val thm2 = DB.fetch "ramseyDef" "G3512_DEF";
 ```
 
-### Cone
 
 
 
 
-### Glueing 
-The next three steps are independent
+
+
+
 
 
 
