@@ -29,25 +29,36 @@ The creation of a HOL4 proof is divided in multiple steps:
 enumeration, generalization, ...
 
 
-### Enumeration
+### Enumeration (10 min)
 Enumeration of all the ramsey 4,4 graphs (R(4,4,k)) 
 and all ramsey 3,5 graphs (R(3,5,k)) up to isomorphism:
+
+```
+sh hol.sh
+```
+
 ```
 load "enum"; open sat aiLib graph enum;
 disable_log := true;
 enum (4,4);
 enum (3,5);
 ```
+
+To exit, ``ctrl + D``.
 The results are stored in the directory ``enum``.
 They can be read using the function ``enum.read_enum``.
 
-### Generalization
+### Generalization (2 hours)
 A generalization is set of edge and non-edge common to multiple graphs.
 In practice, the generalization only need to cover 
 one element of the isomorphism of each graph. (see picture in the paper)
 Generalization are useful as they allow us to solve multiple cases simultaneously.
 For each set R(3,5,k) (resp. (R(4,4,k)), we consturct a set of generalizion
 G(3,5,k) (resp. (G(4,4,k)) with the following code.
+
+```
+sh hol.sh
+```
 
 ```
 load "gen"; open sat aiLib kernel graph gen;
@@ -59,9 +70,40 @@ select_number2 := 100;
 val (_,t44) = add_time (gen (4,4)) (4,17);
 ```
 
+To exit, ``ctrl + D``.
 The results are stored in the directory ``gen``. 
 They can be read using the function ``gen.read_cover``.
 
- 
- 
+### Definition (10 min)
+One can create definitions for the generalizations and their relation with
+the set of clauses C(a,b,k) defining R(a,b,k)
+
+```
+cd def
+../../HOL/bin/Holmake
+cd ..
+```
+
+You can check the definitions by running in HOL ``sh hol.sh``:
+
+```
+load "def/ramseyDefTheory";
+val sl = map fst (DB.definitions "ramseyDef");
+val thm1 = DB.fetch "ramseyDef" "C4416r_DEF";
+val thm2 = DB.fetch "ramseyDef" "G3512_DEF";
+```
+
+### Cone
+
+
+
+
+### Glueing 
+The next three steps are independent
+
+
+
+
+
+
  

@@ -368,10 +368,20 @@ select_number2 := 100;
 val (_,t44) = add_time (gen (4,4)) (4,17);
 *)
 
-(*
-load "gen"; open sat aiLib kernel graph gen;
-val cover = read_cover 10 
-val 
+(* 
+(* safety check *)
+load "gen"; load "enum"; open sat aiLib kernel graph enum gen;
+val cover3510 = read_cover 10 (3,5);
+val inst3510 =
+  mk_fast_set IntInf.compare (map fst (List.concat (map snd cover3510)));
+val inst3510' = read_enum 10 (3,5);
+list_compare IntInf.compare (inst3510,inst3510');
+
+val cover4410 = read_cover 10 (4,4);
+val inst4410 =
+  mk_fast_set IntInf.compare (map fst (List.concat (map snd cover4410)));
+val inst4410' = read_enum 10 (4,4);
+list_compare IntInf.compare (inst4410,inst4410');
 *)
 
 

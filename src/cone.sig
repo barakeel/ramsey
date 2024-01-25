@@ -14,6 +14,6 @@ sig
   val conespec : (int * int, IntInf.int, unit) 
     smlParallel.extspec 
   
-  val cones45 : int -> int -> int * int -> unit
+  val cones45 : int -> int * int -> unit
   
 end

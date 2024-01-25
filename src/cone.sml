@@ -72,7 +72,7 @@ fun cone_of_string s = map string_to_int (String.tokens (fn x => x = #"_") s)
 
 fun write_cone (bluen,redn) mati conel =
   let
-    val dir = selfdir ^ "/ramsey_cone"
+    val dir = selfdir ^ "/cone"
     val size = mat_size (unzip_mat mati)
     val file = dir ^ "/" ^ its bluen ^ its redn ^ its size ^ "_" ^ infts mati
     val _ = mkDir_err dir
@@ -84,7 +84,7 @@ fun write_cone (bluen,redn) mati conel =
   
 fun read_cone (bluen,redn) mati = 
   let
-    val dir = selfdir ^ "/ramsey_cone"
+    val dir = selfdir ^ "/cone"
     val size = mat_size (unzip_mat mati)
     val file = dir ^ "/" ^ its bluen ^ its redn ^ its size ^ "_" ^ infts mati
     fun f s = 
@@ -142,7 +142,7 @@ val conespec : (int * int, IntInf.int, unit) smlParallel.extspec =
   read_result = let fun f file = () in f end
   }
 
-fun cones45 ncore size (bluen,redn) =
+fun cones45 size (bluen,redn) =
   let 
     val s = its bluen ^ its redn ^ its size
     val expdir = selfdir ^ "/exp"
@@ -161,33 +161,27 @@ fun cones45 ncore size (bluen,redn) =
 
 
 (*
-PolyML.print_depth 0;
 load "gen"; load "sat"; load "cone";
-open aiLib kernel config graph sat nauty gen cone;
-PolyML.print_depth 10;
+open aiLib kernel graph sat nauty gen cone;
 
-val ncore = 60;
-range (11,12, fn i => cones45 ncore i (4,4));
-range (14,17, fn i => cones45 ncore i (4,4));
-
-
-val mati = hd (read_par 11 (4,4));
-number_of_holes (unzip_mat mati);
-val mat2i = last (read_par 13 (3,5));
-
-val _ = gen_cone (4,5) mati;
-
-load "glue"; open glue;
-
-val t1 = snd (add_time (glue true (4,5) mati) mat2i);
-val t2 = snd (add_time (glue true (4,5) mat2i) mati);
-
-range (12,13, fn i => cones45 ncore i (3,5));
-
+range (11,12, fn i => cones45 i (4,4));
+range (14,17, fn i => cones45 i (4,4));
 *)
 
 
-(* cone proof 
+(*
+val mati = hd (read_par 11 (4,4));
+number_of_holes (unzip_mat mati);
+val mat2i = last (read_par 13 (3,5));
+val _ = gen_cone (4,5) mati;
+load "glue"; open glue;
+val t1 = snd (add_time (glue true (4,5) mati) mat2i);
+val t2 = snd (add_time (glue true (4,5) mat2i) mati);
+range (12,13, fn i => cones45 ncore i (3,5));
+*)
+
+
+(* cone proof  (not sure if this was finished)
 PolyML.print_depth 0;
 load "gen"; load "sat"; load "cone";
 open aiLib kernel config graph sat nauty gen cone ramseySyntax;
@@ -198,7 +192,6 @@ val mat = unzip_mat mati;
 val size = mat_size mat;
 val cone = read_cone (4,5) mati; 
 val conegen = map fst cone;
-
 val _ = conep_flag := true;
 
 

@@ -83,3 +83,11 @@ val _ = kernel.range (4,17, fn x => (log (its x); all_graph_def x (4,4)))
 
 val _ = log ("exporting theory: takes a while")
 val _ = export_theory()
+
+(*
+load "def/ramseyDefTheory";
+val sl = map fst (DB.definitions "ramseyDef");
+val thm1 = DB.fetch "ramseyDef" "C4416r_DEF";
+val thm2 = DB.fetch "ramseyDef" "G3512_DEF";
+*)
+
