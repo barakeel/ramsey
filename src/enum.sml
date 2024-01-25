@@ -12,11 +12,9 @@ fun add_vertex (bluen,redn) set graphi =
   let
     val graph = unzip_mat graphi
     val size = mat_size graph + 1
-    val _ = (disable_log := true; debug_flag := false)
     val _ = (iso_flag := false;  proof_flag := false)
     val graphl = sat_solver_edgecl (mat_to_edgecl graph) size (bluen,redn)
     val il = map (zip_mat o nauty.normalize_nauty) graphl
-    val _ = disable_log := false
   in
     set := eaddl il (!set)
   end
@@ -138,8 +136,6 @@ end (* struct *)
 PolyML.print_depth 0;
 load "enum"; open sat aiLib graph enum;
 PolyML.print_depth 10;
-
-kernel.store_log := true;
 enum (4,4);
 enum (3,5);
 *)
