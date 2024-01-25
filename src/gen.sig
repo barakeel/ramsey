@@ -22,7 +22,7 @@ sig
   val read_par : int -> int * int -> IntInf.int list
   
   (* main *)
-  val gen : int -> int * int -> int * int -> unit
+  val gen : int * int -> int * int -> unit
   
 
 

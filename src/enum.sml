@@ -133,9 +133,8 @@ fun enum (bluen,redn) =
 end (* struct *)
 
 (*
-PolyML.print_depth 0;
 load "enum"; open sat aiLib graph enum;
-PolyML.print_depth 10;
+disable_log := true;
 enum (4,4);
 enum (3,5);
 *)

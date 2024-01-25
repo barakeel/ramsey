@@ -1,5 +1,6 @@
 (* =========================================================================
-   Compute a set of genralized graphs covering a set of graphs
+   Compute a set of genralized graphs covering a set of graph
+   uset stands for uncovered set.
    ========================================================================= *)
    
 structure gen :> gen =
@@ -37,27 +38,30 @@ fun all_coloring edgel =
     cartesian_productl edgebothl
   end
 
-fun all_leafs_wperm uset m =
+fun all_leafs_wperm_aux (iall,inew) uset m =
   let
     val edgel = all_holes m
     val coloringltop = all_coloring edgel
     val d = ref (dempty IntInf.compare)
     fun loop d e coloringl = case coloringl of 
-        [] => (d,e)
+        [] => (!iall,!inew,d,e)
       | coloring :: cont =>
         let 
           val child = apply_coloring m coloring     
           val (normm,perm) = normalize_nauty_wperm child
           val normi = zip_mat normm
           val newe = eadd normi e
+          val _ = incr iall
         in
           if emem normi uset
-          then loop (dadd normi perm d) newe cont   
+          then (incr inew; loop (dadd normi perm d) newe cont)   
           else loop d newe cont
         end
   in
     loop (dempty IntInf.compare) (eempty IntInf.compare) coloringltop 
   end
+
+fun all_leafs_wperm uset m = all_leafs_wperm_aux (ref 0, ref 0) uset m
 
 (* -------------------------------------------------------------------------
    Cover
@@ -109,6 +113,7 @@ fun concat_cpermll (leafi,vleafsl) =
   end
   
 val threshold = 8 (* percentage of newly covered graph *)
+val maxgen = 10 (* maximum number of holes *)
 
 fun sgeneralize (bluen,redn) uset leafi =
   let
@@ -135,18 +140,20 @@ fun sgeneralize (bluen,redn) uset leafi =
           let val clausel = Vector.sub (varv,v) in
             all (fn x => Array.sub (locala, x) < Vector.sub(sizev,x)) clausel
           end
-        fun sgen_loop vl result = case vl of
+        fun sgen_loop vl result = 
+          if length result >= 10 then rev result else
+          case vl of
             [] => rev result
           | v :: rem => 
             let 
               val edgel = map (fst o dec_edgec o #1) result
               val edge = fst (dec_edgec v)
               val sibling = build_sibling leaf edgel edge
-              val (d,e) = all_leafs_wperm uset sibling
+              val (iall,inew,d,e) = all_leafs_wperm uset sibling
               val maxn = elength e
             in
-              if threshold * dlength d  > maxn
-              then (update_numbera locala v; 
+              if int_div inew iall >= int_div 1 8
+              then (update_numbera locala v;
                     sgen_loop (filter test rem) ((v,maxn,dlist d) :: result)) 
               else sgen_loop rem result
             end   
@@ -235,8 +242,8 @@ fun remove_vleafsl uset (leafi,vleafsl) =
 val select_number1 = ref 240
 val select_number2 = ref 120
 
-(* some graphs are counted multiple time due to isomorphic instantiations *)
-fun size_of_vleafsl vleafsl = sum_int (map (length o #3) vleafsl)
+fun size_of_vleafsl (vleafsl: vleafs list) = 
+  elength (enew IntInf.compare (List.concat (map (map fst o #3) vleafsl)))
 
 fun update_uset selectn pl (uset,result) =
   if elength uset <= 0 orelse 
@@ -338,7 +345,7 @@ fun write_cover size (bluen,redn) cover =
    Generalization main function
    ------------------------------------------------------------------------- *)
 
-fun gen ncore (bluen,redn) (minsize,maxsize) =  
+fun gen (bluen,redn) (minsize,maxsize) =  
   let
     fun f size =
       let
@@ -353,27 +360,16 @@ fun gen ncore (bluen,redn) (minsize,maxsize) =
   
 (*
 PolyML.print_depth 0;
-load "enum"; open sat aiLib kernel graph enum;
-PolyML.print_depth 10;
-
-clean_dir (selfdir ^ "/ramsey_data");
-
-val ncore = 60;
-val (_,t0) = add_time (enum ncore) (3,5);
-val (_,t1) = add_time (enum ncore) (4,4);
-
-
-PolyML.print_depth 0;
 load "gen"; open sat aiLib kernel graph gen;
 PolyML.print_depth 10;
-val ncore = 60;
+
 select_number1 := 313;
 select_number2 := 1;
-val (_,t2) = add_time (gen ncore (3,5)) (5,13);
+val (_,t2) = add_time (gen (3,5)) (5,13);
 
 select_number1 := 1000;
 select_number2 := 100;
-val (_,t3) = add_time (gen ncore (4,4)) (4,17);
+val (_,t3) = add_time (gen (4,4)) (4,17);
 *)
 
 end (* struct *)
