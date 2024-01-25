@@ -39,6 +39,7 @@ enum (4,4);
 enum (3,5);
 ```
 The results are stored in the directory ``enum``.
+They can be read using the function ``enum.read_enum``.
 
 ### Generalization
 A generalization is set of edge and non-edge common to multiple graphs.
@@ -49,15 +50,18 @@ For each set R(3,5,k) (resp. (R(4,4,k)), we consturct a set of generalizion
 G(3,5,k) (resp. (G(4,4,k)) with the following code.
 
 ```
-load "enum"; open sat aiLib graph enum;
-disable_log := true;
-enum (4,4);
-enum (3,5);
+load "gen"; open sat aiLib kernel graph gen;
+select_number1 := 313;
+select_number2 := 1;
+val (_,t35) = add_time (gen (3,5)) (5,13);
+select_number1 := 1000;
+select_number2 := 100;
+val (_,t44) = add_time (gen (4,4)) (4,17);
 ```
 
-The results are stored in the directory ``gen``.
- 
- 
+The results are stored in the directory ``gen``. 
+They can be read using the function ``gen.read_cover``.
+
  
  
  

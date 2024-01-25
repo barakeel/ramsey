@@ -360,15 +360,20 @@ fun gen (bluen,redn) (minsize,maxsize) =
   
 (*
 load "gen"; open sat aiLib kernel graph gen;
-
 select_number1 := 313;
 select_number2 := 1;
 val (_,t35) = add_time (gen (3,5)) (5,13);
-
 select_number1 := 1000;
 select_number2 := 100;
 val (_,t44) = add_time (gen (4,4)) (4,17);
 *)
+
+(*
+load "gen"; open sat aiLib kernel graph gen;
+val cover = read_cover 10 
+val 
+*)
+
 
 end (* struct *)
 

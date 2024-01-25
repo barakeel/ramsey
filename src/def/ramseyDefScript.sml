@@ -8,7 +8,7 @@
 
 open HolKernel boolLib Parse simpLib boolSimps BasicProvers
 local open numTheory prim_recTheory SatisfySimps DefnBase in end
-open aiLib kernel rconfig ramseySyntax graph gen 
+open aiLib kernel syntax graph gen 
 
 val _ = new_theory "ramseyDef"
 
