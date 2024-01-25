@@ -349,7 +349,7 @@ fun gen (bluen,redn) (minsize,maxsize) =
   let
     fun f size =
       let
-        val _ = print_endline ("SIZE " ^ its size)
+        val _ = print_endline ("size " ^ its size)
         val cover = compute_scover_para ncore size (bluen,redn)
       in
         write_cover size (bluen,redn) cover
@@ -363,11 +363,11 @@ load "gen"; open sat aiLib kernel graph gen;
 
 select_number1 := 313;
 select_number2 := 1;
-val (_,t2) = add_time (gen (3,5)) (5,13);
+val (_,t35) = add_time (gen (3,5)) (5,13);
 
 select_number1 := 1000;
 select_number2 := 100;
-val (_,t3) = add_time (gen (4,4)) (4,17);
+val (_,t44) = add_time (gen (4,4)) (4,17);
 *)
 
 end (* struct *)
