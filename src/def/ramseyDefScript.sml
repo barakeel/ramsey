@@ -36,9 +36,9 @@ fun mk_both_cdef size (bluen,redn) =
     ()
   end  
  
-val _ = log ("Clause definitions for ramsey 3 5 x")  
+val _ = log ("C(3,5,x) is the set of clauses equivalent to R(3,5,x)")  
 val _ = kernel.range (5,14, fn x => mk_both_cdef x (3,5))
-val _ = log ("Clause definitions for ramsey 4 4 x")
+val _ = log ("C(3,5,x) is the set of clauses equivalent to R(4,4,x)")
 val _ = kernel.range (4,18, fn x => mk_both_cdef x (4,4))
 
 (* -------------------------------------------------------------------------
@@ -70,28 +70,16 @@ fun all_graph_def size (bluen,redn) =
     val ns = its (length parl)
     val _ = log (s ^  ": " ^ ns ^ " covers")
     val terml = map (term_of_graph o unzip_mat) parl
-    (* 
-    val termll = mk_batch_full 200 terml
-    val conjl = map list_mk_conj termll
-    val _ = log (s ^  ": " ^ ns ^ " terms")
-    val defl = map (mk_gdef size (bluen,redn)) (number_fst 0 conjl)
-    val _ = log (s ^  ": " ^ ns ^ " definitions")
-    val conj = list_mk_conj (map (lhs o concl o SPEC_ALL) defl)
-    *)
     val conjdef = mk_gdef_conj size (bluen,redn) (list_mk_conj terml)
   in
     ()
   end
 
-val _ = log ("Graph definitions for ramsey 3 5 x")
+val _ = log ("definitions of each G(3,5,x)")
 val _ = kernel.range (5,13, fn x => (log (its x); all_graph_def x (3,5)))  
-val _ = log ("Graph definitions for ramsey 4 4 x")
+val _ = log ("definitions of each G(4,4,x)")
 val _ = kernel.range (4,17, fn x => (log (its x); all_graph_def x (4,4)))
   
 
-(*
-(hd o CONJUNCTS o UNDISCH o fst o EQ_IMP_RULE o SPEC_ALL) 
-(DB.fetch "ramseyDef" "G445_DEF");
-*)
-val _ = log ("Exporting theory: takes a while")
+val _ = log ("exporting theory: takes a while")
 val _ = export_theory()
