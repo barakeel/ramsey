@@ -100,7 +100,7 @@ fun write_enum size (bluen,redn) il =
   in
     mkDir_err dir;
     writel (dir ^ "/" ^ enumname) sl;
-    log ("Stored: " ^ enumname)
+    log ("stored: " ^ enumname)
   end
   
 fun read_enum size (bluen,redn) =
