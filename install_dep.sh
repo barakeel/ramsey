@@ -28,6 +28,8 @@ cd HOL
 git checkout cf03ce2dc756feb6c0bc4b042f879595d21f2e68
 $DIR/polyml/bin/poly < "tools/smart-configure.sml"
 cat tools/sequences/kernel tools/sequences/core-theories > shortseq
+perl -p -i -e 's|\QFileSys.tmpName()\E|HOLDIR ^ FileSys.tmpName()|g' $DIR/HOL/src/HolSat/dimacsTools.sml
+mkdir tmp
 bin/build --seq=shortseq
 
 ## HOL: safety check 

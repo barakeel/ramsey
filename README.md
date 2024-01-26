@@ -13,30 +13,29 @@ sh install_dep.sh
 ```
 
 ### Install ramsey
-```
-cd src
-sh install.sh
-```
+Compute dependencies between SML files: `cd src; sh install.sh`
+If one updates the repository (`git pull`), 
+the command `sh install.sh` needs to be run again.
 
-After updating the repository (git pull), the command `sh install.sh` needs to be run again.
+### Running HOL4
+- Start: `cd src; sh hol.sh`
+- Exit: `ctrl + D`
 
-## Verifying the proof in HOL4 (wip)
+## Verifying the proof in HOL4
 Please edit the config file: 
 - choose and appropriate number of cores (default is 40)
 - memory per core in megabyte (default is 8000)
 
 The creation of a HOL4 proof is divided in multiple steps: 
-enumeration, generalization, ...
-
+enumeration/generalization, cones, glueing, definitions, enumeration/
+generalization proof, cone proof, 
+a special case and many gathering steps.
 
 ### Enumeration (10 min)
 Enumeration of all the ramsey 4,4 graphs (R(4,4,k)) 
-and all ramsey 3,5 graphs (R(3,5,k)) up to isomorphism:
+and all ramsey 3,5 graphs (R(3,5,k)) up to isomorphism.
 
-```
-sh hol.sh
-```
-
+Execute in HOL:
 ```
 load "enum"; open sat aiLib graph enum;
 disable_log := true;
@@ -44,22 +43,18 @@ enum (4,4);
 enum (3,5);
 ```
 
-To exit, ``ctrl + D``.
-The results are stored in the directory ``enum``.
-They can be read using the function ``enum.read_enum``.
+The results are stored in the directory `enum`.
+They can be read using the function `enum.read_enum`.
 
 ### Generalization (2 hours)
 A generalization is set of edge and non-edge common to multiple graphs.
 In practice, the generalization only need to cover 
 one element of the isomorphism of each graph. (see picture in the paper)
-Generalization are useful as they allow us to solve multiple cases simultaneously.
-For each set R(3,5,k) (resp. (R(4,4,k)), we consturct a set of generalizion
-G(3,5,k) (resp. (G(4,4,k)) with the following code.
+Generalization are useful as they allow us to solve multiple cases 
+simultaneously. For each set R(3,5,k) (resp. (R(4,4,k)), we consturct a set of 
+graph generalizations G(3,5,k) (resp. (G(4,4,k)) with the following code.
 
-```
-sh hol.sh
-```
-
+Execute in HOL:
 ```
 load "gen"; open sat aiLib kernel graph gen;
 select_number1 := 313;
@@ -70,14 +65,14 @@ select_number2 := 100;
 val (_,t44) = add_time (gen (4,4)) (4,17);
 ```
 
-To exit, ``ctrl + D``.
-The results are stored in the directory ``gen``. 
-They can be read using the function ``gen.read_cover``.
+The results are stored in the directory `gen`. 
+They can be read using the function `gen.read_cover`.
 
 ### Cone (2 hours)
 
 This code create both the cones and the cone generalizations.
 
+Execute in HOL:
 ```
 load "gen"; load "sat"; load "cone";
 open aiLib kernel graph sat nauty gen cone;
@@ -86,12 +81,13 @@ val (_,tcone) = add_time
  range (11,17, fn i => if i = 13 then () else cones45 i (4,4));
 ```
 
-The results are stored in the directory ``cone``. 
+The results are stored in the directory `cone`. 
 
-### Glueing (A very long time)
+### Glueing ()
 
-The first step is to generate some proof scripts:
+The first step is to generate some proof scripts (fast):
 
+Execute in HOL:
 ```
 load "glue"; open aiLib kernel graph syntax sat gen glue;
 val dirname = "glue";
@@ -104,17 +100,31 @@ write_gluescripts dirname 50 true (4,4,11) (3,5,13) (4,5);
 ```
 
 The files in the directory ``glue`` are the generated proof scripts.
-The glueing calls an external minisat on many problems and might take a very long time:
+The glueing calls an external minisat on many problems and might take a very long time.
+
+Warning: 
+The memory per core from the config file does not affect Holmake. 
+The command requires total maximum of 150GB when run on 20 cores.
+And a single core may sometimes use up to 40GB.
+
+From the `src` directory:
 ```
 cd glue
 cp ../def/Holmakefile Holmakefile
-../../HOL/bin/Holmake -j 40 --maxheap=8000 | tee aaa_log_glue
+../../HOL/bin/Holmake -j 40 | tee ../aaa_log_glue
 ```
 
 
 ### Definition (10 min)
-One can create definitions for the generalizations and their relation with
-the set of clauses C(a,b,k) defining R(a,b,k)
+For each R(a,b,k), one can create predicate G\_abk,Cb\_abk and Cr\_abk.
+the set of clauses Cb\_abk(E) defining the property 
+of being a graph of size k having no blue a-cliques (also called a-cliques)
+and Cr\_abk(E) defining the property of being a graph of size k 
+having no red b-cliques (also called b-independent sets)
+
+And G\_abk(E) says that E is not a graph (or a generalization) in R(a,b,k)
+
+
 
 ```
 cd def
@@ -123,7 +133,6 @@ cd ..
 ```
 
 You can check the definitions by running in HOL ``sh hol.sh``:
-
 ```
 load "def/ramseyDefTheory";
 val sl = map fst (DB.definitions "ramseyDef");
@@ -132,8 +141,8 @@ val thm2 = DB.fetch "ramseyDef" "G3512_DEF";
 ```
 
 
-
-
+### Theorems about enumeration
+"G\_abk(E)" is equivalent to "Cb\_abk(E) and Cr\_abk(E)".
 
 
 
