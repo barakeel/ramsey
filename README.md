@@ -109,11 +109,27 @@ The config file does not affect the following step.
 The execution requires total maximum of 300GB when run on 20 cores (default).
 Memory of the partition where the repository sits must be higher than 300GB.
 
-Run from the `src` directory:
+Run from the `src` directory (preferably inside a screen `screen -S glue`):
 ```
-screen -S glue
-sh glue.sh 20
+cd glue
+cp ../def/Holmakefile Holmakefile
+export TMPDIR="$PWD/tmp"
+mkdir tmp
+../../HOL/bin/Holmake -j 18 | tee ../aaa_log_glue
+cd ..
 ```
+
+To be run at most one hour after starting the previous process,
+remove empty temporary files (preferably inside a screen `screen -S tmp`):
+```
+cd /tmp
+watch -n 600 "find . -maxdepth 1 -type f -name 'MLTEMP*' ! -exec lsof {} \; -exec rm {} \;"
+```
+
+Track the progress by running: `ls glue/*Theory.sml | wc -l`
+
+When the process finishes, kill the `watch` process and remove the remaining
+temporary files `rm /tmp/MLTEMP*`.
 
 ### Definition (10 min)
 For each R(a,b,k), one can create predicate G\_abk,Cb\_abk and Cr\_abk.
