@@ -2,8 +2,8 @@ This repository contains the software accompanying the paper
 "A formal proof of Ramsey(4,5)=24". 
 
 ## Install
-
 The following installation instructions are for the Ubuntu OS.
+
 
 ### Install dependencies: polyml + HOL4
 This takes about 15 min to complete. The first following command is optional.
@@ -12,13 +12,19 @@ sudo apt install -y libgmp-dev rlwrap
 sh install_dep.sh
 ```
 
+From now on, the scripts are found and run in the `src` directory.
+
+``` 
+cd src
+```
+
 ### Install ramsey
-Compute dependencies between SML files: `cd src; sh install.sh`
+Compute dependencies between SML files: `sh install.sh`
 If one updates the repository (`git pull`), 
 the command `sh install.sh` needs to be run again.
 
 ### Running HOL4
-- Start: `cd src; sh hol.sh`
+- Start: `sh hol.sh`
 - Exit: `ctrl + D`
 
 ## Verifying the proof in HOL4
@@ -83,10 +89,9 @@ val (_,tcone) = add_time
 
 The results are stored in the directory `cone`. 
 
-### Glueing ()
+### Glueing (2 days)
 
-The first step is to generate some proof scripts (fast):
-
+The first step is to generate proof scripts (fast):
 Execute in HOL:
 ```
 load "glue"; open aiLib kernel graph syntax sat gen glue;
@@ -99,21 +104,16 @@ write_gluescripts dirname 50 true (4,4,12) (3,5,12) (4,5);
 write_gluescripts dirname 50 true (4,4,11) (3,5,13) (4,5);
 ```
 
-The files in the directory ``glue`` are the generated proof scripts.
-The glueing calls an external minisat on many problems and might take a very long time.
+Warning (before running the `glue.sh` bash script): 
+The config file does not affect the following step.
+The execution requires total maximum of 300GB when run on 20 cores (default).
+Memory of the partition where the repository sits must be higher than 300GB.
 
-Warning: 
-The memory per core from the config file does not affect Holmake. 
-The command requires total maximum of 150GB when run on 20 cores.
-And a single core may sometimes use up to 40GB.
-
-From the `src` directory:
+Run from the `src` directory:
 ```
-cd glue
-cp ../def/Holmakefile Holmakefile
-../../HOL/bin/Holmake -j 40 | tee ../aaa_log_glue
+screen -S glue
+sh glue.sh 20
 ```
-
 
 ### Definition (10 min)
 For each R(a,b,k), one can create predicate G\_abk,Cb\_abk and Cr\_abk.
