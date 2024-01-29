@@ -106,7 +106,7 @@ write_gluescripts dirname 50 true (4,4,11) (3,5,13) (4,5);
 
 Warning (before running the `glue.sh` bash script): 
 The config file does not affect the following step.
-The execution requires total maximum of 300GB when run on 20 cores (default).
+The execution requires total maximum of 300GB when run on 18 cores (default).
 Memory of the partition where the repository sits must be higher than 300GB.
 
 Run from the `src` directory (preferably inside a screen `screen -S glue`):
@@ -116,7 +116,6 @@ cp ../def/Holmakefile Holmakefile
 export TMPDIR="$PWD/tmp"
 mkdir tmp
 ../../HOL/bin/Holmake -j 18 | tee ../aaa_log_glue
-cd ..
 ```
 
 To be run at most one hour after starting the previous process,
@@ -126,13 +125,14 @@ cd /tmp
 watch -n 600 "find . -maxdepth 1 -type f -name 'MLTEMP*' ! -exec lsof {} \; -exec rm {} \;"
 ```
 
-Track the progress by running: `ls glue/*Theory.sml | wc -l`
+Track the progress by running from the `src` directory: 
+`ls glue/*Theory.sml | wc -l`.
 
-When the process finishes, kill the `watch` process and remove the remaining
-temporary files `rm /tmp/MLTEMP*`.
+When the process finishes, kill the `watch` process and remove the 
+remaining temporary files `rm /tmp/MLTEMP*`
 
 ### Definition (10 min)
-For each R(a,b,k), one can create predicate G\_abk,Cb\_abk and Cr\_abk.
+For each R(a,b,k), one can create predicate G\_abk,Cb\_abk aznd Cr\_abk.
 the set of clauses Cb\_abk(E) defining the property 
 of being a graph of size k having no blue a-cliques (also called a-cliques)
 and Cr\_abk(E) defining the property of being a graph of size k 

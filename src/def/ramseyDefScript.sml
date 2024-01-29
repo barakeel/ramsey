@@ -40,6 +40,8 @@ val _ = log ("C(3,5,x) is the set of clauses equivalent to R(3,5,x)")
 val _ = kernel.range (5,14, fn x => mk_both_cdef x (3,5))
 val _ = log ("C(3,5,x) is the set of clauses equivalent to R(4,4,x)")
 val _ = kernel.range (4,18, fn x => mk_both_cdef x (4,4))
+val _ = log ("C(4,5,x) is the set of clauses equivalent to R(4,5,x)")
+val _ = kernel.range (5,25, fn x => mk_both_cdef x (4,5))
 
 (* -------------------------------------------------------------------------
    Definitions for graphs

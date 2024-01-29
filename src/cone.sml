@@ -146,12 +146,13 @@ fun cones45 size (bluen,redn) =
     val dir = expdir ^ "/cone" ^ s
     val _ = app mkDir_err [expdir,dir]
     val _ = smlExecScripts.buildheap_dir := dir
-    val _ = smlExecScripts.buildheap_options :=  "--maxheap " ^ its memory
+    val _ = smlExecScripts.buildheap_options := "--maxheap " ^ its memory
     val par = read_par size (bluen,redn)
     val parn = length par
     val _ = log ("par : " ^ its parn)
     val n' = Int.min (parn,ncore)
-    val (_,t) = add_time (smlParallel.parmap_queue_extern n' conespec (4,5)) par
+    val (_,t) = add_time 
+      (smlParallel.parmap_queue_extern n' conespec (4,5)) par
   in
     log ("cones: " ^ rts_round 4 t)
   end
@@ -184,7 +185,7 @@ val t = snd (add_time (glue true (4,5) mati) mat2i);
 (* cone proof  (not sure if this was finished)
 PolyML.print_depth 0;
 load "gen"; load "sat"; load "cone";
-open aiLib kernel config graph sat nauty gen cone ramseySyntax;
+open aiLib kernel syntax graph sat nauty gen cone;
 PolyML.print_depth 10;
 
 val mati = hd (read_par 14 (4,4));
@@ -218,7 +219,11 @@ val parconethmd = create_parconethmd (4,5) mati;
 
 val _ = (disable_log := true;conep_flag := true;
          iso_flag := false; proof_flag := true; debug_flag := false);
-val matl = sat_solver_edgecl (mat_to_edgecl mat) (size+1) (bluen,redn)
+
+val bluen = 4
+val redn = 5
+load "def/ramseyDefTheory";
+val matl = sat_solver_edgecl (mat_to_edgecl mat) (size+1) (bluen,redn);
 
 
 *)
