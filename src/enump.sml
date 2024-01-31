@@ -122,7 +122,7 @@ fun write_enumscript size (bluen,redn) (batchi,igraphl) =
   let 
     val id = its bluen ^ its redn ^ its size
     val batchs = id ^ "_" ^ its batchi
-    val thyname = "ramsey" ^ batchs
+    val thyname = "ramseyEnum" ^ batchs
     val filename = selfdir ^ "/enump/" ^ thyname ^ "Script.sml"
     val args = its size ^ " (" ^ its bluen ^ "," ^ its redn ^ ")"
     val open_cmd = ["open HolKernel boolLib kernel enump ramseyDefTheory"]

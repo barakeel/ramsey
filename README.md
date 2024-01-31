@@ -92,23 +92,18 @@ The results are stored in the directory `cone`.
 
 ### Glueing (4 days)
 
-The first step is to generate proof scripts (fast):
+The first step is to generate proof scripts:
 Execute in HOL:
 ```
-load "glue"; open aiLib kernel graph syntax sat gen glue;
-val dirname = "glue";
-write_gluescripts dirname 1 true (4,4,17) (3,5,7) (4,5);
-write_gluescripts dirname 1 true (4,4,16) (3,5,8) (4,5);
-write_gluescripts dirname 50 true (4,4,15) (3,5,9) (4,5);
-write_gluescripts dirname 50 true (4,4,14) (3,5,10) (4,5);
-write_gluescripts dirname 50 true (4,4,12) (3,5,12) (4,5);
-write_gluescripts dirname 50 true (4,4,11) (3,5,13) (4,5);
+load "glue"; open kernel glue;
+fun f i = write_gluescripts "glue" batchsize true (4,4,i) (3,5,24-i) (4,5);
+val _ = range (11,17,f);
 ```
 
 Warning (before running the `glue.sh` bash script): 
 The config file does not affect the following step.
 The execution requires a total maximum of 300GB of RAM and 300GB of hard disk 
-storage when run on 18 cores with `maxhole 10`. 
+storage when run on 20 cores with `maxhole 10`. 
 If you have more RAM and more hard disk storage 
 you may increase the number of cores.
 
@@ -118,7 +113,7 @@ cd glue
 cp ../def/Holmakefile Holmakefile
 export TMPDIR="$PWD/tmp"
 mkdir tmp
-../../HOL/bin/Holmake -j 18 | tee ../aaa_log_glue
+../../HOL/bin/Holmake -j 20 | tee ../aaa_log_glue
 ```
 
 To be run at most one hour after starting the previous process,
@@ -171,7 +166,7 @@ is obtained by:
 
 ```
 cd enumi
-../../HOL/bin/Holmake
+../../HOL/bin/Holmake --no_prereqs
 cd ..
 ```
 
@@ -190,7 +185,7 @@ First we create the proof scripts by running `sh hol.sh`:
 
 ```
 load "enump"; open aiLib enump;
-val _ = range (8, 18, fn size => write_enumscripts 100 size (4,4));
+val _ = range (8, 18, fn size => write_enumscripts 10 size (4,4));
 ```
 
 Then, call Holmake by running (preferably inside a screen `screen -S enump`):
@@ -214,16 +209,17 @@ show_assums := true;
 val thm = DB.fetch "ramsey4413_0" "R4413_0";
 ```
 
-### Proving the cone clauses
+### Proving the cone clauses (5 hours)
 
 Write the scripts:
 ```
 load "cone"; open kernel cone;
-fun f i = if i = 13 then () else write_conescripts 100 i (4,4);
+fun f i = if i = 13 then () else write_conescripts 10 i (4,4);
 val _ = range (11,17,f);
 ```
 
-Run the scripts (preferably inside a screen `screen -S conep`)::
+Run the scripts (requires 300GB of ram)
+(preferably inside a screen `screen -S conep`)::
 ```
 cd conep
 cp ../enumi/Holmakefile Holmakefile

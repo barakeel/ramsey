@@ -165,15 +165,9 @@ fun write_gluescripts dirname batchsize cone_flag
 end (* struct *)
 
 (*
-load "glue"; open aiLib kernel graph syntax sat gen glue;
-
-val dirname = "glue";
-write_gluescripts dirname 1 true (4,4,17) (3,5,7) (4,5);
-write_gluescripts dirname 1 true (4,4,16) (3,5,8) (4,5);
-write_gluescripts dirname 50 true (4,4,15) (3,5,9) (4,5);
-write_gluescripts dirname 50 true (4,4,14) (3,5,10) (4,5);
-write_gluescripts dirname 50 true (4,4,12) (3,5,12) (4,5);
-write_gluescripts dirname 50 true (4,4,11) (3,5,13) (4,5);
+load "glue"; open kernel glue;
+fun f i = write_gluescripts "glue" batchsize true (4,4,i) (3,5,24-i) (4,5);
+val _ = range (11,17,f);
 *)
 
 
