@@ -157,41 +157,9 @@ fun cones45 size (bluen,redn) =
     log ("cones: " ^ rts_round 4 t)
   end
 
-
-(*
-load "gen"; load "sat"; load "cone";
-open aiLib kernel graph sat nauty gen cone;
-
-store_log := true;
-val (_,t) = add_time range (11,17, fn i => if i = 13 then () else cones45 i (4,4));
-t;
-
-*)
-
-
-(* glueing test
-load "gen"; load "sat"; load "cone";
-open aiLib kernel graph sat nauty gen cone;
-
-val mati = hd (read_par 11 (4,4));
-number_of_holes (unzip_mat mati);
-val mat2i = last (read_par 13 (3,5));
-number_of_holes (unzip_mat mat2i);
-load "glue"; open glue;
-val t = snd (add_time (glue true (4,5) mati) mat2i);
-*)
-
-
-(* cone proof  (not sure if this was finished)
-load "gen"; load "sat"; load "cone";
-open aiLib kernel syntax graph sat nauty gen cone;
-
-
-val mati = hd (read_par 14 (4,4));
-val mat = unzip_mat mati;
-val size = mat_size mat;
-val cone = read_cone (4,5) mati; 
-val conegen = map fst cone;
+(* -------------------------------------------------------------------------
+   Cone proof
+   ------------------------------------------------------------------------- *)
 
 fun create_parconethmd (bluen,redn) mi = 
   let 
@@ -213,18 +181,88 @@ fun create_parconethmd (bluen,redn) mi =
     end
   end;
 
-val parconethmd = create_parconethmd (4,5) mati;
-val _ = init_conethmd parconethmd cone;
+fun CONE45_ONE mati =
+  let
+    val mat = unzip_mat mati
+    val size = mat_size mat
+    val cone = read_cone (4,5) mati
+    val conegen = map fst cone
+    val parconethmd = create_parconethmd (4,5) mati
+    val _ = init_conethmd parconethmd cone
+    val _ = (debug_flag := false; disable_log := false;
+             conep_flag := true; iso_flag := false; proof_flag := true)
+    val matl = sat_solver_edgecl (mat_to_edgecl mat) (size+1) (4,5)
+    val _ = conep_flag := false
+  in
+    !final_thm
+  end
 
+fun write_conescript size (bluen,redn) (batchi,igraphl) = 
+  let 
+    val id = its bluen ^ its redn ^ its size
+    val batchs = id ^ "_" ^ its batchi
+    val thyname = "ramseyCone" ^ batchs
+    val filename = selfdir ^ "/conep/" ^ thyname ^ "Script.sml"
+    val open_cmd = ["open HolKernel boolLib kernel cone ramseyDefTheory"]
+    val newtheory_cmd = ["val _ = new_theory " ^ mlquote thyname]
+    fun save_cmd (i,graph) = 
+      let 
+        val thmname = "Cone" ^ id ^ "_" ^ its i 
+        val graphs =  "(stinf " ^ mlquote (infts graph) ^ ")"
+      in
+        "val _ = save_thm (" ^  mlquote thmname ^ 
+        ", CONE45_ONE " ^ graphs ^ ")"
+      end
+    val export_cmd = ["val _ = export_theory ()"]
+  in
+    writel filename (open_cmd @ newtheory_cmd @ 
+                     map save_cmd igraphl @ export_cmd)
+  end
 
+fun write_conescripts batchsize size (bluen,redn) = 
+  let
+    val _ = mkDir_err (selfdir ^ "/conep")
+    val parl = read_par size (bluen,redn)
+    val ncut = (length parl div batchsize) + 1
+    val _ = print_endline ("par: " ^ its (length parl))
+    val l = number_fst 0 (cut_modulo ncut (number_fst 0 parl))
+  in
+    app (write_conescript size (bluen,redn)) l
+  end
 
-load "def/ramseyDefTheory"; app print_endline (map fst (DB.thms "ramseyDef"));
-val _ = (debug_flag := false; disable_log := false; 
-         conep_flag := true; iso_flag := false; proof_flag := true);
-val matl = sat_solver_edgecl (mat_to_edgecl mat) (size+1) (4,5);
-!final_thm;
+(* val mati = hd (read_par 14 (4,4)); *)
+(* -------------------------------------------------------------------------
+   Generates cones without proof
+   ------------------------------------------------------------------------- *)
+
+(*
+load "gen"; load "sat"; load "cone";
+open aiLib kernel graph sat nauty gen cone;
+
+fun f i = if i = 13 then () else cones45 i (4,4));
+val _ = range (11,17,f);
 *)
 
+(* -------------------------------------------------------------------------
+   Create proof scripts
+   ------------------------------------------------------------------------- *)
+
+(*
+load "cone"; open kernel cone;
+fun f i = if i = 13 then () else write_conescripts 100 i (4,4);
+val _ = range (11,17,f);
+*)
+
+(* -------------------------------------------------------------------------
+   Run proof scripts
+   ------------------------------------------------------------------------- *)
+   
+(*
+cd conep
+cp ../enumi/Holmakefile Holmakefile
+../../HOL/bin/Holmake -j 40 | tee ../aaa_log_conep
+cd ..
+*)
 
 end (* struct *)
 

@@ -16,4 +16,8 @@ sig
   
   val cones45 : int -> int * int -> unit
   
+  (* proof *)
+  val CONE45_ONE : IntInf.int -> thm
+  val write_conescripts : int -> int -> int * int -> unit
+  
 end

@@ -31,11 +31,12 @@ the command `sh install.sh` needs to be run again.
 Please edit the config file: 
 - choose and appropriate number of cores (default is 40)
 - memory per core in megabyte (default is 8000)
+- maximum number of holes in a generalization (default is 10)
+  Decreasing this number to 8 is recommended but untested. 
+  The proof will require less memory and RAM at the cost of being slower.
 
 The creation of a HOL4 proof is divided in multiple steps: 
-enumeration/generalization, cones, glueing, definitions, enumeration/
-generalization proof, cone proof, 
-a special case and many gathering steps.
+enumeration, cone, glueing proof, definition, enumeration proof, cone proof.
 
 ### Enumeration (10 min)
 Enumeration of all the ramsey 4,4 graphs (R(4,4,k)) 
@@ -106,10 +107,10 @@ write_gluescripts dirname 50 true (4,4,11) (3,5,13) (4,5);
 
 Warning (before running the `glue.sh` bash script): 
 The config file does not affect the following step.
-The execution requires 
-(total maximum of 300GB of RAM and 300GB of hard disk storage) when run on 18 
-cores. If you have more RAM and more hard disk storage you may increase the 
-number of cores.
+The execution requires a total maximum of 300GB of RAM and 300GB of hard disk 
+storage when run on 18 cores with `maxhole 10`. 
+If you have more RAM and more hard disk storage 
+you may increase the number of cores.
 
 Run from the `src` directory (preferably inside a screen `screen -S glue`):
 ```
@@ -121,7 +122,8 @@ mkdir tmp
 ```
 
 To be run at most one hour after starting the previous process,
-remove empty temporary files (preferably inside a screen `screen -S tmp`):
+remove empty temporary files (preferably inside a screen `screen -S tmp`).
+This is unsafe if you have another process using files named `/tmp/MLTEMP*`.
 ```
 cd /tmp
 watch -n 600 "find . -maxdepth 1 -type f -name 'MLTEMP*' ! -exec lsof {} \; -exec rm {} \;"
@@ -132,6 +134,13 @@ Track the progress by running from the `src` directory:
 
 When the process finishes, kill the `watch` process and remove the 
 remaining temporary files `rm /tmp/MLTEMP*`
+
+You can check the glueing lemmas created by running `sh hol.sh`:
+```
+load "glue/ramseyGlue_4414_3510_140Theory";
+val sl = map fst (DB.thms "ramseyGlue_4414_3510_140");
+val thm = DB.fetch "ramseyGlue_4414_3510_140" "RamseyGlue_4414_3510_9635";
+```
 
 ### Definition (10 min)
 ```
@@ -148,7 +157,7 @@ val thm1 = DB.fetch "ramseyDef" "C4416r_DEF";
 val thm2 = DB.fetch "ramseyDef" "G3512_DEF";
 ```
 
-### Proving the enumeration (1 hour)
+### Proving the enumeration (30 min)
 First, create some empty files by running `sh hol.sh`;
 
 ```
@@ -184,7 +193,7 @@ load "enump"; open aiLib enump;
 val _ = range (8, 18, fn size => write_enumscripts 100 size (4,4));
 ```
 
-Then we call Holmake by running (preferably inside a screen `screen -S enump`):
+Then, call Holmake by running (preferably inside a screen `screen -S enump`):
 (warning use up to 300GB of ram)
 ```
 cd enump
@@ -194,8 +203,17 @@ cd ..
 ```
 
 This creates low-level lemmas that need to combined.
+There is one lemma for each graph of size n telling that any extension
+verifying C,4,4,n+1 must also be in a graph in R,4,4,n+1
 
+You can check these low-level lemmas by running `sh hol.sh`:
+```
+load "enump/ramsey4413_0Theory";
+val sl = map fst (DB.thms "ramsey4413_0");
+show_assums := true;
+val thm = DB.fetch "ramsey4413_0" "R4413_0";
+```
 
-
+### Proving the cone clauses
 
  

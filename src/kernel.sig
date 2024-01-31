@@ -22,8 +22,7 @@ sig
   val store_log : bool ref
   val logfile : string ref 
   val log : string -> unit 
-   
-   
+  
   (* dictionaries shortcut*)
   type ('a,'b) dict = ('a, 'b) Redblackmap.dict
   val dfindo : 'a -> ('a, 'b) dict -> 'b option
@@ -42,6 +41,8 @@ sig
   val streal : string -> real
   val stil : string -> int list
   val ilts : int list -> string
+  
+  (* debugging timers *)
   val timer_glob1 : real ref
   val timer_glob2 : real ref
   val timer_glob3 : real ref
