@@ -170,7 +170,7 @@ cd ..
 
 (*
 load "enump"; open kernel enump;
-val _ = range (8, 18, fn size => write_enumscripts 100 size (4,4));
+val _ = range (8, 18, fn size => write_enumscripts 10 size (4,4));
 *)
 
 (* 
