@@ -1,6 +1,8 @@
 signature cone =
 sig
 
+  include Abbrev
+    
   val attempts_glob : int ref
 
   val cone_compare : int list * int list -> order

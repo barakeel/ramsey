@@ -176,7 +176,7 @@ val _ = range (8, 18, fn size => write_enumscripts 100 size (4,4));
 (* 
 cd enump
 cp ../enumi/Holmakefile Holmakefile
-../../HOL/bin/Holmake -j 40
+../../HOL/bin/Holmake --no_prereqs -j 40
 cd ..
 *)
 

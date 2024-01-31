@@ -186,7 +186,6 @@ fun CONE45_ONE mati =
     val mat = unzip_mat mati
     val size = mat_size mat
     val cone = read_cone (4,5) mati
-    val conegen = map fst cone
     val parconethmd = create_parconethmd (4,5) mati
     val _ = init_conethmd parconethmd cone
     val _ = (debug_flag := false; disable_log := false;
@@ -230,7 +229,7 @@ fun write_conescripts batchsize size (bluen,redn) =
     app (write_conescript size (bluen,redn)) l
   end
 
-(* val mati = hd (read_par 14 (4,4)); *)
+
 (* -------------------------------------------------------------------------
    Generates cones without proof
    ------------------------------------------------------------------------- *)
@@ -260,7 +259,7 @@ val _ = range (11,17,f);
 (*
 cd conep
 cp ../enumi/Holmakefile Holmakefile
-../../HOL/bin/Holmake -j 40 | tee ../aaa_log_conep
+../../HOL/bin/Holmake --no_prereqs -j 40 | tee ../aaa_log_conep
 cd ..
 *)
 

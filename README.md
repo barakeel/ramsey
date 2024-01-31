@@ -198,7 +198,7 @@ Then, call Holmake by running (preferably inside a screen `screen -S enump`):
 ```
 cd enump
 cp ../enumi/Holmakefile Holmakefile
-../../HOL/bin/Holmake -j 40 | tee ../aaa_log_enump
+../../HOL/bin/Holmake --no_prereqs -j 40 | tee ../aaa_log_enump
 cd ..
 ```
 
@@ -206,7 +206,7 @@ This creates low-level lemmas that need to combined.
 There is one lemma for each graph of size n telling that any extension
 verifying C,4,4,n+1 must also be in a graph in R,4,4,n+1
 
-You can check these low-level lemmas by running `sh hol.sh`:
+Check the output:
 ```
 load "enump/ramsey4413_0Theory";
 val sl = map fst (DB.thms "ramsey4413_0");
@@ -215,5 +215,20 @@ val thm = DB.fetch "ramsey4413_0" "R4413_0";
 ```
 
 ### Proving the cone clauses
+
+Write the scripts:
+```
+load "cone"; open kernel cone;
+fun f i = if i = 13 then () else write_conescripts 100 i (4,4);
+val _ = range (11,17,f);
+```
+
+Run the scripts (preferably inside a screen `screen -S conep`)::
+```
+cd conep
+cp ../enumi/Holmakefile Holmakefile
+../../HOL/bin/Holmake --no_prereqs -j 40 | tee ../aaa_log_conep
+cd ..
+```
 
  
