@@ -6,10 +6,16 @@ sig
   val selfdir : string 
    
   (* global parameters *)
-  val real_time : real
-  val abstract_time : int
   val memory : int
   val ncore : int
+  
+  (* sat solving parameters *)
+  val real_time : real
+  val abstract_time : int
+  
+  (* generalization/cover parameters *)
+  val mincover : int
+  val maxhole : int
   
   (* logging *)
   val disable_log : bool ref

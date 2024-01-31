@@ -111,9 +111,6 @@ fun concat_cpermll (leafi,vleafsl) =
     mk_fast_set (fst_compare IntInf.compare)
       ((leafi,idperm) :: List.concat (map #3 vleafsl))
   end
-  
-val threshold = 8 (* percentage of newly covered graph *)
-val maxgen = 10 (* maximum number of holes *)
 
 fun sgeneralize (bluen,redn) uset leafi =
   let
@@ -141,7 +138,7 @@ fun sgeneralize (bluen,redn) uset leafi =
             all (fn x => Array.sub (locala, x) < Vector.sub(sizev,x)) clausel
           end
         fun sgen_loop vl result = 
-          if length result >= 10 then rev result else
+          if length result >= maxhole then rev result else
           case vl of
             [] => rev result
           | v :: rem => 
@@ -152,7 +149,7 @@ fun sgeneralize (bluen,redn) uset leafi =
               val (iall,inew,d,e) = all_leafs_wperm uset sibling
               val maxn = elength e
             in
-              if int_div inew iall >= int_div 1 8
+              if mincover * inew >= iall
               then (update_numbera locala v;
                     sgen_loop (filter test rem) ((v,maxn,dlist d) :: result)) 
               else sgen_loop rem result
@@ -229,7 +226,7 @@ fun remove_vleafsl_aux uset (leafi,vleafsl) acc = case vleafsl of
     [] => SOME (leafi, rev acc)
   | (v,maxn,cperml) :: m =>  
     let val newcperml = filter (fn x => emem (fst x) uset) cperml in
-      if threshold * length newcperml > maxn 
+      if mincover * length newcperml > maxn 
       then remove_vleafsl_aux uset (leafi,m) ((v,maxn,newcperml) :: acc)
       else NONE
     end

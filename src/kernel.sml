@@ -28,10 +28,20 @@ fun iflag s i =
 fun rflag s r = 
   valOf (Real.fromString (dfind s configd)) handle NotFound => r
 
-val real_time = rflag "real_time" 0.0
-val abstract_time = iflag "abstract_time" 0
+(* global parameters *)
 val memory = iflag "memory" 10000
 val ncore = (string_to_int (dfind "ncore" configd) handle NotFound => 32)
+
+(* used in sat.sml (default is unlimited) *)
+val real_time = rflag "real_time" 0.0
+val abstract_time = iflag "abstract_time" 0
+
+(* used in gen.sml when constructing cover *)
+(* at least one new graph should be covered per "mincover" generated graphs *)
+val mincover = iflag "mincover" 8
+(* maximum number of holes in a generalization *)
+val maxhole = iflag "maxhole" 10 
+
 
 (* -------------------------------------------------------------------------
    Logging

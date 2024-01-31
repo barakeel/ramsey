@@ -89,7 +89,7 @@ val (_,tcone) = add_time
 
 The results are stored in the directory `cone`. 
 
-### Glueing (2 days)
+### Glueing (4 days)
 
 The first step is to generate proof scripts (fast):
 Execute in HOL:
@@ -106,8 +106,10 @@ write_gluescripts dirname 50 true (4,4,11) (3,5,13) (4,5);
 
 Warning (before running the `glue.sh` bash script): 
 The config file does not affect the following step.
-The execution requires total maximum of 300GB when run on 18 cores (default).
-Memory of the partition where the repository sits must be higher than 300GB.
+The execution requires 
+(total maximum of 300GB of RAM and 300GB of hard disk storage) when run on 18 
+cores. If you have more RAM and more hard disk storage you may increase the 
+number of cores.
 
 Run from the `src` directory (preferably inside a screen `screen -S glue`):
 ```
@@ -146,7 +148,7 @@ val thm1 = DB.fetch "ramseyDef" "C4416r_DEF";
 val thm2 = DB.fetch "ramseyDef" "G3512_DEF";
 ```
 
-### Proving the enumeration
+### Proving the enumeration (1 hour)
 First, create some empty files by running `sh hol.sh`;
 
 ```
@@ -182,15 +184,16 @@ load "enump"; open aiLib enump;
 val _ = range (8, 18, fn size => write_enumscripts 100 size (4,4));
 ```
 
-Then we call Holmake by running:
-
+Then we call Holmake by running (preferably inside a screen `screen -S enump`):
+(warning use up to 300GB of ram)
 ```
 cd enump
 cp ../enumi/Holmakefile Holmakefile
-../../HOL/bin/Holmake -j 40
+../../HOL/bin/Holmake -j 40 | tee ../aaa_log_enump
 cd ..
 ```
 
+This creates low-level lemmas that need to combined.
 
 
 

@@ -169,7 +169,7 @@ cd ..
 *)
 
 (*
-load "enump"; open aiLib enump;
+load "enump"; open kernel enump;
 val _ = range (8, 18, fn size => write_enumscripts 100 size (4,4));
 *)
 
