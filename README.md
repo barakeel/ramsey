@@ -174,11 +174,22 @@ val thm2 = DB.fetch "ramseyEnumInit" "R3514";
 val thm3 = DB.fetch "ramseyEnumInit" "R447";
 ```
 
-For bigger k2, the proof is parallelized:
+For bigger k2, the proof is parallelized.
+First we create the proof scripts by running `sh hol.sh`:
 
+```
+load "enump"; open aiLib enump;
+val _ = range (8, 18, fn size => write_enumscripts 100 size (4,4));
+```
 
+Then we call Holmake by running:
 
-
+```
+cd enump
+cp ../enumi/Holmakefile Holmakefile
+../../HOL/bin/Holmake -j 40
+cd ..
+```
 
 
 

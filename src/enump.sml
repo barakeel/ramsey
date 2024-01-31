@@ -169,16 +169,8 @@ cd ..
 *)
 
 (*
-PolyML.print_depth 0;
-load "enump"; open sat aiLib kernel graph nauty sat gen enum enump;
-PolyML.print_depth 10;
-
-write_enumscripts 1 8 (4,4);
-write_enumscripts 1 9 (4,4);
-write_enumscripts 1 10 (4,4);
-write_enumscripts 10 11 (4,4);
-val _ = range (10, 18, fn size => 
-  (print_endline (its size); write_enumscripts 100 size (4,4)));
+load "enump"; open aiLib enump;
+val _ = range (8, 18, fn size => write_enumscripts 100 size (4,4));
 *)
 
 (* 
