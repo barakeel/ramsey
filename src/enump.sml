@@ -50,9 +50,9 @@ fun C_SMALLER size (bluen,redn) b =
 
 (* -------------------------------------------------------------------------
    Construct Ramsey theorems from Ramsey theorems at smaller sizes.
-   Warning: creates definitions as a side effect.
    ------------------------------------------------------------------------- *)
 
+(* serial version *)
 fun R_THM size (bluen,redn) =
   let
     val cover = read_cover size (bluen,redn)
@@ -64,7 +64,34 @@ fun R_THM size (bluen,redn) =
     ELIM_COND size (!final_thm)
   end
 
+fun NEXT_R_THM size (bluen,redn) prevthm = 
+  let
+    val gs = "G" ^ its bluen ^ its redn ^ its (size - 1)
+    val prevparl = read_par (size - 1) (bluen,redn)
+    val cover = read_cover size (bluen,redn)
+    val (pard,t) = add_time (create_pard size) (bluen,redn)
+    val _ = init_gthmd pard cover
+    fun f1 mi = 
+      let 
+        val m = unzip_mat mi
+        val _ = (iso_flag := false; debug_flag := false; proof_flag := true)
+        val _ = sat_solver_edgecl (mat_to_edgecl m) size (bluen,redn) 
+      in
+        ELIM_COND_GRAPH m (!final_thm)
+      end
+    val thml0 = map f1 prevparl
+    val thm2 = LIST_CONJ thml0;
+    val prevgdef = DB.fetch "ramseyDef" (gs ^ "_DEF")
+    val prevgthm = (snd o EQ_IMP_RULE o SPEC_ALL) prevgdef
+    val thm3 = MP prevgthm thm2
+    val thm4 = PROVE_HYP thm3 prevthm
+    val (thmb,thmr) = (C_SMALLER (size - 1) (bluen,redn) true, 
+                       C_SMALLER (size - 1) (bluen,redn) false);
+  in
+    PROVE_HYPL [thmb,thmr] thm4
+  end
 
+(* parallel version *)
 fun INIT_NEXT_R_THM_ONE size (bluen,redn) =
   let
     val gs = "G" ^ its bluen ^ its redn ^ its (size - 1)
@@ -89,33 +116,6 @@ fun NEXT_R_THM_ONE size (bluen,redn) prevpar =
     val _ = print_endline ("ELIM_COND_GRAPH: " ^ rts_round 4 t)
   in
     thm
-  end
-  
-fun NEXT_R_THM size (bluen,redn) prevthm = 
-  let
-    val gs = "G" ^ its bluen ^ its redn ^ its (size - 1)
-    val prevparl = read_par (size - 1) (bluen,redn)
-    val cover = read_cover size (bluen,redn)
-    val (pard,t) = add_time (create_pard size) (bluen,redn)
-    val _ = init_gthmd pard cover
-    fun f1 mi = 
-      let 
-        val m = unzip_mat mi
-        val _ = (iso_flag := false; debug_flag := false; proof_flag := true)
-        val _ = sat_solver_edgecl (mat_to_edgecl m) size (bluen,redn) 
-      in
-        ELIM_COND_GRAPH m (!final_thm)
-      end
-    val thml0 = map f1 prevparl (* parallelization point *)
-    val thm2 = LIST_CONJ thml0;
-    val prevgdef = DB.fetch "ramseyDef" (gs ^ "_DEF")
-    val prevgthm = (snd o EQ_IMP_RULE o SPEC_ALL) prevgdef
-    val thm3 = MP prevgthm thm2
-    val thm4 = PROVE_HYP thm3 prevthm
-    val (thmb,thmr) = (C_SMALLER (size - 1) (bluen,redn) true, 
-                       C_SMALLER (size - 1) (bluen,redn) false);
-  in
-    PROVE_HYPL [thmb,thmr] thm4
   end
   
 fun write_enumscript size (bluen,redn) (batchi,igraphl) = 
@@ -160,9 +160,9 @@ PolyML.print_depth 0;
 load "enump"; open sat aiLib kernel graph nauty sat gen enum enump;
 PolyML.print_depth 10;
 
-(* requires creating an empty gen4418 and an empty gen3514 *)
-erase_file "ramsey_data/gen4418";
-erase_file "ramsey_data/gen3514";
+(* create the empty files *)
+erase_file "gen/gen4418";
+erase_file "gen/gen3514";
 
 write_enumscripts 1 8 (4,4);
 write_enumscripts 1 9 (4,4);
@@ -171,60 +171,3 @@ write_enumscripts 10 11 (4,4);
 val _ = range (10, 18, fn size => 
   (print_endline (its size); write_enumscripts 100 size (4,4)));
 *)
- 
- (* -------------------------------------------------------------------------
-    Special case: after generating the scripts 
-    remove ramsey4410_0Script.sml because it is too hard. 
-    Replace it by the following 
-    ------------------------------------------------------------------------- *)
- 
-(*
- 
-val par = hd (read_par 9 (4,4));
-val parm = unzip_mat par;
-
-fun apply_coloring m edgecl = 
-   let 
-     val newm = mat_copy m
-     fun f ((i,j),c) = mat_update_sym (newm,i,j,c) 
-   in
-     app f edgecl; newm
-   end
-
-fun all_coloring edgel = 
-  let
-    val edgebothl =
-      let 
-        val l = ref []
-        fun f (i,j) = l := [((i,j),blue),((i,j),red)] :: !l 
-      in 
-        (app f edgel; !l)
-      end
-  in
-    cartesian_productl edgebothl
-  end
-
-fun split_par n parm =
-  let 
-    val l1 = all_holes parm
-    val l2 = dict_sort Int.compare (map ramseySyntax.edge_to_var l1)
-    val l3 = map ramseySyntax.var_to_edge l2
-    val l4 = first_n n l3
-    val coloringl = all_coloring l4
-  in
-    map (apply_coloring parm) coloringl
-  end;
-  
-val parml = map zip_mat (split_par 8 parm);
-val parml' = map (fn (a,b) => (a,[(a,b)])) (number_fst 1000 parml);
-  
-app (write_enumscript 10 (4,4)) parml';
-  
-
-*)
-  
-
-
-
-
-

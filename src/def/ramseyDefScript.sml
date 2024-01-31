@@ -1,7 +1,5 @@
 (* ===================================================================== *)
-(* FILE          : ramseyDefScript.sml                                   *)
-(* DESCRIPTION   : Ramsey definitions for R35 and R44 graphs             *)
-(* AUTHORS       : Thibault Gauthier                                     *)
+(* Definitions of R35, R44 and R45 graphs                                *)
 (* ===================================================================== *)
 
 (* load "ramseySyntax"; load "graph"; *)

@@ -183,17 +183,15 @@ val t = snd (add_time (glue true (4,5) mati) mat2i);
 
 
 (* cone proof  (not sure if this was finished)
-PolyML.print_depth 0;
 load "gen"; load "sat"; load "cone";
 open aiLib kernel syntax graph sat nauty gen cone;
-PolyML.print_depth 10;
+
 
 val mati = hd (read_par 14 (4,4));
 val mat = unzip_mat mati;
 val size = mat_size mat;
 val cone = read_cone (4,5) mati; 
 val conegen = map fst cone;
-val _ = conep_flag := true;
 
 fun create_parconethmd (bluen,redn) mi = 
   let 
@@ -208,24 +206,23 @@ fun create_parconethmd (bluen,redn) mi =
           val colc = combine (col,parcone)
           val term = term_of_edgecl (size + 1) colc
         in
-          ASSUME term
+          UNDISCH_ALL (SPEC_ALL (ASSUME term))
         end
     in
       dnew cone_compare (map_assoc f parl)
     end
-  end
+  end;
 
 val parconethmd = create_parconethmd (4,5) mati;
-
-val _ = (disable_log := true;conep_flag := true;
-         iso_flag := false; proof_flag := true; debug_flag := false);
-
-val bluen = 4
-val redn = 5
-load "def/ramseyDefTheory";
-val matl = sat_solver_edgecl (mat_to_edgecl mat) (size+1) (bluen,redn);
+val _ = init_conethmd parconethmd cone;
 
 
+
+load "def/ramseyDefTheory"; app print_endline (map fst (DB.thms "ramseyDef"));
+val _ = (debug_flag := false; disable_log := false; 
+         conep_flag := true; iso_flag := false; proof_flag := true);
+val matl = sat_solver_edgecl (mat_to_edgecl mat) (size+1) (4,5);
+!final_thm;
 *)
 
 

@@ -256,7 +256,7 @@ fun cone_of_graph graph =
 fun thm_of_graph graph =
   if !conep_flag then
     let
-      val thm = dfind (cone_of_graph graph) (!conethmd_glob)
+      val thm = UNDISCH_ALL (dfind (cone_of_graph graph) (!conethmd_glob))
       val _ = debugf "thm_of_cone" thm_to_string thm
     in
       thm
