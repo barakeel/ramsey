@@ -132,16 +132,6 @@ When the process finishes, kill the `watch` process and remove the
 remaining temporary files `rm /tmp/MLTEMP*`
 
 ### Definition (10 min)
-For each R(a,b,k), one can create predicate G\_abk,Cb\_abk aznd Cr\_abk.
-the set of clauses Cb\_abk(E) defining the property 
-of being a graph of size k having no blue a-cliques (also called a-cliques)
-and Cr\_abk(E) defining the property of being a graph of size k 
-having no red b-cliques (also called b-independent sets)
-
-And G\_abk(E) says that E is not a graph (or a generalization) in R(a,b,k)
-
-
-
 ```
 cd def
 ../../HOL/bin/Holmake 
@@ -156,10 +146,17 @@ val thm1 = DB.fetch "ramseyDef" "C4416r_DEF";
 val thm2 = DB.fetch "ramseyDef" "G3512_DEF";
 ```
 
+### Proving the enumeration
+The proof of the enumeration of 3,5,k1 graphs and 4,4,k2 graphs for small k2
+is obtained by running:
 
-### Theorems about enumeration
-"G\_abk(E)" is equivalent to "Cb\_abk(E) and Cr\_abk(E)".
+```
+cd enumi
+../../HOL/bin/Holmake
+cd ..
+```
 
+For bigger k2, the proof is parallelized
 
 
 
