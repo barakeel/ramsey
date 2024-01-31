@@ -147,14 +147,31 @@ val thm2 = DB.fetch "ramseyDef" "G3512_DEF";
 ```
 
 ### Proving the enumeration
+First, create some empty files by running `sh hol.sh`;
+
+```
+load "aiLib";
+aiLib.erase_file "gen/gen4418";
+aiLib.erase_file "gen/gen3514";
+```
+
 The proof of the enumeration of 3,5,k1 graphs and 4,4,k2 graphs for small k2
-is obtained by running:
+is obtained by:
 
 ```
 cd enumi
 ../../HOL/bin/Holmake
 cd ..
 ```
+
+You can check the definitions by running in HOL ``sh hol.sh``:
+```
+load "def/ramseyInitTheory";
+val sl = map fst (DB.definitions "ramseyInit");
+val thm1 = DB.fetch "ramseyDef" "C4416r_DEF";
+val thm2 = DB.fetch "ramseyDef" "G3512_DEF";
+```
+
 
 For bigger k2, the proof is parallelized
 
