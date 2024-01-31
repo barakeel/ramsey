@@ -123,7 +123,7 @@ fun write_enumscript size (bluen,redn) (batchi,igraphl) =
     val id = its bluen ^ its redn ^ its size
     val batchs = id ^ "_" ^ its batchi
     val thyname = "ramsey" ^ batchs
-    val filename = selfdir ^ "/RamseyEnum/" ^ thyname ^ "Script.sml"
+    val filename = selfdir ^ "/enump/" ^ thyname ^ "Script.sml"
     val args = its size ^ " (" ^ its bluen ^ "," ^ its redn ^ ")"
     val open_cmd = ["open HolKernel boolLib kernel enump ramseyDefTheory"]
     val newtheory_cmd = ["val _ = new_theory " ^ mlquote thyname]
@@ -144,6 +144,7 @@ fun write_enumscript size (bluen,redn) (batchi,igraphl) =
 
 fun write_enumscripts batchsize size (bluen,redn) = 
   let
+    val _ = mkDir_err (selfdir ^ "/enump")
     val parl = read_par (size-1) (bluen,redn)
     val ncut = (length parl div batchsize) + 1
     val _ = print_endline ("par: " ^ its (length parl))
@@ -156,13 +157,21 @@ fun write_enumscripts batchsize size (bluen,redn) =
 end (* struct *)
 
 (*
+load "aiLib";
+aiLib.erase_file "gen/gen4418";
+aiLib.erase_file "gen/gen3514";
+*)
+
+(*
+cd enumi
+../../HOL/bin/Holmake
+cd ..
+*)
+
+(*
 PolyML.print_depth 0;
 load "enump"; open sat aiLib kernel graph nauty sat gen enum enump;
 PolyML.print_depth 10;
-
-(* create the empty files *)
-erase_file "gen/gen4418";
-erase_file "gen/gen3514";
 
 write_enumscripts 1 8 (4,4);
 write_enumscripts 1 9 (4,4);
@@ -171,3 +180,12 @@ write_enumscripts 10 11 (4,4);
 val _ = range (10, 18, fn size => 
   (print_endline (its size); write_enumscripts 100 size (4,4)));
 *)
+
+(* 
+cd enump
+cp ../enumi/Holmakefile Holmakefile
+../../HOL/bin/Holmake -j 40
+cd ..
+*)
+
+

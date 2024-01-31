@@ -138,7 +138,7 @@ cd def
 cd ..
 ```
 
-You can check the definitions by running in HOL ``sh hol.sh``:
+You can check the definitions by running `sh hol.sh`:
 ```
 load "def/ramseyDefTheory";
 val sl = map fst (DB.definitions "ramseyDef");
@@ -164,16 +164,17 @@ cd enumi
 cd ..
 ```
 
-You can check the definitions by running in HOL ``sh hol.sh``:
+You can check the theorems by running `sh hol.sh`:
 ```
-load "def/ramseyInitTheory";
-val sl = map fst (DB.definitions "ramseyInit");
-val thm1 = DB.fetch "ramseyDef" "C4416r_DEF";
-val thm2 = DB.fetch "ramseyDef" "G3512_DEF";
+load "enumi/ramseyEnumInitTheory";
+val sl = map fst (DB.thms "ramseyEnumInit");
+show_assums := true;
+val thm1 = DB.fetch "ramseyEnumInit" "R3513";
+val thm2 = DB.fetch "ramseyEnumInit" "R3514";
+val thm3 = DB.fetch "ramseyEnumInit" "R447";
 ```
 
-
-For bigger k2, the proof is parallelized
+For bigger k2, the proof is parallelized:
 
 
 
