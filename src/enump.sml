@@ -190,7 +190,7 @@ fun write_enumfinalscript () =
     val thyl = map (fn s => fst (split_string ".sml" s)) filel2 
     val s = String.concatWith " " ("open" :: thyl)
     val cmd = 
-      "cat open_template RamseyEnumScript_template > RamseyEnumScript.sml"
+      "cat open_template ramseyEnumScript_template > RamseyEnumScript.sml"
   in
     writel (enumfdir ^ "/open_template") [s];
     cmd_in_dir enumfdir cmd
