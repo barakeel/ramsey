@@ -130,7 +130,7 @@ fun NEXT_R_THM_PAR size (bluen,redn) prevthm thml =
   in
     PROVE_HYPL [thmb,thmr] thm4
   end 
- 
+
 fun write_enumscript size (bluen,redn) (batchi,igraphl) = 
   let 
     val id = its bluen ^ its redn ^ its size
@@ -165,7 +165,34 @@ fun write_enumscripts batchsize size (bluen,redn) =
   in
     app (write_enumscript size (bluen,redn)) l
   end
- 
+
+fun collect_44k k = 
+  let
+    val enumpdir = selfdir ^ "/enump"
+    val filel1 = listDir (selfdir ^ "/enump")
+    val filel2 = filter (String.isSuffix "Theory.sml") filel1
+    val thyl = map (fn s => fst (split_string "Theory" s)) filel2
+    val prefix = "ramseyEnum44" ^ its k
+    val thyl8 = filter (String.isPrefix prefix) thyl
+    val sthml = List.concat (map DB.thms thyl8)
+    fun f s = string_to_int (snd (split_string "_" s))
+    val ithml = map_fst f sthml
+  in
+    map snd (dict_sort (fst_compare Int.compare) ithml)
+  end
+
+fun write_enumfinalscript () =
+  let
+    val enumpdir = selfdir ^ "/enump"
+    val filel1 = listDir enumpdir
+    val filel2 = filter (String.isSuffix "Theory.sml") filel1 
+    val thyl = map (fn s => fst (split_string ".sml" s)) filel2 
+    val s = String.concatWith " " ("open" :: thyl)
+  in
+    writel (enumpdir ^ "/open_template") [s];
+    cmd_in_dir enumpdir 
+      "cat open template RamseyEnumScript_template > RamseyEnumScript.sml"
+  end
 
 (* -------------------------------------------------------------------------
    Generating scripts
@@ -209,32 +236,7 @@ load "enump"; open enump;
 show_assums := true;
 
 
-fun collect_44k k = 
-  let
-    val filel = filter (String.isSuffix "Theory.sml") (listDir "enump");
-    val thyl = map (fn s => fst (split_string "Theory" s)) filel;
-    val prefix = "ramseyEnum44" ^ its k
-    val thyl8 = filter (String.isPrefix prefix) thyl;
-    val _ = app load (map (fn x => selfdir ^ "/enump/" ^ x ^ "Theory") thyl8);
-    val sthml = List.concat (map DB.thms thyl8);
-    fun f s = string_to_int (snd (split_string "_" s));
-    val ithml = map_fst f sthml
-  in
-     map snd (dict_sort (fst_compare Int.compare) ithml)
-  end;
-  
 
-val R448 = NEXT_R_THM_PAR 8 (4,4) ramseyEnumInitTheory.R447 (collect_44k 8);
-val R449 = NEXT_R_THM_PAR 9 (4,4) R448 (collect_44k 9);
-val R4410 = NEXT_R_THM_PAR 10 (4,4) R449 (collect_44k 10);
-val R4411 = NEXT_R_THM_PAR 11 (4,4) R4410 (collect_44k 11);
-val R4412 = NEXT_R_THM_PAR 12 (4,4) R4411 (collect_44k 12);
-val R4413 = NEXT_R_THM_PAR 13 (4,4) R4412 (collect_44k 13);
-val R4414 = NEXT_R_THM_PAR 14 (4,4) R4413 (collect_44k 14);
-val R4415 = NEXT_R_THM_PAR 15 (4,4) R4414 (collect_44k 15);
-val R4416 = NEXT_R_THM_PAR 16 (4,4) R4415 (collect_44k 16);
-val R4417 = NEXT_R_THM_PAR 17 (4,4) R4416 (collect_44k 17);
-val R4418 = NEXT_R_THM_PAR 18 (4,4) R4417 (collect_44k 18);
 
 load "sat"; open sat;
 

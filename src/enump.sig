@@ -18,5 +18,7 @@ sig
     int * (int * IntInf.int) list -> unit
   val write_enumscripts : int -> int -> int * int -> unit
   val NEXT_R_THM_PAR : int -> int * int -> thm -> thm list -> thm
+  val collect_44k : int -> thm list
+  val write_enumfinalscript : unit -> unit
   
 end

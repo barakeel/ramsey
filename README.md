@@ -189,10 +189,10 @@ cd ..
 
 Look at a theorem:
 ```
-load "enumf/ramseyEnumInitTheory";
-val sl = map fst (DB.thms "ramseyEnumInit");
+load "enumf/ramseyEnumTheory";
+val sl = map fst (DB.thms "ramseyEnum");
 show_assums := true;
-val thm = DB.fetch "ramseyEnumInit" "R4417";
+val thm = DB.fetch "ramseyEnum" "R4417";
 ```
 
 
