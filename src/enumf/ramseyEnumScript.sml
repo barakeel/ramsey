@@ -2,7 +2,7 @@
 (* Enumeration of ramsey graphs: (after running parallel lemmas *)
 (* ========================================================================= *)
 
-open HolKernel boolLib kernel enump ramseyDefTheory
+open HolKernel boolLib aiLib kernel enump ramseyDefTheory
 
 val _ = new_theory "ramseyEnum"
 
