@@ -181,6 +181,12 @@ This creates low-level lemmas for the difficult case that need to combined.
 The final proof of the enumeration of 3,5,k graphs and 4,4,k graphs
 is obtained by running:
 
+Create the final proof script by running `sh hol.sh`:
+
+
+
+
+Then:
 ```
 cd enumf
 ../../HOL/bin/Holmake --no_prereqs
@@ -194,9 +200,6 @@ val sl = map fst (DB.thms "ramseyEnum");
 show_assums := true;
 val thm = DB.fetch "ramseyEnum" "R4417";
 ```
-
-
-
 
 ### Proving the cone clauses (5 hours)
 

@@ -184,14 +184,16 @@ fun collect_44k k =
 fun write_enumfinalscript () =
   let
     val enumpdir = selfdir ^ "/enump"
+    val enumfdir = selfdir ^ "/enumf"
     val filel1 = listDir enumpdir
     val filel2 = filter (String.isSuffix "Theory.sml") filel1 
     val thyl = map (fn s => fst (split_string ".sml" s)) filel2 
     val s = String.concatWith " " ("open" :: thyl)
-  in
-    writel (enumpdir ^ "/open_template") [s];
-    cmd_in_dir enumpdir 
+    val cmd = 
       "cat open template RamseyEnumScript_template > RamseyEnumScript.sml"
+  in
+    writel (enumfdir ^ "/open_template") [s];
+    cmd_in_dir enumfdir cmd
   end
 
 (* -------------------------------------------------------------------------
@@ -224,29 +226,5 @@ val sl = map fst (DB.thms "ramseyEnum4413_0");
 show_assums := true;
 val thm = DB.fetch "ramseyEnum4413_0" "R4413_0";
 *)
-
-(* -------------------------------------------------------------------------
-   Regrouping theorems
-   ------------------------------------------------------------------------- *)
-  
-(*
-load "aiLib"; open aiLib;
-load "enumi/ramseyEnumInitTheory";
-load "enump"; open enump;
-show_assums := true;
-
-
-
-
-load "sat"; open sat;
-
-
-load "enump/ramseyEnum4413_0Theory";
-val sl = map fst (DB.thms "ramseyEnum4413_0");
-show_assums := true;
-val thm = DB.fetch "ramseyEnum4413_0" "R4413_0";
-*) 
-  
-  
   
 end (* struct *)
