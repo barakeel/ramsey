@@ -181,11 +181,14 @@ This creates low-level lemmas for the difficult case that need to combined.
 The final proof of the enumeration of 3,5,k graphs and 4,4,k graphs
 is obtained by running:
 
-Create the final proof script by running `sh hol.sh`:
+Create the final enumeration script by running `sh hol.sh`:
 
 ```
 load "enump"; open enump;
 write_enumfinalscript ();
+```
+
+Then, run the script:
 ```
 cd enumf
 ../../HOL/bin/Holmake --no_prereqs
