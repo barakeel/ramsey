@@ -17,8 +17,7 @@ fun create_pard size (bluen,redn) =
       dnew IntInf.compare gthml
     end
   end
- 
-  
+
 (* -------------------------------------------------------------------------
    Proves that ramsey clauses on bigger graphs imply ramsey clauses
    on smaller graphs
@@ -118,6 +117,20 @@ fun NEXT_R_THM_ONE size (bluen,redn) prevpar =
     thm
   end
   
+fun NEXT_R_THM_PAR size (bluen,redn) prevthm thml = 
+  let
+    val gs = "G" ^ its bluen ^ its redn ^ its (size - 1)
+    val thm2 = LIST_CONJ thml;
+    val prevgdef = DB.fetch "ramseyDef" (gs ^ "_DEF")
+    val prevgthm = (snd o EQ_IMP_RULE o SPEC_ALL) prevgdef
+    val thm3 = MP prevgthm thm2
+    val thm4 = PROVE_HYP thm3 prevthm
+    val (thmb,thmr) = (C_SMALLER (size - 1) (bluen,redn) true, 
+                       C_SMALLER (size - 1) (bluen,redn) false);
+  in
+    PROVE_HYPL [thmb,thmr] thm4
+  end 
+ 
 fun write_enumscript size (bluen,redn) (batchi,igraphl) = 
   let 
     val id = its bluen ^ its redn ^ its size
@@ -153,31 +166,72 @@ fun write_enumscripts batchsize size (bluen,redn) =
     app (write_enumscript size (bluen,redn)) l
   end
  
-  
-end (* struct *)
 
-(*
-load "aiLib";
-aiLib.erase_file "gen/gen4418";
-aiLib.erase_file "gen/gen3514";
-*)
-
-(*
-cd enumi
-../../HOL/bin/Holmake
-cd ..
-*)
+(* -------------------------------------------------------------------------
+   Generating scripts
+   ------------------------------------------------------------------------- *)
 
 (*
 load "enump"; open kernel enump;
-val _ = range (8, 18, fn size => write_enumscripts 10 size (4,4));
+val _ = range (8, 18, fn size => write_enumscripts 50 size (4,4));
 *)
 
-(* 
+(* -------------------------------------------------------------------------
+   Run scripts
+   ------------------------------------------------------------------------- *)
+
+(*
 cd enump
 cp ../enumi/Holmakefile Holmakefile
-../../HOL/bin/Holmake --no_prereqs -j 40
+../../HOL/bin/Holmake --no_prereqs -j 40 | tee ../aaa_log_enump
 cd ..
 *)
 
+(* -------------------------------------------------------------------------
+   Look at a theorem
+   ------------------------------------------------------------------------- *)
 
+(*
+load "enump/ramseyEnum4413_0Theory";
+val sl = map fst (DB.thms "ramseyEnum4413_0");
+show_assums := true;
+val thm = DB.fetch "ramseyEnum4413_0" "R4413_0";
+*)
+
+(* -------------------------------------------------------------------------
+   Regrouping theorems
+   ------------------------------------------------------------------------- *)
+  
+(*
+load "aiLib"; open aiLib;
+load "enumi/ramseyEnumInitTheory";
+val sl = map fst (DB.thms "ramseyEnumInit");
+show_assums := true;
+val R447 = ramseyEnumInitTheory.R447;
+
+val filel = filter (String.isSuffix "Theory.sml") (listDir "enump");
+val thyl = map (fn s => fst (split_string "Theory" s)) filel;
+val thyl8 = filter (String.isPrefix "ramseyEnum448") thyl;
+val _ = app load (map (fn x => "enump/" ^ x ^ "Theory") thyl8);
+val sthml = List.concat (map DB.thms thyl8);
+fun f s = string_to_int (snd (split_string "_" s));
+val ithml = map_fst f sthml;
+val ithml' = dict_sort (fst_compare Int.compare) ithml;
+val thml0 = map snd ithml';
+val thm2 = LIST_CONJ thml0;
+val bluen = 4
+val redn = 4
+val size = 8;
+
+load "sat"; open sat;
+
+
+load "enump/ramseyEnum4413_0Theory";
+val sl = map fst (DB.thms "ramseyEnum4413_0");
+show_assums := true;
+val thm = DB.fetch "ramseyEnum4413_0" "R4413_0";
+*) 
+  
+  
+  
+end (* struct *)

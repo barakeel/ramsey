@@ -8,14 +8,15 @@ sig
   
   (* creating R theorems (requires computed enum and cover) *)
   val C_SMALLER : int -> int * int -> bool -> thm
+  (* serial version *)
   val R_THM : int -> int * int -> thm
   val NEXT_R_THM : int -> int * int -> thm -> thm 
+  (* parallel version *)
   val INIT_NEXT_R_THM_ONE : int -> int * int -> unit
-  val NEXT_R_THM_ONE : int -> int * int -> IntInf.int -> thm
-  
+  val NEXT_R_THM_ONE : int -> int * int -> IntInf.int -> thm 
   val write_enumscript : int -> int * int -> 
     int * (int * IntInf.int) list -> unit
   val write_enumscripts : int -> int -> int * int -> unit
-  
+  val NEXT_R_THM_PAR : int -> int * int -> thm -> thm list -> thm
   
 end

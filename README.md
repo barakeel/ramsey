@@ -29,11 +29,13 @@ the command `sh install.sh` needs to be run again.
 
 ## Verifying the proof in HOL4
 Please edit the config file: 
-- choose and appropriate number of cores (default is 40)
+- choose and appropriate number of cores, 
+  typically half of the number given by `lscpu` but this also depends your 
+  available RAM (default is 40).
 - memory per core in megabyte (default is 8000)
 - maximum number of holes in a generalization (default is 10)
-  Decreasing this number to 8 is recommended but untested. 
-  The proof will require less memory and RAM at the cost of being slower.
+  Decreasing this number to 8 will require less memory and RAM 
+  at the cost of being slower.
 
 The creation of a HOL4 proof is divided in multiple steps: 
 enumeration, cone, glueing proof, definition, enumeration proof, cone proof.
@@ -81,11 +83,8 @@ This code create both the cones and the cone generalizations.
 
 Execute in HOL:
 ```
-load "gen"; load "sat"; load "cone";
-open aiLib kernel graph sat nauty gen cone;
-store_log := true;
-val (_,tcone) = add_time 
- range (11,17, fn i => if i = 13 then () else cones45 i (4,4));
+load "cone"; open kernel cone;
+val _ = range (11,17, fn i => if i = 13 then () else cones45 i (4,4));
 ```
 
 The results are stored in the directory `cone`. 
@@ -96,7 +95,7 @@ The first step is to generate proof scripts:
 Execute in HOL:
 ```
 load "glue"; open kernel glue;
-fun f i = write_gluescripts "glue" batchsize true (4,4,i) (3,5,24-i) (4,5);
+fun f i = write_gluescripts "glue" 10 true (4,4,i) (3,5,24-i) (4,5);
 val _ = range (11,17,f);
 ```
 
@@ -130,7 +129,7 @@ Track the progress by running from the `src` directory:
 When the process finishes, kill the `watch` process and remove the 
 remaining temporary files `rm /tmp/MLTEMP*`
 
-You can check the glueing lemmas created by running `sh hol.sh`:
+Look at a theorem:
 ```
 load "glue/ramseyGlue_4414_3510_140Theory";
 val sl = map fst (DB.thms "ramseyGlue_4414_3510_140");
@@ -144,7 +143,7 @@ cd def
 cd ..
 ```
 
-You can check the definitions by running `sh hol.sh`:
+Look at definitions:
 ```
 load "def/ramseyDefTheory";
 val sl = map fst (DB.definitions "ramseyDef");
@@ -152,7 +151,7 @@ val thm1 = DB.fetch "ramseyDef" "C4416r_DEF";
 val thm2 = DB.fetch "ramseyDef" "G3512_DEF";
 ```
 
-### Proving the enumeration (30 min)
+### Proving the enumeration (1 hour)
 First, create some empty files by running `sh hol.sh`;
 
 ```
@@ -170,26 +169,25 @@ cd enumi
 cd ..
 ```
 
-You can check the theorems by running `sh hol.sh`:
+Look at a theorem:
 ```
 load "enumi/ramseyEnumInitTheory";
 val sl = map fst (DB.thms "ramseyEnumInit");
 show_assums := true;
-val thm1 = DB.fetch "ramseyEnumInit" "R3513";
-val thm2 = DB.fetch "ramseyEnumInit" "R3514";
-val thm3 = DB.fetch "ramseyEnumInit" "R447";
+val thm = DB.fetch "ramseyEnumInit" "R3513";
 ```
 
 For bigger k2, the proof is parallelized.
 First we create the proof scripts by running `sh hol.sh`:
 
 ```
-load "enump"; open aiLib enump;
-val _ = range (8, 18, fn size => write_enumscripts 10 size (4,4));
+load "enump"; open kernel enump;
+val _ = range (8, 18, fn size => write_enumscripts 50 size (4,4));
 ```
 
-Then, call Holmake by running (preferably inside a screen `screen -S enump`):
-(warning use up to 300GB of ram)
+Run the scripts (requires 300GB of ram)
+preferably inside a screen `screen -S enump`:
+
 ```
 cd enump
 cp ../enumi/Holmakefile Holmakefile
@@ -201,12 +199,12 @@ This creates low-level lemmas that need to combined.
 There is one lemma for each graph of size n telling that any extension
 verifying C,4,4,n+1 must also be in a graph in R,4,4,n+1
 
-Check the output:
+Look at a theorem:
 ```
-load "enump/ramsey4413_0Theory";
-val sl = map fst (DB.thms "ramsey4413_0");
+load "enump/ramseyEnum4412_0Theory";
+val sl = map fst (DB.thms "ramseyEnum4412_0");
 show_assums := true;
-val thm = DB.fetch "ramsey4413_0" "R4413_0";
+val thm = DB.fetch "ramseyEnum4412_0" "R4412_0";
 ```
 
 ### Proving the cone clauses (5 hours)
@@ -219,12 +217,23 @@ val _ = range (11,17,f);
 ```
 
 Run the scripts (requires 300GB of ram)
-(preferably inside a screen `screen -S conep`)::
+preferably inside a screen `screen -S conep`:
 ```
 cd conep
 cp ../enumi/Holmakefile Holmakefile
 ../../HOL/bin/Holmake --no_prereqs -j 40 | tee ../aaa_log_conep
 cd ..
 ```
+
+Look at a theorem:
+```
+load "conep/ramseyCone4412_0Theory";
+val sl = map fst (DB.thms "ramseyCone4412_0");
+show_assums := true;
+val thm = DB.fetch "ramseyCone4412_0" "Cone4412_0";
+```
+
+
+
 
  
