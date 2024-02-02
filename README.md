@@ -183,10 +183,9 @@ is obtained by running:
 
 Create the final proof script by running `sh hol.sh`:
 
-
-
-
-Then:
+```
+load "enump"; open enump;
+write_enumfinalscript ();
 ```
 cd enumf
 ../../HOL/bin/Holmake --no_prereqs
