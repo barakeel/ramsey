@@ -35,7 +35,7 @@ fun collect_44k k =
     val ithml = map_fst f sthml
   in
      map snd (dict_sort (fst_compare Int.compare) ithml)
-  end;
+  end
  
 val R448 = save_thm ("R448", NEXT_R_THM_PAR 8 (4,4) R447 (collect_44k 8))
 val R449 = save_thm ("R449", NEXT_R_THM_PAR 9 (4,4) R448 (collect_44k 9))
