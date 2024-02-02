@@ -160,24 +160,6 @@ aiLib.erase_file "gen/gen4418";
 aiLib.erase_file "gen/gen3514";
 ```
 
-The proof of the enumeration of 3,5,k1 graphs and 4,4,k2 graphs for small k2
-is obtained by:
-
-```
-cd enumi
-../../HOL/bin/Holmake --no_prereqs
-cd ..
-```
-
-Look at a theorem:
-```
-load "enumi/ramseyEnumInitTheory";
-val sl = map fst (DB.thms "ramseyEnumInit");
-show_assums := true;
-val thm = DB.fetch "ramseyEnumInit" "R3513";
-```
-
-For bigger k2, the proof is parallelized.
 First we create the proof scripts by running `sh hol.sh`:
 
 ```
@@ -195,17 +177,26 @@ cp ../enumi/Holmakefile Holmakefile
 cd ..
 ```
 
-This creates low-level lemmas that need to combined.
-There is one lemma for each graph of size n telling that any extension
-verifying C,4,4,n+1 must also be in a graph in R,4,4,n+1
+This creates low-level lemmas for the difficult case that need to combined.
+The final proof of the enumeration of 3,5,k graphs and 4,4,k graphs
+is obtained by running:
+
+```
+cd enumf
+../../HOL/bin/Holmake --no_prereqs
+cd ..
+```
 
 Look at a theorem:
 ```
-load "enump/ramseyEnum4412_0Theory";
-val sl = map fst (DB.thms "ramseyEnum4412_0");
+load "enumf/ramseyEnumInitTheory";
+val sl = map fst (DB.thms "ramseyEnumInit");
 show_assums := true;
-val thm = DB.fetch "ramseyEnum4412_0" "R4412_0";
+val thm = DB.fetch "ramseyEnumInit" "R4417";
 ```
+
+
+
 
 ### Proving the cone clauses (5 hours)
 
