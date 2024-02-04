@@ -127,7 +127,7 @@ fun glue_pb cone_flag (bluen,redn) m1i m2i =
         vertical_cone_clauses_ground (bluen,redn) m1i m2i 
       else []
   in
-    mk_neg (mk_conj (list_mk_conj cclauses, list_mk_conj rclauses))
+    mk_neg (list_mk_conj (cclauses @ rclauses))
   end
   
 fun glue cone_flag (bluen,redn) m1i m2i = 
@@ -209,7 +209,7 @@ val thm = ASSUME (glue_pb true (4,5) m44i m35i);
 
 
 val thm = ref TRUTH;
-val _ = thm := glue true (4,5) m44i m35i;
+val _ = thm := time (glue true (4,5) m44i) m35i;
 
 
 fun strip_conj_right n t = if n = 0 then [] else
