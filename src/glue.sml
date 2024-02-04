@@ -24,52 +24,65 @@ fun diag_mat m1 m2 =
     m
   end
 
+(*
 (* this reduction step will need to be reproduced in the proof *)
 fun reduce_clause mat acc clause = case clause of
     [] => SOME (rev acc)
   | (lit as ((i,j),color)) :: m => 
     let val newcolor = mat_sub (mat,i,j) in
-      if newcolor = 0 then reduce_clause mat (lit :: acc) m
-      else if color <> newcolor then reduce_clause mat acc m else NONE
+      if newcolor = 0 
+        then reduce_clause mat (lit :: acc) m
+      else if color = newcolor 
+        then reduce_clause mat acc m else NONE
     end;
-
-fun ramsey_clauses_mat (bluen,redn) mat =
-  List.mapPartial (reduce_clause mat []) 
-    (ramsey_clauses_bare (mat_size mat) (bluen,redn));
-
-fun ramsey_clauses_diagmat (bluen,redn) m1 m2 =
-  ramsey_clauses_mat (bluen,redn) (diag_mat m1 m2)
+*)
 
 fun satvar i j = mk_var ("E_" ^ its i ^ "_" ^ its j,bool)
 
-fun mk_ground_var ((i,j),c) = 
-  if c = 1 then mk_neg (satvar i j)
-  else if c = 2 then satvar i j
-  else raise ERR "mk_Eijc" "unexpected color";
+fun satlit ((i,j),c) = 
+   if c = 1 then satvar i j
+   else if c = 2 then mk_neg (satvar i j)
+   else raise ERR "satlit" "unexpected"
 
-fun mk_ground_clause clause = list_mk_disj (map mk_ground_var clause)
+fun satclause clause = list_mk_imp (map satlit clause, F)
 
-fun ramsey_clauses_ground (bluen,redn) m1i m2i =
-  let val clauses = ramsey_clauses_diagmat (bluen,redn) 
-    (unzip_mat m1i) (unzip_mat m2i) 
+fun uclauses_of_graph m =
+  let
+    val l = ref []
+    fun f (i,j,c) = 
+      if c = 0 then () else l := satlit ((i,j),c) :: !l
   in
-    map mk_ground_clause clauses
+    mat_traverse f m; !l
   end
+
+fun ramsey_clauses_mat (bluen,redn) mat =
+  (* List.mapPartial (reduce_clause mat []) *) 
+  map satclause (ramsey_clauses_bare (mat_size mat) (bluen,redn));
+
+fun ramsey_clauses_diagmat (bluen,redn) m1 m2 =
+  let val m = diag_mat (unzip_mat m1) (unzip_mat m2) in
+    uclauses_of_graph m @
+    ramsey_clauses_mat (bluen,redn) m
+  end
+  
+(*
+val thm = UNDISCH (fst (EQ_IMP_RULE (SPEC_ALL ramseyDefTheory.C4524b_DEF)));
+val sets = subsets_of_size 4 (List.tabulate (24,I));
+val thm1 = UNDISCH_ALL (SPECL (map X set) thm);
+val thm2 = DISCHL (filter is_lit (hyp thm1)) thm1;
+*)
+
     
 (* -------------------------------------------------------------------------
    Add cone clauses. Each clause is not a clause and is in DNF form.
    ------------------------------------------------------------------------- *)
 
-fun mk_ground_var2 ((i,j),c) = 
-  if c = 1 then satvar i j
-  else if c = 2 then mk_neg (satvar i j)
-  else raise ERR "mk_Eijc" "unexpected color";
 
 fun mk_cone_clause conel column =
   let 
     val l1 = map (fn x => combine (column,x)) conel
     val l2 = map (filter (fn (_,c) => c <> 0)) l1
-    val l3 = map (fn x => list_mk_conj (map mk_ground_var2 x)) l2
+    val l3 = map (fn x => list_mk_conj (map satlit x)) l2
   in
     list_mk_disj l3
   end
@@ -100,7 +113,7 @@ val both_flag = ref false
 
 fun glue_pb cone_flag (bluen,redn) m1i m2i =
   let
-    val rclauses = ramsey_clauses_ground (bluen,redn) m1i m2i
+    val rclauses = ramsey_clauses_diagmat (bluen,redn) m1i m2i
     val cclauses = 
       if !both_flag then  
         (vertical_cone_clauses_ground (bluen,redn) m1i m2i @
@@ -109,7 +122,7 @@ fun glue_pb cone_flag (bluen,redn) m1i m2i =
         vertical_cone_clauses_ground (bluen,redn) m1i m2i 
       else []
   in
-    mk_neg (list_mk_conj (cclauses @ rclauses))
+    mk_neg (mk_conj (list_mk_conj cclauses, list_mk_conj rclauses))
   end
   
 fun glue cone_flag (bluen,redn) m1i m2i = 
