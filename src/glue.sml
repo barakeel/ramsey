@@ -60,11 +60,16 @@ fun ramsey_clauses_ground (bluen,redn) m1i m2i =
    Add cone clauses. Each clause is not a clause and is in DNF form.
    ------------------------------------------------------------------------- *)
 
-fun mk_cone_clause conel column = 
+fun mk_ground_var2 ((i,j),c) = 
+  if c = 1 then satvar i j
+  else if c = 2 then mk_neg (satvar i j)
+  else raise ERR "mk_Eijc" "unexpected color";
+
+fun mk_cone_clause conel column =
   let 
     val l1 = map (fn x => combine (column,x)) conel
     val l2 = map (filter (fn (_,c) => c <> 0)) l1
-    val l3 = map (fn x => list_mk_conj (map mk_ground_var x)) l2
+    val l3 = map (fn x => list_mk_conj (map mk_ground_var2 x)) l2
   in
     list_mk_disj l3
   end
