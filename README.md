@@ -95,7 +95,8 @@ The first step is to generate proof scripts:
 Execute in HOL:
 ```
 load "glue"; open kernel glue;
-fun f i = write_gluescripts "glue" 10 true (4,4,i) (3,5,24-i) (4,5);
+fun f i = if i = 13 then () else
+  write_gluescripts "glue" 50 true (4,4,i) (3,5,24-i) (4,5);
 val _ = range (11,17,f);
 ```
 

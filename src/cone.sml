@@ -161,6 +161,40 @@ fun cones45 size (bluen,redn) =
    Cone proof
    ------------------------------------------------------------------------- *)
 
+(*
+load "cone"; open aiLib cone graph;
+val mi = hd (gen.read_par 12 (4,4));
+val parl = map fst (read_cone (4,5) mi); 
+val size = mat_size (unzip_mat mi);
+val col = List.tabulate (size,fn i => (i,size));
+val colc = combine (col,(hd parl));
+
+val coll = map (fn x =>  combine (col,x)) parl;
+
+fun term_of_coneone edgecl =   
+  let 
+    val edgecl' = filter (fn (_,c) => c <> 0) edgecl
+    val litl = map hlit (map_fst edge_to_var edgecl')
+  in
+    list_mk_imp (litl,F)
+  end
+val term = term_of_coneone colc;
+val term = 
+
+val thm = UNDISCH_ALL (ASSUME term);
+val thml = CONJUNCTS thm;
+val x = UNDISCH_ALL (hd thml);
+
+*)
+
+fun term_of_coneone edgecl =   
+  let 
+    val edgecl' = filter (fn (_,c) => c <> 0) edgecl
+    val litl = map hlit (map_fst edge_to_var edgecl')
+  in
+    list_mk_imp (litl,F)
+  end
+
 fun create_parconethmd (bluen,redn) mi = 
   let 
     val parl = map fst (read_cone (bluen,redn) mi) 
@@ -172,9 +206,9 @@ fun create_parconethmd (bluen,redn) mi =
       fun f parcone =
         let
           val colc = combine (col,parcone)
-          val term = term_of_edgecl (size + 1) colc
+          val term = term_of_coneone colc
         in
-          UNDISCH_ALL (SPEC_ALL (ASSUME term))
+          UNDISCH_ALL (ASSUME term)
         end
     in
       dnew cone_compare (map_assoc f parl)
@@ -195,6 +229,12 @@ fun CONE45_ONE mati =
   in
     !final_thm
   end
+
+(*
+load "cone"; open aiLib cone graph;
+val mati = hd (gen.read_par 12 (4,4));
+CONE45_ONE mati;
+*)
 
 fun write_conescript size (bluen,redn) (batchi,igraphl) = 
   let 

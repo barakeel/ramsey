@@ -55,7 +55,7 @@ fun ramsey_clauses_ground (bluen,redn) m1i m2i =
   end
     
 (* -------------------------------------------------------------------------
-   Add cone clauses
+   Add cone clauses. Each clause is not a clause and is in DNF form.
    ------------------------------------------------------------------------- *)
 
 fun mk_cone_clause conel column = 
