@@ -30,7 +30,7 @@ fun reduce_clause mat acc clause = case clause of
   | (lit as ((i,j),color)) :: m => 
     let val newcolor = mat_sub (mat,i,j) in
       if newcolor = 0 then reduce_clause mat (lit :: acc) m
-      else if color = newcolor then reduce_clause mat acc m else NONE
+      else if color <> newcolor then reduce_clause mat acc m else NONE
     end;
 
 fun ramsey_clauses_mat (bluen,redn) mat =
@@ -201,5 +201,6 @@ first_n 2 coneparl;
 
 load "minisatProve"; open minisatProve;
 val thm = minisatProve tm;
+
 val thm = glue true (4,5) m44i m35i;
 *)
