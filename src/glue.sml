@@ -24,7 +24,7 @@ fun diag_mat m1 m2 =
     m
   end
 
-(*
+
 (* this reduction step will need to be reproduced in the proof *)
 fun reduce_clause mat acc clause = case clause of
     [] => SOME (rev acc)
@@ -35,7 +35,7 @@ fun reduce_clause mat acc clause = case clause of
       else if color = newcolor 
         then reduce_clause mat acc m else NONE
     end;
-*)
+
 
 fun satvar i j = mk_var ("E_" ^ its i ^ "_" ^ its j,bool)
 
@@ -44,7 +44,13 @@ fun satlit ((i,j),c) =
    else if c = 2 then mk_neg (satvar i j)
    else raise ERR "satlit" "unexpected"
 
-fun satclause clause = list_mk_imp (map satlit clause, F)
+fun invsatlit ((i,j),c) = 
+   if c = 2 then satvar i j
+   else if c = 1 then mk_neg (satvar i j)
+   else raise ERR "satlit" "unexpected"
+
+
+fun satclause clause = list_mk_disj (map invsatlit clause)
 
 fun uclauses_of_graph m =
   let
@@ -56,13 +62,12 @@ fun uclauses_of_graph m =
   end
 
 fun ramsey_clauses_mat (bluen,redn) mat =
-  (* List.mapPartial (reduce_clause mat []) *) 
-  map satclause (ramsey_clauses_bare (mat_size mat) (bluen,redn));
+  List.mapPartial (reduce_clause mat []) 
+    (ramsey_clauses_bare (mat_size mat) (bluen,redn));
 
 fun ramsey_clauses_diagmat (bluen,redn) m1 m2 =
   let val m = diag_mat (unzip_mat m1) (unzip_mat m2) in
-    uclauses_of_graph m @
-    ramsey_clauses_mat (bluen,redn) m
+    map satclause (ramsey_clauses_mat (bluen,redn) m)
   end
   
 (*
@@ -198,22 +203,25 @@ val size44 = 14;
 val size35 = 10;
 val m4414l = read_par size44 (4,4);
 val m3510l = read_par size35 (3,5);
-val m44i = hd (read_par size44 (4,4));
-val m35i = hd (read_par size35 (3,5));
-val tm = glue_pb true (4,5) m44i m35i;
+val m44i = last (read_par size44 (4,4));
+val m35i = last (read_par size35 (3,5));
+val thm = ASSUME (glue_pb true (4,5) m44i m35i);
+
+
+val thm = ref TRUTH;
+val _ = thm := glue true (4,5) m44i m35i;
+
 
 fun strip_conj_right n t = if n = 0 then [] else
   let val (a,b) = dest_conj t in a :: strip_conj_right (n-1) b end;
-
 val conel = first_n 2 
   (strip_disj (hd (strip_conj_right 10 (dest_neg tm))));
 val clause = last (strip_conj_right 11 (dest_neg tm));
-
 val coneparl = map fst (cone.read_cone (4,5) m44i);
 first_n 2 coneparl;
 
-load "minisatProve"; open minisatProve;
-val thm = minisatProve tm;
 
-val thm = glue true (4,5) m44i m35i;
+
+
+
 *)
