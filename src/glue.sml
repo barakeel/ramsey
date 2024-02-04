@@ -40,9 +40,11 @@ fun ramsey_clauses_mat (bluen,redn) mat =
 fun ramsey_clauses_diagmat (bluen,redn) m1 m2 =
   ramsey_clauses_mat (bluen,redn) (diag_mat m1 m2)
 
+fun satvar i j = mk_var ("E_" ^ its i ^ "_" ^ its j,bool)
+
 fun mk_ground_var ((i,j),c) = 
-  if c = 1 then mk_var ("E_" ^ its i ^ "_" ^ its j,bool)
-  else if c = 2 then mk_neg (mk_var ("E_" ^ its i ^ "_" ^ its j,bool))
+  if c = 1 then mk_neg (satvar i j)
+  else if c = 2 then satvar i j
   else raise ERR "mk_Eijc" "unexpected color";
 
 fun mk_ground_clause clause = list_mk_disj (map mk_ground_var clause)
@@ -173,7 +175,6 @@ val _ = range (11,17,f);
 
 (* test
 load "glue"; open aiLib kernel graph syntax sat gen glue;
-PolyML.print_depth 10;
 
 val size44 = 14;
 val size35 = 10;
@@ -182,6 +183,16 @@ val m3510l = read_par size35 (3,5);
 val m44i = hd (read_par size44 (4,4));
 val m35i = hd (read_par size35 (3,5));
 val tm = glue_pb true (4,5) m44i m35i;
+
+fun strip_conj_right n t = if n = 0 then [] else
+  let val (a,b) = dest_conj t in a :: strip_conj_right (n-1) b end;
+
+val conel = first_n 2 
+  (strip_disj (hd (strip_conj_right 10 (dest_neg tm))));
+val clause = last (strip_conj_right 11 (dest_neg tm));
+
+val coneparl = map fst (cone.read_cone (4,5) m44i);
+first_n 2 coneparl;
 
 load "minisatProve"; open minisatProve;
 val thm = minisatProve tm;

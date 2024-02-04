@@ -232,8 +232,11 @@ fun CONE45_ONE mati =
 
 (*
 load "cone"; open aiLib cone graph;
+load "def/ramseyDefTheory";
 val mati = hd (gen.read_par 12 (4,4));
-CONE45_ONE mati;
+val thm = CONE45_ONE mati;
+filter (not o is_imp_only) (hyp thm); 
+length (hyp thm);
 *)
 
 fun write_conescript size (bluen,redn) (batchi,igraphl) = 
@@ -288,7 +291,7 @@ val _ = range (11,17,f);
 
 (*
 load "cone"; open kernel cone;
-fun f i = if i = 13 then () else write_conescripts 100 i (4,4);
+fun f i = if i = 13 then () else write_conescripts 10 i (4,4);
 val _ = range (11,17,f);
 *)
 
@@ -298,7 +301,7 @@ val _ = range (11,17,f);
    
 (*
 cd conep
-cp ../enumi/Holmakefile Holmakefile
+echo "INCLUDES = .. ../def" > Holmakefile
 ../../HOL/bin/Holmake --no_prereqs -j 40 | tee ../aaa_log_conep
 cd ..
 *)

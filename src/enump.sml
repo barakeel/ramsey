@@ -211,7 +211,7 @@ val _ = range (8, 18, fn size => write_enumscripts 50 size (4,4));
 
 (*
 cd enump
-cp ../enumi/Holmakefile Holmakefile
+echo "INCLUDES = .. ../def" > Holmakefile
 ../../HOL/bin/Holmake --no_prereqs -j 40 | tee ../aaa_log_enump
 cd ..
 *)

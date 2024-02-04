@@ -173,7 +173,7 @@ preferably inside a screen `screen -S enump`:
 
 ```
 cd enump
-cp ../enumi/Holmakefile Holmakefile
+echo "INCLUDES = .. ../def" > Holmakefile
 ../../HOL/bin/Holmake --no_prereqs -j 40 | tee ../aaa_log_enump
 cd ..
 ```
@@ -217,7 +217,7 @@ Run the scripts (requires 300GB of ram)
 preferably inside a screen `screen -S conep`:
 ```
 cd conep
-cp ../enumi/Holmakefile Holmakefile
+echo "INCLUDES = .. ../def" > Holmakefile
 ../../HOL/bin/Holmake --no_prereqs -j 40 | tee ../aaa_log_conep
 cd ..
 ```
