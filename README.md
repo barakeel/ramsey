@@ -95,14 +95,15 @@ The first step is to generate proof scripts:
 Execute in HOL:
 ```
 load "glue"; open kernel glue;
-fun f i = if i = 13 then () else
-  write_gluescripts "glue" 50 true (4,4,i) (3,5,24-i) (4,5);
-val _ = range (11,17,f);
+fun f i = if i = 11 then () else
+  write_gluescripts "glue" 1 (3,5,i) (4,4,24-i) (4,5);
+val _ = range (7,13,f);
 ```
 
 Warning (before running the `glue.sh` bash script): 
 The config file does not affect the following step.
-The execution requires a total maximum of 300GB of RAM and 300GB of hard disk 
+The execution requires a total maximum of 
+300GB of RAM and 300GB of hard disk 
 storage when run on 20 cores with `maxhole 10`. 
 If you have more RAM and more hard disk storage 
 you may increase the number of cores.
@@ -204,33 +205,3 @@ show_assums := true;
 val thm = DB.fetch "ramseyEnum" "R4417";
 ```
 
-### Proving the cone clauses (5 hours)
-
-Write the scripts:
-```
-load "cone"; open kernel cone;
-fun f i = if i = 13 then () else write_conescripts 10 i (4,4);
-val _ = range (11,17,f);
-```
-
-Run the scripts (requires 300GB of ram)
-preferably inside a screen `screen -S conep`:
-```
-cd conep
-echo "INCLUDES = .. ../def" > Holmakefile
-../../HOL/bin/Holmake --no_prereqs -j 40 | tee ../aaa_log_conep
-cd ..
-```
-
-Look at a theorem:
-```
-load "conep/ramseyCone4412_0Theory";
-val sl = map fst (DB.thms "ramseyCone4412_0");
-show_assums := true;
-val thm = DB.fetch "ramseyCone4412_0" "Cone4412_0";
-```
-
-
-
-
- 
