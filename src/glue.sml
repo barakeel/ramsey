@@ -63,8 +63,7 @@ fun glue_pb (bluen,redn) m1i m2i =
     mk_neg (list_mk_conj rclauses)
   end
   
-fun glue (bluen,redn) m1i m2i = 
-  SAT_PROVE (glue_pb (bluen,redn) m1i m2i)
+fun glue (bluen,redn) m1i m2i = SAT_PROVE (glue_pb (bluen,redn) m1i m2i)
 
 (* -------------------------------------------------------------------------
    Write gluing scripts
@@ -122,7 +121,7 @@ end (* struct *)
 (*
 load "glue"; open kernel glue;
 fun f i = if i = 11 then () else 
-  write_gluescripts "glue" 1 false (3,5,i) (4,4,24-i) (4,5);
+  write_gluescripts "glue" 1 (3,5,i) (4,4,24-i) (4,5);
 val _ = range (7,13,f);
 *)
 
