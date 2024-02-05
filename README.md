@@ -165,7 +165,7 @@ cd glue
 cp ../def/Holmakefile Holmakefile
 export TMPDIR="$PWD/tmp"
 mkdir tmp
-../../HOL/bin/Holmake -j 20 | tee ../aaa_log_glue
+../../HOL/bin/Holmake --no_prereqs -j 40 | tee ../aaa_log_glue
 ```
 
 To be run at most one hour after starting the previous process,

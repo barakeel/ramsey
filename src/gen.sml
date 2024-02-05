@@ -381,6 +381,14 @@ val inst4410' = read_enum 10 (4,4);
 list_compare IntInf.compare (inst4410,inst4410');
 *)
 
+(* 
+
+
+
+
+*)
+
+
 
 end (* struct *)
 
