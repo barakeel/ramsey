@@ -4,8 +4,6 @@ struct
 open HolKernel Abbrev boolLib aiLib kernel graph nauty
 val ERR = mk_HOL_ERR "syntax"
 
-fun debug_mat m = if !debug_flag then graph.print_mat m else ()
-
 (* -------------------------------------------------------------------------
    Order in which the vertices should be colored
    ------------------------------------------------------------------------- *)
@@ -64,14 +62,13 @@ fun mk_domain_aux size =
     val vl = List.tabulate (size,X)
     fun f v = numSyntax.mk_less (v,numSyntax.term_of_int size)
     val boundl = map f vl
-    val pairvl = map pair_of_list (kernel.subsets_of_size 2 vl)
+    val pairvl = all_pairs vl
     val diffl = map (fn (a,b) => mk_neg (mk_eq (a,b))) pairvl
   in
     (vl, list_mk_imp (boundl @ diffl,F))
   end
   
 fun mk_domain size =
-  dfind size (!domain_cache) handle NotFound => 
   let val r = mk_domain_aux size in
     domain_cache := dadd size r (!domain_cache); r
   end
@@ -92,7 +89,7 @@ fun mk_domain_only cliquen size =
     val vl = List.tabulate (cliquen,X)
     fun f v = numSyntax.mk_less (v,numSyntax.term_of_int size)
     val boundl = map f vl
-    val pairvl = map pair_of_list (kernel.subsets_of_size 2 vl)
+    val pairvl = all_pairs vl
     val diffl = map (fn (a,b) => mk_neg (mk_eq (a,b))) pairvl
   in
     list_mk_imp (boundl @ diffl,F)
@@ -102,7 +99,7 @@ fun noclique size (cliquen,b) =
   let
     val vl = List.tabulate (cliquen,X)
     val domain = mk_domain_only cliquen size
-    val pairvl = map pair_of_list (subsets_of_size 2 vl)
+    val pairvl = all_pairs vl
     val litl = map (fn (a,b) => list_mk_comb (E,[a,b])) pairvl
     val litl' = map (fn x => if b then x else mk_neg x) litl
   in

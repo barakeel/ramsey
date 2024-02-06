@@ -179,21 +179,6 @@ fun normalize_nauty graph =
   let val vertexl = List.tabulate (mat_size graph,I) in 
     snd (normalize_nauty_aux graph [vertexl])
   end
-
-(* -------------------------------------------------------------------------
-   Derived functions
-   ------------------------------------------------------------------------- *)
-
-fun nauty_set l = mk_fast_set mat_compare (map normalize_nauty l)
- 
-fun subgraphs m size =   
-  let
-    val perml = subsets_of_size size (List.tabulate (mat_size m,I))
-    val permfl = map mk_permf perml
-    val ml = map (mat_permute (m,size)) permfl
-  in
-    nauty_set ml
-  end
  
 (*
 load "nauty"; open aiLib kernel graph nauty;
