@@ -123,10 +123,9 @@ fun subsets_of_size n l =
   then subsets_of_size_small n l 
   else subsets_of_size_large n l
 
-
 (*
 load "kernel"; open aiLib kernel; 
-val (l,t) = add_time (subsets_of_size 2) (List.tabulate (20,I));
+val (l,t) = add_time (subsets_of_size 3) (List.tabulate (7,I));
 *)
 
 (* -------------------------------------------------------------------------

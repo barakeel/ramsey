@@ -20,8 +20,6 @@ val max_red_degree = ref 0
 val iso_flag = ref true
 val proof_flag = ref true
 val graphl = ref []
-val conegen_flag = ref false
-val coneset_glob = ref (eempty (list_compare Int.compare))
 
 fun normalize_nauty_wperm x = 
   if !iso_flag then nauty.normalize_nauty_wperm x else (x,[])
@@ -40,15 +38,9 @@ val prop_glob = ref (dempty Int.compare)
 val graph_glob = ref (Array2.array (1,1,~1))
 val reason_glob = ref (Array.array (1,~1))
 val thmv_glob = ref (Vector.fromList ([]: thm list))
-(* val decision_glob = ref (~1,~1)
-val dec_glob = ref (Array.array (1,false));  *)
 val final_thm = ref TRUTH
 val gthmd_glob = ref 
   (dempty IntInf.compare: (IntInf.int, (thm * int list)) dict)
-val conep_flag = ref false
-val conethmd_glob = ref 
-  (dempty (list_compare Int.compare): (int list, thm) dict)
-
 
 val size_glob = ref 0
 val pos_thm = ref TRUTH
@@ -95,7 +87,6 @@ fun init_timer () =
   show_assums := true;
   final_thm := TRUTH;
   graphl := [];
-  coneset_glob := eempty (list_compare Int.compare);
   prop_counter := 0;
   prop_small_counter := 0;
   prop_conflict_counter := 0;
@@ -241,41 +232,21 @@ fun init_thms size (bluen,redn) =
     neg_thm := f (DB.fetch "ramseyDef" (s ^ "r_DEF"))
   end
 
-
-(* return last column (without its last entry)*)
-fun cone_of_graph graph = 
-  let 
-    val size = mat_size graph 
-    val col1 = List.tabulate (size-1,fn i => (i,size -1))
-    val col2 = map (fn (i,j) => mat_sub (graph,i,j)) col1 
-  in
-    col2
-  end
-
-
 fun thm_of_graph graph =
-  if !conep_flag then
-    let
-      val thm = UNDISCH_ALL (dfind (cone_of_graph graph) (!conethmd_glob))
-      val _ = debugf "thm_of_cone" thm_to_string thm
-    in
-      thm
-    end
-  else 
-    let
-      val _ = (debug "graph before"; debug_mat graph)
-      val _ = debugf "graph size: " (its o mat_size) graph  
-      val (normgraph,perm2) = nauty.normalize_nauty_wperm graph
-      val (thm,perm1) = dfind (zip_mat normgraph) (!gthmd_glob)
-      val _ = debugf "thm_of_graph" thm_to_string thm
-      val _ = debugf "perm1: " ilts perm1
-      val _ = debugf "perm2: " ilts perm2
-      val thm' = PERMUTE_LIT thm perm1 perm2
-      val _ = debugf "thm_of_graph permuted" thm_to_string thm'
-    in
-      thm'
-    end
-    handle Subscript => raise ERR "thm_of_graph" "subscript"
+  let
+    val _ = (debug "graph before"; debug_mat graph)
+    val _ = debugf "graph size: " (its o mat_size) graph  
+    val (normgraph,perm2) = nauty.normalize_nauty_wperm graph
+    val (thm,perm1) = dfind (zip_mat normgraph) (!gthmd_glob)
+    val _ = debugf "thm_of_graph" thm_to_string thm
+    val _ = debugf "perm1: " ilts perm1
+    val _ = debugf "perm2: " ilts perm2
+    val thm' = PERMUTE_LIT thm perm1 perm2
+    val _ = debugf "thm_of_graph permuted" thm_to_string thm'
+  in
+    thm'
+  end
+  handle Subscript => raise ERR "thm_of_graph" "subscript"
 
 
 fun thm_of_clause clause = 
@@ -847,11 +818,9 @@ fun sat_solver_loop assignv clausevv path =
           val newpath = (undol, decv, colorm, decthm :: thml,g1) :: parentl  
         in
           debug "sat";
-          if !iso_flag then graphl := normgraph :: !graphl
-            else if !conegen_flag 
-            then coneset_glob := eadd 
-            (cone_of_graph (!graph_glob)) (!coneset_glob) 
-            else graphl := mat_copy (!graph_glob) :: !graphl
+          if !iso_flag 
+          then graphl := normgraph :: !graphl
+          else graphl := mat_copy (!graph_glob) :: !graphl
           ;
           app (fn f => f ()) newundol;
           frec newpath
@@ -954,24 +923,6 @@ fun init_gthmd pard cover =
   (
   gthmd_glob := dempty IntInf.compare;
   app (update_gthmd pard) cover
-  )
-
-(* -------------------------------------------------------------------------
-   Intializing conethmd
-   ------------------------------------------------------------------------- *)
-
-fun update_conethmd parconethmd (parcone,childl) =
-  let 
-    val thm = dfind parcone parconethmd
-    fun g childcone = conethmd_glob := dadd childcone thm (!conethmd_glob)
-  in
-    app g childl
-  end
-
-fun init_conethmd parconethmd conecover =
-  (
-  conethmd_glob := dempty (list_compare Int.compare);
-  app (update_conethmd parconethmd) conecover
   )
 
 (* -------------------------------------------------------------------------

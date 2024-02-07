@@ -23,10 +23,7 @@ sig
   val isod_glob : (IntInf.int, thm * int list) Redblackmap.dict ref
   val gthmd_glob : (IntInf.int, thm * int list) Redblackmap.dict ref
   val allsat_flag : bool ref
-  val conep_flag : bool ref
-  val conegen_flag : bool ref
-  val coneset_glob : int list Redblackset.set ref
-  
+
   (* solver *)
   val sat_solver : int -> int * int -> mat list
   val sat_solver_wisod : int -> int * int -> 
@@ -34,15 +31,11 @@ sig
   val sat_solver_edgecl : ((int * int) * int) list -> 
     int -> int * int -> mat list
   
-  
   (* preprocessing *)
   val mk_both_cdef : int -> int * int -> thm * thm
   val init_gthmd : (IntInf.int, thm) Redblackmap.dict ->
     (IntInf.int * (IntInf.int * int list) list) list -> unit
-  val init_conethmd : (int list, thm) Redblackmap.dict -> 
-    (int list * int list list) list -> unit
   
-
   (* postprocessing *)
   val ELIM_COND : int -> thm -> thm
   val ELIM_COND_GRAPH : mat -> thm -> thm
