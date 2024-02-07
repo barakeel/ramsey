@@ -1,7 +1,5 @@
 (* =========================================================================
-   DPLL sat solver modulo isomorphism 
-   Todo : faster reconstruction of the proof 
-   (e.g topologically sorting variable to avoid duplicated work)
+   DPLL sat solver modulo isomorphism
    ========================================================================= *)
 
 structure sat :> sat =
@@ -945,8 +943,7 @@ val NOEQSYM =
 
 fun ELIM_COND_GRAPH graph finalthm = 
   let
-    val tml = (fst o strip_imp_only o snd o strip_forall) 
-      (term_of_graph graph)
+    val tml = (fst o strip_imp_only o snd o strip_forall) (term_of_graph graph)
     val n = mat_size graph
     val lemma = LESS_THAN_NEXT n
     val v = X n
@@ -971,8 +968,6 @@ fun ELIM_COND_GRAPH graph finalthm =
   end  
   
 
-
-  
 end (* struct *)
 
 (*
