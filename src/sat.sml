@@ -14,9 +14,6 @@ fun debug_mat m = if !debug_flag then graph.print_mat m else ()
 
 (* flags conspiring to output all models *)
 val allsat_flag = ref true
-val degree_flag = ref false
-val max_blue_degree = ref 0
-val max_red_degree = ref 0
 val iso_flag = ref true
 val proof_flag = ref true
 val graphl = ref []
@@ -186,10 +183,10 @@ fun PERMUTE_LIT' thm1 perm1 perm2 =
     fun f i = let val i' = permf i in
         if i <> i' then SOME {redex = X i, residue = X i'} else NONE
       end
-    val sub = total_time timer_glob4 (List.mapPartial f) vertexl
-    val thm2 = total_time timer_glob1 (INST sub) thm1
-    val lemmal = total_time timer_glob2 (List.mapPartial NORM_HYP) (hyp thm2)
-    val thm3 = total_time timer_glob3 (PROVE_HYPL lemmal) thm2
+    val sub = (List.mapPartial f) vertexl
+    val thm2 = (INST sub) thm1
+    val lemmal = (List.mapPartial NORM_HYP) (hyp thm2)
+    val thm3 = (PROVE_HYPL lemmal) thm2
   in
     thm3
   end
@@ -345,7 +342,7 @@ fun BACK_PROP' decv thm =
     BACK_PROP_AUX decv thm vl
   end
 
-fun BACK_PROP decv thm = total_time degree_timer (BACK_PROP' decv) thm
+fun BACK_PROP decv thm = (BACK_PROP' decv) thm
   handle Subscript => raise ERR "BACK_PROP" ""
   
 fun dec_thm decv (confv,confclause) = case prop_thmo confv of 
@@ -386,7 +383,7 @@ fun by_iso_aux (normgraph,perm2) =
   
 fun by_iso (normgraph,perm2) =
   if !iso_flag 
-  then (incr iso_counter; total_time iso_timer by_iso_aux (normgraph,perm2))
+  then (incr iso_counter; by_iso_aux (normgraph,perm2))
   else NONE
 
 (* -------------------------------------------------------------------------
@@ -764,10 +761,10 @@ fun sat_solver_loop assignv clausevv path =
     let
       val decthm = if not (!proof_flag) then TRUTH else 
         let 
-          val thmF = total_time degree_timer (CONFLICT thma) thmb
+          val thmF = (CONFLICT thma) thmb
           val _ = SAVE_ISO (g1,thmF)   
         in
-          total_time degree_timer (SMART_DISCH decv) (BACK_PROP decv thmF) 
+          (SMART_DISCH decv) (BACK_PROP decv thmF) 
         end
       val _ = (debug "undo"; app (fn f => f ()) undol)  
       val newparentl = (undol', decv, colorl, decthm :: thml, g2) :: parentl
@@ -799,7 +796,7 @@ fun sat_solver_loop assignv clausevv path =
         let
           val _ = (debug "iso"; incr iso_conflict_counter)
           val decthm = if not (!proof_flag) then TRUTH else 
-            total_time degree_timer (SMART_DISCH decv) (BACK_PROP decv thmF)
+            (SMART_DISCH decv) (BACK_PROP decv thmF)
           val newpath = (undol,decv,colorm, decthm :: thml, g1) :: parentl
         in
           app (fn f => f ()) newundol;
@@ -813,7 +810,7 @@ fun sat_solver_loop assignv clausevv path =
           val decthm = 
             if not (!proof_flag) then TRUTH else 
             let val thmF = total_time iso_timer thm_of_graph (!graph_glob) in
-              total_time degree_timer (SMART_DISCH decv) (BACK_PROP decv thmF)
+              (SMART_DISCH decv) (BACK_PROP decv thmF)
             end
           val newpath = (undol, decv, colorm, decthm :: thml,g1) :: parentl  
         in
