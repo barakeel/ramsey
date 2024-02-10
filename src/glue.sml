@@ -13,7 +13,6 @@ val ERR = mk_HOL_ERR "glue"
    Create diagonal by block matrix and reduce the set of ramsey clauses
    ------------------------------------------------------------------------- *)
 
-fun shift_edgel x el = map (fn (a,b) => (a + x, b + x)) el;
 fun shift_edgecl x ecl = map (fn ((a,b),c) => ((a + x, b + x),c)) ecl;
 
 fun diag_mat m1 m2 = 
@@ -24,8 +23,7 @@ fun diag_mat m1 m2 =
   in
     m
   end
-  
-
+ 
 (* this reduction step will need to be reproduced in the proof *)
 fun reduce_clause mat acc clause = case clause of
     [] => SOME (rev acc)
@@ -71,6 +69,8 @@ fun glue (bluen,redn) m1i m2i = SAT_PROVE (glue_pb (bluen,redn) m1i m2i)
    Eliminating clauses with holes
    ------------------------------------------------------------------------- *)
 
+fun shift_edgel x el = map (fn (a,b) => (a + x, b + x)) el;
+
 fun diag_holes m1 m2 =
   let 
     val hole1 = all_holes m1  
@@ -97,9 +97,29 @@ fun glue_pb_hole (bluen,redn) m1i m2i =
 fun glue_hole (bluen,redn) m1i m2i = 
   SAT_PROVE (glue_pb_hole (bluen,redn) m1i m2i)
 
+
+
+
+(*
+load "glue"; open graph glue;
+val m1 = random_elem (gen.read_par 10 (3,5));
+val m2 = rando_elem (gen.read_par 14 (4,4));
+
+val thm = glue_hole (4,5) m1 m2;
+
+*)
 (* -------------------------------------------------------------------------
    Exporting problems in the dimacs format
    ------------------------------------------------------------------------- *)
+
+fun glue_hole_ext (bluen,redn) m1i m2i =
+  let 
+    val clausel1 = ramsey_clauses_diagmat_bare (bluen,redn) m1i m2i 
+    val holed = enew edge_compare (diag_holes (unzip_mat m1i) (unzip_mat m2i))
+    val clausel2 = List.mapPartial (reduce_hole holed) clausel1
+  in
+    clausel2
+  end   
 
 fun write_dimacs file clausel = 
   let
