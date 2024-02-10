@@ -102,11 +102,11 @@ fun glue_hole (bluen,redn) m1i m2i =
 
 (*
 load "glue"; open graph glue;
-val m1 = random_elem (gen.read_par 10 (3,5));
-val m2 = rando_elem (gen.read_par 14 (4,4));
+val m1 = hd (gen.read_par 10 (3,5));
+val m2 = hd (gen.read_par 14 (4,4));
 
 val thm = glue_hole (4,5) m1 m2;
-
+../picosat-965/picosat aaa_test
 *)
 (* -------------------------------------------------------------------------
    Exporting problems in the dimacs format

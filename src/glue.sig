@@ -14,6 +14,8 @@ sig
   val glue_hole : int * int -> IntInf.int -> IntInf.int -> thm
 
   (* export to external sat solvers *)
+  val glue_hole_ext : int * int -> IntInf.int -> IntInf.int -> 
+    ((int * int) * int) list list
   val write_dimacs : string -> ((int * int) * int) list list -> unit
 
 end
