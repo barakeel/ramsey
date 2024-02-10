@@ -13,6 +13,7 @@ val ERR = mk_HOL_ERR "glue"
    Create diagonal by block matrix and reduce the set of ramsey clauses
    ------------------------------------------------------------------------- *)
 
+fun shift_edgel x el = map (fn (a,b) => (a + x, b + x)) el;
 fun shift_edgecl x ecl = map (fn ((a,b),c) => ((a + x, b + x),c)) ecl;
 
 fun diag_mat m1 m2 = 
@@ -23,6 +24,7 @@ fun diag_mat m1 m2 =
   in
     m
   end
+  
 
 (* this reduction step will need to be reproduced in the proof *)
 fun reduce_clause mat acc clause = case clause of
@@ -37,21 +39,21 @@ fun reduce_clause mat acc clause = case clause of
 
 fun satvar i j = mk_var ("E_" ^ its i ^ "_" ^ its j,bool)
 
-fun satlit ((i,j),c) = 
-   if c = 1 then satvar i j
-   else if c = 2 then mk_neg (satvar i j)
-   else raise ERR "satlit" "unexpected"
-
 fun invsatlit ((i,j),c) = 
    if c = 2 then satvar i j
    else if c = 1 then mk_neg (satvar i j)
-   else raise ERR "satlit" "unexpected"
+   else raise ERR "invsatlit" "unexpected"
 
 fun satclause clause = list_mk_disj (map invsatlit clause)
 
 fun ramsey_clauses_mat (bluen,redn) mat =
   List.mapPartial (reduce_clause mat []) 
     (ramsey_clauses_bare (mat_size mat) (bluen,redn));
+
+fun ramsey_clauses_diagmat_bare (bluen,redn) m1 m2 =
+  let val m = diag_mat (unzip_mat m1) (unzip_mat m2) in
+    ramsey_clauses_mat (bluen,redn) m
+  end
 
 fun ramsey_clauses_diagmat (bluen,redn) m1 m2 =
   let val m = diag_mat (unzip_mat m1) (unzip_mat m2) in
@@ -64,6 +66,57 @@ fun glue_pb (bluen,redn) m1i m2i =
   end
   
 fun glue (bluen,redn) m1i m2i = SAT_PROVE (glue_pb (bluen,redn) m1i m2i)
+
+(* -------------------------------------------------------------------------
+   Eliminating clauses with holes
+   ------------------------------------------------------------------------- *)
+
+fun diag_holes m1 m2 =
+  let 
+    val hole1 = all_holes m1  
+    val hole2 = shift_edgel (mat_size m1) (all_holes m2)
+  in
+    hole1 @ hole2
+  end
+  
+fun reduce_hole holed clause = 
+  if exists (fn (edge,_) => emem edge holed) clause
+  then SOME clause
+  else NONE
+
+fun glue_pb_hole (bluen,redn) m1i m2i =
+  let 
+    val clausel1 = ramsey_clauses_diagmat_bare (bluen,redn) m1i m2i 
+    val holed = enew edge_compare (diag_holes (unzip_mat m1i) (unzip_mat m2i))
+    val clausel2 = List.mapPartial (reduce_hole holed) clausel1
+    val clausel3 = map satclause clausel2
+  in
+    mk_neg (list_mk_conj clausel3)
+  end 
+
+fun glue_hole (bluen,redn) m1i m2i = 
+  SAT_PROVE (glue_pb_hole (bluen,redn) m1i m2i)
+
+(* -------------------------------------------------------------------------
+   Exporting problems in the dimacs format
+   ------------------------------------------------------------------------- *)
+
+fun write_dimacs file clausel = 
+  let
+    val edgel = mk_fast_set edge_compare (map fst (List.concat clausel))
+    val mapping = number_snd 1 edgel
+    val edged = dnew edge_compare mapping
+    fun g ((i,j),c) = 
+      if c = 1 then "-" ^ its (dfind (i,j) edged) 
+      else if c = 2 then its (dfind (i,j) edged)
+      else raise ERR "write_dimacs" "unexpected color"       
+    fun f clause = String.concatWith " " (map g clause) ^ " 0"
+    val header = "p cnf " ^ its (dlength edged) ^ " " ^ its (length clausel)
+    fun h ((i,j),v) = its i ^ "," ^ its j ^ " " ^ its v
+  in
+    writel file (header :: map f clausel);
+    writel (file ^ "_mapping") (map h mapping)
+  end
 
 (* -------------------------------------------------------------------------
    Write gluing scripts
