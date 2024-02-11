@@ -48,78 +48,23 @@ fun ramsey_clauses_mat (bluen,redn) mat =
   List.mapPartial (reduce_clause mat []) 
     (ramsey_clauses_bare (mat_size mat) (bluen,redn));
 
-fun ramsey_clauses_diagmat_bare (bluen,redn) m1 m2 =
+fun ramsey_clauses_diagmat (bluen,redn) m1 m2 =
   let val m = diag_mat (unzip_mat m1) (unzip_mat m2) in
     ramsey_clauses_mat (bluen,redn) m
   end
 
-fun ramsey_clauses_diagmat (bluen,redn) m1 m2 =
-  let val m = diag_mat (unzip_mat m1) (unzip_mat m2) in
-    map satclause (ramsey_clauses_mat (bluen,redn) m)
-  end
-
 fun glue_pb (bluen,redn) m1i m2i =
-  let val rclauses = ramsey_clauses_diagmat (bluen,redn) m1i m2i in
+  let val rclauses = map satclause 
+    (ramsey_clauses_diagmat (bluen,redn) m1i m2i) 
+  in
     mk_neg (list_mk_conj rclauses)
   end
   
 fun glue (bluen,redn) m1i m2i = SAT_PROVE (glue_pb (bluen,redn) m1i m2i)
 
 (* -------------------------------------------------------------------------
-   Eliminating clauses with holes
-   ------------------------------------------------------------------------- *)
-
-fun shift_edgel x el = map (fn (a,b) => (a + x, b + x)) el;
-
-fun diag_holes m1 m2 =
-  let 
-    val hole1 = all_holes m1  
-    val hole2 = shift_edgel (mat_size m1) (all_holes m2)
-  in
-    hole1 @ hole2
-  end
-  
-fun reduce_hole holed clause = 
-  if exists (fn (edge,_) => emem edge holed) clause
-  then SOME clause
-  else NONE
-
-fun glue_pb_hole (bluen,redn) m1i m2i =
-  let 
-    val clausel1 = ramsey_clauses_diagmat_bare (bluen,redn) m1i m2i 
-    val holed = enew edge_compare (diag_holes (unzip_mat m1i) (unzip_mat m2i))
-    val clausel2 = List.mapPartial (reduce_hole holed) clausel1
-    val clausel3 = map satclause clausel2
-  in
-    mk_neg (list_mk_conj clausel3)
-  end 
-
-fun glue_hole (bluen,redn) m1i m2i = 
-  SAT_PROVE (glue_pb_hole (bluen,redn) m1i m2i)
-
-
-
-
-(*
-load "glue"; open graph glue;
-val m1 = hd (gen.read_par 10 (3,5));
-val m2 = hd (gen.read_par 14 (4,4));
-
-val thm = glue_hole (4,5) m1 m2;
-../picosat-965/picosat aaa_test
-*)
-(* -------------------------------------------------------------------------
    Exporting problems in the dimacs format
    ------------------------------------------------------------------------- *)
-
-fun glue_hole_ext (bluen,redn) m1i m2i =
-  let 
-    val clausel1 = ramsey_clauses_diagmat_bare (bluen,redn) m1i m2i 
-    val holed = enew edge_compare (diag_holes (unzip_mat m1i) (unzip_mat m2i))
-    val clausel2 = List.mapPartial (reduce_hole holed) clausel1
-  in
-    clausel2
-  end   
 
 fun write_dimacs file clausel = 
   let
@@ -137,6 +82,25 @@ fun write_dimacs file clausel =
     writel file (header :: map f clausel);
     writel (file ^ "_mapping") (map h mapping)
   end
+
+(*
+load "glue"; open aiLib kernel graph glue;
+val csize = 10;
+val m1 = hd (gen.read_par 10 (3,5));
+val m2 = hd (gen.read_par 14 (4,4));
+number_of_holes (unzip_mat m1);
+number_of_holes (unzip_mat m2);
+
+val perm = random_elem (subsets_of_size (csize - 1) (List.tabulate (csize,I)));
+val permf = mk_permf perm;
+val m1' = mat_permute (unzip_mat m1,csize-1) permf;
+
+ramsey_clauses_diagmat_bare (bluen,redn) (zip_mat m1') m2;
+
+*)
+
+
+
 
 (* -------------------------------------------------------------------------
    Write gluing scripts
