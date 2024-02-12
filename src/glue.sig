@@ -9,6 +9,10 @@ sig
   val glue : int * int -> IntInf.int -> IntInf.int -> thm
   val write_gluescripts : string -> int ->
     (int * int * int) -> (int * int * int) -> (int * int) -> unit
+  
+  (* I/O for picosat *)
   val write_dimacs : string -> ((int * int) * int) list list -> unit
+  val read_sol : string -> ((int * int) * int) list list
+  val read_map : string -> (int, int * int) Redblackmap.dict
 
 end

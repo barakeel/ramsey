@@ -80,37 +80,18 @@ fun write_dimacs file clausel =
     fun h ((i,j),v) = its i ^ "," ^ its j ^ " " ^ its v
   in
     writel file (header :: map f clausel);
-    writel (file ^ "_mapping") (map h mapping)
+    writel (file ^ "_map") (map h mapping)
   end
 
-(*
-load "glue"; open aiLib kernel graph glue;
-load "enum"; open enum;
+(* -------------------------------------------------------------------------
+   Reading allsat problems
+   All edges appear in the satisfiable assignments 
+   because there are cliques with only unknown edges 
+   ------------------------------------------------------------------------- *)
 
-val _ = mkDir_err "pico";
-val csize = 10;
-val m1 = random_elem (enum.read_enum csize (3,5));
-val m2 = random_elem (enum.read_enum (24 - csize) (4,4));
-val m2' = 
-  zip_mat (random_subgraph (mat_size (unzip_mat m2) - 2) (unzip_mat m2));
-writel "pico/test_mat"  (map infts [m1,m2,m2']);
-
-val clausel = ramsey_clauses_diagmat (4,5) m1 m2';
-val _ = write_dimacs "aaa_test" clausel;
-val (_,t1) = add_time
-  (cmd_in_dir selfdir) "../picosat-965/picosat -o aaa_test_out --all aaa_test";
-val sl = readl "aaa_test_out";
-
-*)
-(*
-(* take the first one example and extend it back. *)
-load "glue"; open aiLib kernel graph glue;
-val sl1 = first_n 6 (readl "aaa_test_out");
-
-
-fun read_mapd file = 
+fun read_map file = 
   let 
-    val sl = readl (file ^ "_mapping")
+    val sl = readl file
     fun f s = 
       let 
         val (s1,s2) = pair_of_list (String.tokens Char.isSpace s) 
@@ -122,27 +103,58 @@ fun read_mapd file =
     dnew Int.compare (map (swap o f) sl)
   end;
 
-fun read_sol d sl =
+fun read_sol_one d sl =
   let
     val sl2 = map (fn x => tl (String.tokens Char.isSpace x)) sl
     val il3 = filter (fn x => x <> 0) (map string_to_int (List.concat sl2))
     fun f x = (dfind (Int.abs x) d : int * int, if x > 0 then 1 else 2)
   in
     map f il3
-  end;
+  end
 
-(* all variable should appear because there are cliques within unknown edges *)
-
-fun read_solutions file = 
+fun read_sol file = 
   let 
-    val solfile = file ^ "_out"
-    val mappingfile = file ^ "_mapping"
-    val d = read_mapd file
-    val sll0 = tl (butlast (readl "aaa_test_out"))
+    val d = read_map (file ^ "_map")
+    val sll0 = tl (butlast (readl (file ^ "_sol")))
     val sll1 = rpt_split_sl "s SATISFIABLE" sll0      
   in
-    map (read_sol d) sll1
+    map (read_sol_one d) sll1
   end 
+
+
+
+(*
+load "glue"; open aiLib kernel graph glue;
+load "enum"; open enum;
+
+val _ = mkDir_err "pico";
+val file = selfdir ^ "/pico/test";
+
+val csize = 10;
+val m1 = random_elem (enum.read_enum csize (3,5));
+val m2 = random_elem (enum.read_enum (24 - csize) (4,4));
+val m2u = unzip_mat m2;
+val m2sub = zip_mat (random_subgraph (mat_size m2u - 2) m2u);
+writel (file ^ "_mat") (map infts [m1,m2,m2sub]);
+
+val clausel = ramsey_clauses_diagmat (4,5) m1 m2sub;
+val _ = write_dimacs file clausel;
+val cmd = "../../picosat-965/picosat -o " ^ file ^ "_sol --all " ^ file;  
+
+val (_,t1) = add_time
+  (cmd_in_dir (selfdir ^ "/pico")) cmd 
+  
+  "../picosat-965/picosat -o aaa_test_out --all aaa_test";
+val sl = readl "aaa_test_out";
+
+*)
+(*
+(* take the first one example and extend it back. *)
+load "glue"; open aiLib kernel graph glue;
+val sl1 = first_n 6 (readl "aaa_test_out");
+
+
+
    
 val soll = read_solutions "aaa_test";
 
