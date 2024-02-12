@@ -85,20 +85,68 @@ fun write_dimacs file clausel =
 
 (*
 load "glue"; open aiLib kernel graph glue;
+load "enum"; open enum;
+
+val _ = mkDir_err "pico";
 val csize = 10;
-val m1 = hd (gen.read_par 10 (3,5));
-val m2 = hd (gen.read_par 14 (4,4));
-number_of_holes (unzip_mat m1);
-number_of_holes (unzip_mat m2);
+val m1 = random_elem (enum.read_enum csize (3,5));
+val m2 = random_elem (enum.read_enum (24 - csize) (4,4));
+val m2' = 
+  zip_mat (random_subgraph (mat_size (unzip_mat m2) - 2) (unzip_mat m2));
+writel "pico/test_mat"  (map infts [m1,m2,m2']);
 
-val perm = random_elem (subsets_of_size (csize - 1) (List.tabulate (csize,I)));
-val permf = mk_permf perm;
-val m1' = mat_permute (unzip_mat m1,csize-1) permf;
-
-ramsey_clauses_diagmat_bare (bluen,redn) (zip_mat m1') m2;
+val clausel = ramsey_clauses_diagmat (4,5) m1 m2';
+val _ = write_dimacs "aaa_test" clausel;
+val (_,t1) = add_time
+  (cmd_in_dir selfdir) "../picosat-965/picosat -o aaa_test_out --all aaa_test";
+val sl = readl "aaa_test_out";
 
 *)
+(*
+(* take the first one example and extend it back. *)
+load "glue"; open aiLib kernel graph glue;
+val sl1 = first_n 6 (readl "aaa_test_out");
 
+
+fun read_mapd file = 
+  let 
+    val sl = readl (file ^ "_mapping")
+    fun f s = 
+      let 
+        val (s1,s2) = pair_of_list (String.tokens Char.isSpace s) 
+        val (s1a,s1b) = pair_of_list (String.tokens (fn x => x = #",") s1) 
+      in
+        ((string_to_int s1a, string_to_int s1b), string_to_int s2)
+      end
+  in 
+    dnew Int.compare (map (swap o f) sl)
+  end;
+
+fun read_sol d sl =
+  let
+    val sl2 = map (fn x => tl (String.tokens Char.isSpace x)) sl
+    val il3 = filter (fn x => x <> 0) (map string_to_int (List.concat sl2))
+    fun f x = (dfind (Int.abs x) d : int * int, if x > 0 then 1 else 2)
+  in
+    map f il3
+  end;
+
+(* all variable should appear because there are cliques within unknown edges *)
+
+fun read_solutions file = 
+  let 
+    val solfile = file ^ "_out"
+    val mappingfile = file ^ "_mapping"
+    val d = read_mapd file
+    val sll0 = tl (butlast (readl "aaa_test_out"))
+    val sll1 = rpt_split_sl "s SATISFIABLE" sll0      
+  in
+    map (read_sol d) sll1
+  end 
+   
+val soll = read_solutions "aaa_test";
+
+*)
 
 
 

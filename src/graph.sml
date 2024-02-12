@@ -293,7 +293,6 @@ mat_compare (m,m1);
 (* -------------------------------------------------------------------------
    Permutations
    ------------------------------------------------------------------------- *)
- 
 
 fun mat_permute (m,size) sigma =
   let fun f (x,y) = mat_sub (m, sigma x, sigma y) in
@@ -320,7 +319,16 @@ fun mk_permf perm =
 fun invert_perm perm = 
   let val permd = dnew Int.compare (number_snd 0 perm) in
     List.tabulate (dlength permd, fn i => dfind i permd)
-  end   
+  end 
+  
+fun random_subgraph subsize m =
+  let
+    val vertexl = List.tabulate (mat_size m,I)
+    val perm = random_elem (subsets_of_size subsize vertexl)
+    val permf = mk_permf perm
+  in
+    mat_permute (m,subsize) permf
+  end
   
 (* -------------------------------------------------------------------------
    Properties
@@ -410,6 +418,23 @@ fun all_cedges m =
     mat_traverse f m; !l
   end 
 
+fun is_ramsey (bluen,redn) topm = 
+  let 
+    val vertexl = List.tabulate (mat_size topm,I)
+    val bluem = mat_copy topm 
+    fun f (i,j,x) = if x = 0 then mat_update_sym (bluem,i,j,blue) else ()
+    val _ = mat_traverse f topm
+    val redm = mat_copy topm
+    fun f (i,j,x) = if x = 0 then mat_update_sym (redm,i,j,red) else ()
+    val _ = mat_traverse f topm
+    fun is_clique m color l = 
+      let val l' = map pair_of_list (subsets_of_size 2 l) in
+        all (fn (a,b) => mat_sub (m,a,b) = color) l'
+      end
+  in
+    not (exists (is_clique bluem blue) (subsets_of_size bluen vertexl)) andalso
+    not (exists (is_clique redm red) (subsets_of_size redn vertexl)) 
+  end
 
 
 

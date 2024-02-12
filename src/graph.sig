@@ -46,13 +46,14 @@ sig
   val random_shape_nocycle : int -> int -> mat
   val matK : int -> mat
    
-  (* mat_permute also can also be used to reduce the size of the graph *)
+  (* mat_permute: can also be used to reduce the size of the graph *)
   val mat_permute : mat * int -> (int -> int) -> mat
   val mk_permf : int list -> (int -> int)
   val invert_perm : int list -> int list
   val symmetrify : mat -> mat
   val permutations : 'a list -> 'a list list
- 
+  val random_subgraph : int -> mat -> mat
+   
   (* neighbors *)
   val neighbor_of : int -> mat -> int -> int list
   val commonneighbor_of : int -> mat -> int * int -> int list
@@ -67,7 +68,7 @@ sig
   val number_of_blueedges : mat -> int
   val all_cedges : mat -> (int * int) list
   val all_edges : int -> (int * int) list
-
+  val is_ramsey : (int * int) -> mat -> bool
   
   (* converting from matrix representation to list of edges *)
   val mat_to_edgecl : mat -> coloring
