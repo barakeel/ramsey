@@ -230,11 +230,13 @@ fun benchmark expname n c1 c2 =
 (*
 load "glue"; open aiLib kernel graph glue;
 load "enum"; open enum;
+load "genv"; open genv;
 
 val c1 = read_enum 10 (3,5);
 val c2 = read_enum 14 (4,4);
 benchmark "v0v0" 100 c1 c2;
 
+val c1 = read_enum 10 (3,5);
 
 
 *)
