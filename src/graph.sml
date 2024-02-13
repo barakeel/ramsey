@@ -308,6 +308,8 @@ mat_compare (m,m1);
    Permutations
    ------------------------------------------------------------------------- *)
 
+fun extend_mat m n = edgecl_to_mat (mat_size m + 2) (mat_to_edgecl m)
+
 fun mat_permute (m,size) sigma =
   let fun f (x,y) = mat_sub (m, sigma x, sigma y) in
     mat_tabulate (size, f)

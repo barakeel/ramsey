@@ -37,16 +37,13 @@ fun ramsey_clauses_mat (bluen,redn) mat =
   List.mapPartial (reduce_clause mat []) 
     (ramsey_clauses_bare (mat_size mat) (bluen,redn));
 
-fun ramsey_clauses_diagmat (bluen,redn) m1 m2 =
-  let val m = diag_mat (unzip_mat m1) (unzip_mat m2) in
-    ramsey_clauses_mat (bluen,redn) m
-  end
-
 fun glue_pb (bluen,redn) m1i m2i =
-  let val rclauses = map satclause 
-    (ramsey_clauses_diagmat (bluen,redn) m1i m2i) 
+  let 
+    val m = diag_mat (unzip_mat m1i) (unzip_mat m2i)
+    val clausel = ramsey_clauses_mat (bluen,redn) m
+    val clausetml = map satclause clausel
   in
-    mk_neg (list_mk_conj rclauses)
+    mk_neg (list_mk_conj clausetml)
   end
   
 fun glue (bluen,redn) m1i m2i = SAT_PROVE (glue_pb (bluen,redn) m1i m2i)
@@ -158,11 +155,15 @@ fun random_cartesian_subset n c1 c2 =
    Benchmarking covers
    ------------------------------------------------------------------------- *)
 
+val extend_flag = ref 2
+
 fun benchmark_one () (c1e,c2e) = 
   let 
     val dir = !smlExecScripts.buildheap_dir
     val picodir = dir ^ "/pico"
-    val clausel = ramsey_clauses_diagmat (4,5) c1e c2e
+    val m1 = diag_mat (unzip_mat c1e) (unzip_mat c2e)
+    val m2 = extend_mat m1 (!extend_flag)
+    val clausel = ramsey_clauses_mat (4,5) m1
     val file = picodir ^ "/" ^ infts c1e ^ "_" ^ infts c2e
     val fileout = file ^ "_sol"
     val _ = write_dimacs file clausel
@@ -236,8 +237,8 @@ val c1 = read_enum 10 (3,5);
 val c2 = read_enum 14 (4,4);
 benchmark "v0v0" 100 c1 c2;
 
-val c1 = read_enum 10 (3,5);
-
+val c2v2 = compute_cover 2 c2;
+benchmark "v0v2e" 100 c1 (map fst c2v2);
 
 *)
 
@@ -257,7 +258,8 @@ val m2u = unzip_mat m2;
 val m2sub = zip_mat (random_subgraph (mat_size m2u - 2) m2u);
 writel (file ^ "_mat") (map infts [m1,m2sub]);
 
-val clausel = ramsey_clauses_diagmat (4,5) m1 m2sub;
+val m = diag_mat (unzip_mat m1) (unzip_mat m2sub);
+val clausel = ramsey_clauses_mat (4,5) m;
 val _ = write_dimacs file clausel;
 val cmd = "../../picosat-965/picosat -o " ^ file ^ "_sol --all " ^ file;
 val (_,t) = add_time (cmd_in_dir dir) cmd;
@@ -271,6 +273,8 @@ print_mat m4;
 is_ramsey (4,5) m4;
 
 (* extension steps *)
+
+
 val m4' = edgecl_to_mat (mat_size m3 + 2) (mat_to_edgecl m3 @ sol);
 print_mat m4';
 val clausel = ramsey_clauses_mat (4,5) m4';

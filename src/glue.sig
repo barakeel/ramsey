@@ -5,9 +5,7 @@ sig
   type mat = int Array2.array
   val ramsey_clauses_mat : 
     int * int -> mat -> ((int * int) * int) list list
-  val ramsey_clauses_diagmat : int * int ->
-    IntInf.int -> IntInf.int -> ((int * int) * int) list list
-  
+
   val glue_pb : int * int -> IntInf.int -> IntInf.int -> term
   val glue : int * int -> IntInf.int -> IntInf.int -> thm
   val write_gluescripts : string -> int ->

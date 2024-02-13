@@ -46,6 +46,7 @@ sig
   val random_shape_nocycle : int -> int -> mat
   val matK : int -> mat
   val diag_mat : mat -> mat -> mat
+  val extend_mat : mat -> int -> mat
   
   (* mat_permute: can also be used to reduce the size of the graph *)
   val mat_permute : mat * int -> (int -> int) -> mat
