@@ -10,20 +10,9 @@ open HolKernel Abbrev boolLib aiLib kernel graph sat gen syntax
 val ERR = mk_HOL_ERR "glue"
 
 (* -------------------------------------------------------------------------
-   Create diagonal by block matrix and reduce the set of ramsey clauses
+   Create clauses from graphs
    ------------------------------------------------------------------------- *)
-
-fun shift_edgecl x ecl = map (fn ((a,b),c) => ((a + x, b + x),c)) ecl;
-
-fun diag_mat m1 m2 = 
-  let
-    val ecl1 = mat_to_edgecl m1
-    val ecl2 = shift_edgecl (mat_size m1) (mat_to_edgecl m2)
-    val m = edgecl_to_mat (mat_size m1 + mat_size m2) (ecl1 @ ecl2)
-  in
-    m
-  end
- 
+   
 (* this reduction step will need to be reproduced in the proof *)
 fun reduce_clause mat acc clause = case clause of
     [] => SOME (rev acc)
@@ -115,48 +104,176 @@ fun read_sol_one d sl =
 fun read_sol file = 
   let 
     val d = read_map (file ^ "_map")
-    val sll0 = tl (butlast (readl (file ^ "_sol")))
-    val sll1 = rpt_split_sl "s SATISFIABLE" sll0      
+    val sl0 = readl (file ^ "_sol")
   in
-    map (read_sol_one d) sll1
+    if last sl0 = "s SOLUTIONS 0" then [] else
+    let
+      val sl1 = tl (butlast (readl (file ^ "_sol")))
+      val sll1 = rpt_split_sl "s SATISFIABLE" sl1    
+    in
+      map (read_sol_one d) sll1
+    end 
+  end
+
+
+(* -------------------------------------------------------------------------
+   Sampling from a large cartesian product
+   ------------------------------------------------------------------------- *)
+
+fun sample_cartesian_one d c1 c2 =
+  let 
+    val c1e = random_elem c1
+    val c2e = random_elem c2
+  in
+    if emem (c1e,c2e) d 
+    then sample_cartesian_one d c1 c2
+    else (c1e,c2e)
+  end
+  
+fun sample_cartesian_loop n d c1 c2 = 
+  if elength d >= n then elist d else
+  let 
+    val (c1e,c2e) = sample_cartesian_one d c1 c2 
+    val newd = eadd (c1e,c2e) d  
+  in
+    sample_cartesian_loop n newd c1 c2
+  end
+  
+fun sample_cartesian n c1 c2 =
+  let val d = eempty (cpl_compare IntInf.compare IntInf.compare) in
+    sample_cartesian_loop n d c1 c2
+  end
+    
+fun random_cartesian_subset n c1 c2 =
+  let
+    val n1 = length c1
+    val n2 = length c2
+  in 
+    if n1 * n2 < 100000 
+    then random_subset n (cartesian_product c1 c2)
+    else sample_cartesian n c1 c2
   end 
 
+(* -------------------------------------------------------------------------
+   Benchmarking covers
+   ------------------------------------------------------------------------- *)
+
+fun benchmark_one () (c1e,c2e) = 
+  let 
+    val dir = !smlExecScripts.buildheap_dir
+    val picodir = dir ^ "/pico"
+    val clausel = ramsey_clauses_diagmat (4,5) c1e c2e
+    val file = picodir ^ "/" ^ infts c1e ^ "_" ^ infts c2e
+    val fileout = file ^ "_sol"
+    val _ = write_dimacs file clausel
+    val picobin = selfdir ^ "/../picosat-965/picosat"
+    val cmd = picobin ^ " -o " ^ fileout ^ " --all " ^ file
+    val (_,t) = add_time (cmd_in_dir picodir) cmd
+    val n = length (read_sol file)
+  in
+    (t,n)
+  end
+
+fun write_unit file _ = ()
+fun read_unit file = ()
+fun write_infinf file (i1,i2) = writel file (map infts [i1,i2])
+fun read_infinf file = pair_of_list (map stinf (readl file))
+fun write_result file (r,i) = writel file [rts r, its i]
+fun read_result file = 
+  let val (s1,s2) = pair_of_list (readl file) in
+    (valOf (Real.fromString s1), string_to_int s2)
+  end
+
+val benchspec : 
+  (unit, IntInf.int * IntInf.int, real * int) smlParallel.extspec =
+  {
+  self_dir = selfdir,
+  self = "glue.benchspec",
+  parallel_dir = selfdir ^ "/parallel_search",
+  reflect_globals = (fn () => "(" ^
+    String.concatWith "; "
+    ["smlExecScripts.buildheap_dir := " ^ mlquote 
+      (!smlExecScripts.buildheap_dir)] 
+    ^ ")"),
+  function = benchmark_one,
+  write_param = write_unit,
+  read_param = read_unit,
+  write_arg = write_infinf,
+  read_arg = read_infinf,
+  write_result = write_result,
+  read_result = read_result
+  }
+
+fun benchmark expname n c1 c2 = 
+  let
+    val expdir = selfdir ^ "/exp"
+    val dir = expdir ^ "/" ^ expname
+    val picodir = dir ^ "/pico"
+    val _ = app mkDir_err [expdir,dir,picodir]
+    val n1 = length c1
+    val n2 = length c2
+    val pbl = random_cartesian_subset n c1 c2
+    val _ = smlExecScripts.buildheap_dir := dir
+    val ril = smlParallel.parmap_queue_extern ncore benchspec () pbl
+    fun f (r,i) = rts r ^ " " ^ its i
+    val rl = map fst ril
+    val mean = average_real rl
+    val maxt = list_rmax rl
+    val expt = mean * Real.fromInt (n1 * n2)
+  in
+    writel (dir ^ "/summary") 
+      (map rts [expt,mean,maxt] @
+       map its [n,sum_int (map snd ril),n1,n2,n1*n2] @
+       map f ril)
+  end
+
+(*
+load "glue"; open aiLib kernel graph glue;
+load "enum"; open enum;
+
+
+*)
 
 
 (*
 load "glue"; open aiLib kernel graph glue;
 load "enum"; open enum;
 
-val _ = mkDir_err "pico";
-val file = selfdir ^ "/pico/test";
+(* find a very dense cover *)
+val dir = selfdir ^ "/pico";
+clean_dir dir;
+val file = dir ^ "/test";
 
 val csize = 10;
 val m1 = random_elem (enum.read_enum csize (3,5));
 val m2 = random_elem (enum.read_enum (24 - csize) (4,4));
 val m2u = unzip_mat m2;
 val m2sub = zip_mat (random_subgraph (mat_size m2u - 2) m2u);
-writel (file ^ "_mat") (map infts [m1,m2,m2sub]);
+writel (file ^ "_mat") (map infts [m1,m2sub]);
 
 val clausel = ramsey_clauses_diagmat (4,5) m1 m2sub;
 val _ = write_dimacs file clausel;
-val cmd = "../../picosat-965/picosat -o " ^ file ^ "_sol --all " ^ file;  
+val cmd = "../../picosat-965/picosat -o " ^ file ^ "_sol --all " ^ file;
+val (_,t) = add_time (cmd_in_dir dir) cmd;
+val soll = read_sol file;
 
-val (_,t1) = add_time
-  (cmd_in_dir (selfdir ^ "/pico")) cmd 
-  
-  "../picosat-965/picosat -o aaa_test_out --all aaa_test";
-val sl = readl "aaa_test_out";
+val m3 = diag_mat (unzip_mat m1) (unzip_mat m2sub);
+val sol = hd soll;
+val m4 = edgecl_to_mat (mat_size m3) (mat_to_edgecl m3 @ sol);
+print_mat m3;
+print_mat m4;
+is_ramsey (4,5) m4;
 
-*)
-(*
-(* take the first one example and extend it back. *)
-load "glue"; open aiLib kernel graph glue;
-val sl1 = first_n 6 (readl "aaa_test_out");
-
-
-
-   
-val soll = read_solutions "aaa_test";
+(* extension steps *)
+val m4' = edgecl_to_mat (mat_size m3 + 2) (mat_to_edgecl m3 @ sol);
+print_mat m4';
+val clausel = ramsey_clauses_mat (4,5) m4';
+val file = dir ^ "/teste";
+write_dimacs file clausel;
+val cmd = "../../picosat-965/picosat -o " ^ file ^ "_sol --all " ^ file;
+val (_,t) = add_time (cmd_in_dir dir) cmd;
+val sl = readl (file ^ "_sol");
+val soll = read_sol file;
 
 *)
 

@@ -98,7 +98,6 @@ fun random_shape size color =
    mat_tabulate (size,fn (a,b) => if a=b then 0 else 
     if random_real () < 0.5 then 0 else color)
 
-
 (* -------------------------------------------------------------------------
    Neighbors
    ------------------------------------------------------------------------- *)
@@ -198,6 +197,21 @@ fun edgecl_to_mat size edgecl =
     fun f (i,j) = case dfindo (i,j) edged of NONE => 0 | SOME c => c 
   in
     symmetrify (mat_tabulate (size, f))
+  end
+
+(* -------------------------------------------------------------------------
+   Create diagonal by block matrix and reduce the set of ramsey clauses
+   ------------------------------------------------------------------------- *)
+
+fun shift_edgecl x ecl = map (fn ((a,b),c) => ((a + x, b + x),c)) ecl;
+
+fun diag_mat m1 m2 = 
+  let
+    val ecl1 = mat_to_edgecl m1
+    val ecl2 = shift_edgecl (mat_size m1) (mat_to_edgecl m2)
+    val m = edgecl_to_mat (mat_size m1 + mat_size m2) (ecl1 @ ecl2)
+  in
+    m
   end
 
 (* -------------------------------------------------------------------------
@@ -329,7 +343,7 @@ fun random_subgraph subsize m =
   in
     mat_permute (m,subsize) permf
   end
-  
+
 (* -------------------------------------------------------------------------
    Properties
    ------------------------------------------------------------------------- *)

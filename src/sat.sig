@@ -3,6 +3,7 @@ sig
   
   include Abbrev
   type mat = int Array2.array
+  type clause = ((int * int) * int) list
   
   (* vector with constant time deletion *)
   val dlv_fromlist : 'a -> 'a list -> ((int ref * int ref) * 'a) vector
@@ -12,7 +13,7 @@ sig
   
   (* clauses *)
   val ramsey_clauses : int -> int * int -> (int * int) list list
-  val ramsey_clauses_bare : int -> int * int -> ((int * int) * int) list list
+  val ramsey_clauses_bare : int -> int * int -> clause list
   
   (* flags and memories *)
   val final_thm : thm ref

@@ -8,6 +8,12 @@ struct
 open HolKernel Abbrev boolLib bossLib aiLib kernel graph nauty syntax
 val ERR = mk_HOL_ERR "sat"
 
+type clause = ((int * int) * int) list
+
+(* -------------------------------------------------------------------------
+   Globals 1
+   ------------------------------------------------------------------------- *)
+
 fun debug_mat m = if !debug_flag then graph.print_mat m else ()
 
 (* flags conspiring to output all models *)
@@ -20,7 +26,7 @@ fun normalize_nauty_wperm x =
   if !iso_flag then nauty.normalize_nauty_wperm x else (x,[])
 
 (* -------------------------------------------------------------------------
-   Globals
+   Globals 2
    ------------------------------------------------------------------------- *)
 
 val limit_glob = 

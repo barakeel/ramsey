@@ -1,5 +1,5 @@
 (* =========================================================================
-   Compute a set of genralized graphs covering a set of graph
+   Compute a set of generalized graphs covering a set of graph
    uset stands for uncovered set.
    ========================================================================= *)
    

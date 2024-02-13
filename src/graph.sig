@@ -39,13 +39,14 @@ sig
   val string_of_mat : mat -> string
   val print_mat : mat -> unit
   
-  (* initialization *)
+  (* matrices *)
   val random_mat : int -> mat
   val random_full_mat : int -> mat
   val random_shape : int -> int -> mat
   val random_shape_nocycle : int -> int -> mat
   val matK : int -> mat
-   
+  val diag_mat : mat -> mat -> mat
+  
   (* mat_permute: can also be used to reduce the size of the graph *)
   val mat_permute : mat * int -> (int -> int) -> mat
   val mk_permf : int list -> (int -> int)
@@ -73,5 +74,7 @@ sig
   (* converting from matrix representation to list of edges *)
   val mat_to_edgecl : mat -> coloring
   val edgecl_to_mat : int -> coloring -> mat
+  
+  
    
 end
