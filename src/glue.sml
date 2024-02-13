@@ -219,7 +219,7 @@ fun benchmark expname n c1 c2 =
     val rl = map fst ril
     val mean = average_real rl
     val maxt = list_rmax rl
-    val expt = mean * Real.fromInt (n1 * n2)
+    val expt = (mean * Real.fromInt (n1 * n2)) / (60.0 * 60.0 * 24.0);
   in
     writel (dir ^ "/summary") 
       (map rts [expt,mean,maxt] @
@@ -231,6 +231,11 @@ fun benchmark expname n c1 c2 =
 load "glue"; open aiLib kernel graph glue;
 load "enum"; open enum;
 
+val c1 = read_enum 10 (3,5);
+val c2 = read_enum 14 (4,4);
+benchmark "v0v0" 100 c1 c2;
+
+
 
 *)
 
@@ -239,7 +244,6 @@ load "enum"; open enum;
 load "glue"; open aiLib kernel graph glue;
 load "enum"; open enum;
 
-(* find a very dense cover *)
 val dir = selfdir ^ "/pico";
 clean_dir dir;
 val file = dir ^ "/test";
