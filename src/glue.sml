@@ -155,15 +155,13 @@ fun random_cartesian_subset n c1 c2 =
    Benchmarking covers
    ------------------------------------------------------------------------- *)
 
-val extend_flag = ref 2
 
 fun benchmark_one () (c1e,c2e) = 
   let 
     val dir = !smlExecScripts.buildheap_dir
     val picodir = dir ^ "/pico"
     val m1 = diag_mat (unzip_mat c1e) (unzip_mat c2e)
-    val m2 = extend_mat m1 (!extend_flag)
-    val clausel = ramsey_clauses_mat (4,5) m2
+    val clausel = ramsey_clauses_mat (4,5) m1
     val file = picodir ^ "/" ^ infts c1e ^ "_" ^ infts c2e
     val fileout = file ^ "_sol"
     val _ = write_dimacs file clausel
@@ -235,11 +233,10 @@ load "genv"; open genv;
 
 val c1 = read_enum 10 (3,5);
 val c2 = read_enum 14 (4,4);
-benchmark "v0v0" 100 c1 c2;
-
 val c2v2 = compute_cover 2 c2;
 benchmark "v0v2e" 100 c1 (map fst c2v2);
 
+benchmark "v0v0" 100 c1 c2;
 *)
 
 
