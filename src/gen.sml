@@ -363,6 +363,11 @@ val (_,t35) = add_time (gen (3,5)) (5,13);
 select_number1 := 1000;
 select_number2 := 100;
 val (_,t44) = add_time (gen (4,4)) (4,17);
+
+
+select_number1 := 1000;
+select_number2 := 100;
+val (_,t44) = add_time (gen (4,4)) (14,14);
 *)
 
 (* 

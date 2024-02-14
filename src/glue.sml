@@ -37,81 +37,20 @@ fun ramsey_clauses_mat (bluen,redn) mat =
   List.mapPartial (reduce_clause mat []) 
     (ramsey_clauses_bare (mat_size mat) (bluen,redn));
 
+fun satpb_of_clausel clausel =
+  let val clausetml = map satclause clausel in
+    mk_neg (list_mk_conj clausetml)
+  end
+  
 fun glue_pb (bluen,redn) m1i m2i =
   let 
     val m = diag_mat (unzip_mat m1i) (unzip_mat m2i)
     val clausel = ramsey_clauses_mat (bluen,redn) m
-    val clausetml = map satclause clausel
   in
-    mk_neg (list_mk_conj clausetml)
+    satpb_of_clausel clausel
   end
   
 fun glue (bluen,redn) m1i m2i = SAT_PROVE (glue_pb (bluen,redn) m1i m2i)
-
-(* -------------------------------------------------------------------------
-   Exporting problems in the dimacs format
-   ------------------------------------------------------------------------- *)
-
-fun write_dimacs file clausel = 
-  let
-    val edgel = mk_fast_set edge_compare (map fst (List.concat clausel))
-    val mapping = number_snd 1 edgel
-    val edged = dnew edge_compare mapping
-    fun g ((i,j),c) = 
-      if c = 1 then "-" ^ its (dfind (i,j) edged) 
-      else if c = 2 then its (dfind (i,j) edged)
-      else raise ERR "write_dimacs" "unexpected color"       
-    fun f clause = String.concatWith " " (map g clause) ^ " 0"
-    val header = "p cnf " ^ its (dlength edged) ^ " " ^ its (length clausel)
-    fun h ((i,j),v) = its i ^ "," ^ its j ^ " " ^ its v
-  in
-    writel file (header :: map f clausel);
-    writel (file ^ "_map") (map h mapping)
-  end
-
-(* -------------------------------------------------------------------------
-   Reading allsat problems
-   All edges appear in the satisfiable assignments 
-   because there are cliques with only unknown edges 
-   ------------------------------------------------------------------------- *)
-
-fun read_map file = 
-  let 
-    val sl = readl file
-    fun f s = 
-      let 
-        val (s1,s2) = pair_of_list (String.tokens Char.isSpace s) 
-        val (s1a,s1b) = pair_of_list (String.tokens (fn x => x = #",") s1) 
-      in
-        ((string_to_int s1a, string_to_int s1b), string_to_int s2)
-      end
-  in 
-    dnew Int.compare (map (swap o f) sl)
-  end;
-
-fun read_sol_one d sl =
-  let
-    val sl2 = map (fn x => tl (String.tokens Char.isSpace x)) sl
-    val il3 = filter (fn x => x <> 0) (map string_to_int (List.concat sl2))
-    fun f x = (dfind (Int.abs x) d : int * int, if x > 0 then 1 else 2)
-  in
-    map f il3
-  end
-
-fun read_sol file = 
-  let 
-    val d = read_map (file ^ "_map")
-    val sl0 = readl (file ^ "_sol")
-  in
-    if last sl0 = "s SOLUTIONS 0" then [] else
-    let
-      val sl1 = tl (butlast (readl (file ^ "_sol")))
-      val sll1 = rpt_split_sl "s SATISFIABLE" sl1    
-    in
-      map (read_sol_one d) sll1
-    end 
-  end
-
 
 (* -------------------------------------------------------------------------
    Sampling from a large cartesian product
@@ -155,36 +94,23 @@ fun random_cartesian_subset n c1 c2 =
    Benchmarking covers
    ------------------------------------------------------------------------- *)
 
-
 fun benchmark_one () (c1e,c2e) = 
   let 
-    val dir = !smlExecScripts.buildheap_dir
-    val picodir = dir ^ "/pico"
     val m1 = diag_mat (unzip_mat c1e) (unzip_mat c2e)
     val clausel = ramsey_clauses_mat (4,5) m1
-    val file = picodir ^ "/" ^ infts c1e ^ "_" ^ infts c2e
-    val fileout = file ^ "_sol"
-    val _ = write_dimacs file clausel
-    val picobin = selfdir ^ "/../picosat-965/picosat"
-    val cmd = picobin ^ " -o " ^ fileout ^ " --all " ^ file
-    val (_,t) = add_time (cmd_in_dir picodir) cmd
-    val n = length (read_sol file)
+    val (_,t) = add_time SAT_PROVE (satpb_of_clausel clausel)
   in
-    (t,n)
+    t
   end
 
 fun write_unit file _ = ()
 fun read_unit file = ()
 fun write_infinf file (i1,i2) = writel file (map infts [i1,i2])
 fun read_infinf file = pair_of_list (map stinf (readl file))
-fun write_result file (r,i) = writel file [rts r, its i]
-fun read_result file = 
-  let val (s1,s2) = pair_of_list (readl file) in
-    (valOf (Real.fromString s1), string_to_int s2)
-  end
+fun write_result file r = writel file [rts r]
+fun read_result file = (valOf o Real.fromString o hd o readl) file
 
-val benchspec : 
-  (unit, IntInf.int * IntInf.int, real * int) smlParallel.extspec =
+val benchspec : (unit, IntInf.int * IntInf.int, real) smlParallel.extspec =
   {
   self_dir = selfdir,
   self = "glue.benchspec",
@@ -207,23 +133,21 @@ fun benchmark expname n c1 c2 =
   let
     val expdir = selfdir ^ "/exp"
     val dir = expdir ^ "/" ^ expname
-    val picodir = dir ^ "/pico"
-    val _ = app mkDir_err [expdir,dir,picodir]
+    val _ = app mkDir_err [expdir,dir]
     val n1 = length c1
     val n2 = length c2
     val pbl = random_cartesian_subset n c1 c2
     val _ = smlExecScripts.buildheap_dir := dir
-    val ril = smlParallel.parmap_queue_extern ncore benchspec () pbl
-    fun f (r,i) = rts r ^ " " ^ its i
-    val rl = map fst ril
+    val rl = smlParallel.parmap_queue_extern ncore benchspec () pbl
+    fun f r = rts r
     val mean = average_real rl
     val maxt = list_rmax rl
     val expt = (mean * Real.fromInt (n1 * n2)) / (60.0 * 60.0 * 24.0);
   in
     writel (dir ^ "/summary") 
       (map rts [expt,mean,maxt] @
-       map its [n,sum_int (map snd ril),n1,n2,n1*n2] @
-       map f ril)
+       map its [n,n1,n2,n1*n2] @
+       map f rl)
   end
 
 (*
@@ -241,12 +165,13 @@ benchmark "v0v0" 100 c1 c2;
 
 
 (*
+export TMPDIR="$PWD/tmp";
+mkdir tmp;
+sh hol.sh
 load "glue"; open aiLib kernel graph glue;
 load "enum"; open enum;
 
-val dir = selfdir ^ "/pico";
-clean_dir dir;
-val file = dir ^ "/test";
+clean_dir (selfdir ^ "/tmp);
 
 val csize = 10;
 val m1 = random_elem (enum.read_enum csize (3,5));
@@ -268,6 +193,8 @@ val m4 = edgecl_to_mat (mat_size m3) (mat_to_edgecl m3 @ sol);
 print_mat m3;
 print_mat m4;
 is_ramsey (4,5) m4;
+
+cmd_in_dir selfdir "find /tmp -maxdepth 1 -type f -name 'MLTEMP*' ! -exec lsof {} \; -exec rm {} \;";
 
 (* extension steps *)
 
