@@ -151,66 +151,24 @@ fun benchmark expname n c1 c2 =
   end
 
 (*
+export TMPDIR="$PWD/tmp";
+mkdir tmp;
+
+(* start hol *)
 load "glue"; open aiLib kernel graph glue;
 load "enum"; open enum;
 load "genv"; open genv;
 
 val c1 = read_enum 10 (3,5);
 val c2 = read_enum 14 (4,4);
+benchmark "v0v0" 100 c1 c2;
+
 val c2v2 = compute_cover 2 c2;
 benchmark "v0v2e" 100 c1 (map fst c2v2);
 
-benchmark "v0v0" 100 c1 c2;
+(* stop hol *)
+find /tmp -maxdepth 1 -type f -name 'MLTEMP*' ! -exec lsof {} \; -exec rm {} \;
 *)
-
-
-(*
-export TMPDIR="$PWD/tmp";
-mkdir tmp;
-sh hol.sh
-load "glue"; open aiLib kernel graph glue;
-load "enum"; open enum;
-
-clean_dir (selfdir ^ "/tmp);
-
-val csize = 10;
-val m1 = random_elem (enum.read_enum csize (3,5));
-val m2 = random_elem (enum.read_enum (24 - csize) (4,4));
-val m2u = unzip_mat m2;
-val m2sub = zip_mat (random_subgraph (mat_size m2u - 2) m2u);
-writel (file ^ "_mat") (map infts [m1,m2sub]);
-
-val m = diag_mat (unzip_mat m1) (unzip_mat m2sub);
-val clausel = ramsey_clauses_mat (4,5) m;
-val _ = write_dimacs file clausel;
-val cmd = "../../picosat-965/picosat -o " ^ file ^ "_sol --all " ^ file;
-val (_,t) = add_time (cmd_in_dir dir) cmd;
-val soll = read_sol file;
-
-val m3 = diag_mat (unzip_mat m1) (unzip_mat m2sub);
-val sol = hd soll;
-val m4 = edgecl_to_mat (mat_size m3) (mat_to_edgecl m3 @ sol);
-print_mat m3;
-print_mat m4;
-is_ramsey (4,5) m4;
-
-cmd_in_dir selfdir "find /tmp -maxdepth 1 -type f -name 'MLTEMP*' ! -exec lsof {} \; -exec rm {} \;";
-
-(* extension steps *)
-
-
-val m4' = edgecl_to_mat (mat_size m3 + 2) (mat_to_edgecl m3 @ sol);
-print_mat m4';
-val clausel = ramsey_clauses_mat (4,5) m4';
-val file = dir ^ "/teste";
-write_dimacs file clausel;
-val cmd = "../../picosat-965/picosat -o " ^ file ^ "_sol --all " ^ file;
-val (_,t) = add_time (cmd_in_dir dir) cmd;
-val sl = readl (file ^ "_sol");
-val soll = read_sol file;
-
-*)
-
 
 
 (* -------------------------------------------------------------------------
