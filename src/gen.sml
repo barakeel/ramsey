@@ -363,11 +363,6 @@ val (_,t35) = add_time (gen (3,5)) (5,13);
 select_number1 := 1000;
 select_number2 := 100;
 val (_,t44) = add_time (gen (4,4)) (4,17);
-
-
-select_number1 := 1000;
-select_number2 := 100;
-val (_,t44) = add_time (gen (4,4)) (14,14);
 *)
 
 (* 
@@ -385,6 +380,15 @@ val inst4410 =
 val inst4410' = read_enum 10 (4,4);
 list_compare IntInf.compare (inst4410,inst4410');
 *)
+
+(*
+(* overlap *)
+
+
+
+
+*)
+
 
 end (* struct *)
 

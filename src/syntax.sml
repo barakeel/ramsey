@@ -55,9 +55,7 @@ fun hlit_to_var tm = edge_to_var (hlit_to_edge tm)
   handle HOL_ERR _ => raise ERR "hlit_to_var" ""
 fun hlit_to_vc tm = (hlit_to_var tm, if is_neg tm then red else blue)
  
-val domain_cache = ref (dempty Int.compare)
-
-fun mk_domain_aux size =
+fun mk_domain size =
   let
     val vl = List.tabulate (size,X)
     fun f v = numSyntax.mk_less (v,numSyntax.term_of_int size)
@@ -68,12 +66,7 @@ fun mk_domain_aux size =
     (vl, list_mk_imp (boundl @ diffl,F))
   end
   
-fun mk_domain size =
-  let val r = mk_domain_aux size in
-    domain_cache := dadd size r (!domain_cache); r
-  end
 
-(* need to be full graph *)
 fun term_of_graph graph = 
   let 
     val size = mat_size graph 

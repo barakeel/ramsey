@@ -181,6 +181,8 @@ Track the progress by running from the `src` directory:
 
 When the process finishes, kill the `watch` process and remove the 
 remaining temporary files `rm /tmp/MLTEMP*`
+In the `src/glue` directory: `rm tmp/*`.
+In the `HOL` directory: `rm tmp/*`.
 
 Look at a theorem:
 ```

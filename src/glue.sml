@@ -157,14 +157,23 @@ mkdir tmp;
 (* start hol *)
 load "glue"; open aiLib kernel graph glue;
 load "enum"; open enum;
-load "genv"; open genv;
+load "gen"; open gen;
 
-val c1 = read_enum 10 (3,5);
-val c2 = read_enum 14 (4,4);
-benchmark "v0v0" 100 c1 c2;
+val c1c = read_enum 10 (3,5);
+val c2c = read_enum 14 (4,4);
+val c1 = read_par 10 (3,5);
+val c2 = read_par 14 (4,4);
 
-val c2v2 = compute_cover 2 c2;
-benchmark "v0v2e" 100 c1 (map fst c2v2);
+fun f x = int_pow 2 (number_of_holes (unzip_mat x));
+val h1 = sum_int (map f c1); 
+length c1c;
+val h2 = sum_int (map f c2);
+length c2c;
+
+
+val expname = "e4e4bis";
+benchmark expname 100 c1 c2;
+val sl = readl (selfdir ^ "/exp/" ^ expname ^ "/summary");
 
 (* stop hol *)
 find /tmp -maxdepth 1 -type f -name 'MLTEMP*' ! -exec lsof {} \; -exec rm {} \;
@@ -223,6 +232,11 @@ fun write_gluescripts dirname batchsize
   end
 
 end (* struct *)
+
+(*
+load "glue"; open kernel glue;
+write_gluescripts "glue8" 1 (3,5,8) (4,4,16) (4,5);
+*)
 
 (*
 load "glue"; open kernel glue;
