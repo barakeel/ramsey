@@ -29,6 +29,16 @@ fun lit_of_edgec ((i,j),c) =
   else if c = 2 then mk_neg (list_mk_comb (E,[X i,X j]))
   else raise ERR "lit_of_edgec" ""
   
+fun is_deftm s x = 
+  is_comb x andalso 
+  is_const (rator x) andalso 
+  String.isPrefix s (fst (dest_const (rator x)))
+
+fun is_gdeftm x = is_deftm "G" x;  
+fun get_gdeftm thm = singleton_of_list (filter is_gdeftm (hyp thm))
+
+fun is_cdeftm x = is_deftm "C" x;  
+
 (* -------------------------------------------------------------------------
    Convert graph terms to matrices
    ------------------------------------------------------------------------- *)
@@ -158,37 +168,8 @@ fun elim_exists k =
   end
 
 (* -------------------------------------------------------------------------
-   Previous defnitions and theorems.
-   ------------------------------------------------------------------------- *)
-   
-(* Definitions for C *)
-val C358b_DEF = DB.fetch "ramseyDef" "C358b_DEF";
-val C358r_DEF = DB.fetch "ramseyDef" "C358r_DEF";
-val C4416b_DEF = DB.fetch "ramseyDef" "C4416b_DEF";
-val C4416r_DEF = DB.fetch "ramseyDef" "C4416r_DEF";
-val C4524b_DEF = DB.fetch "ramseyDef" "C4524b_DEF";
-val C4524r_DEF = DB.fetch "ramseyDef" "C4524r_DEF";
-
-(* Definitions for G *)
-val G358_DEF = DB.fetch "ramseyDef" "G358_DEF";
-val G4416_DEF = DB.fetch "ramseyDef" "G4416_DEF";
-
-(* Enumeration theorem *)
-val R358 = DB.fetch "ramseyEnum" "R358";
-val R4416 = DB.fetch "ramseyEnum" "R4416";
-
-(* -------------------------------------------------------------------------
    Forward proof
    ------------------------------------------------------------------------- *)
-
-fun get_gdeftm rthm = 
-  let 
-    fun test x = is_const (rator x) andalso 
-                 String.isPrefix "G" (fst (dest_const (rator x)))
-    val tml = filter test (hyp rthm)
-  in
-    singleton_of_list tml
-  end
 
 fun prepare_rthm rthm =
   let 
@@ -246,61 +227,14 @@ val glued = dnew (cpl_compare IntInf.compare IntInf.compare)
               (List.concat (map get_gluemap gluescriptl));
 
 (* -------------------------------------------------------------------------
-   Convert to first-order and do unit propagation
+   Convert to first-order
    ------------------------------------------------------------------------- *)
 
-fun reduce_thm (m35i,m44i) clausethm =
-  let 
-    val m = diag_mat (unzip_mat m35i) (unzip_mat m44i)
-    val litl = map lit_of_edgec (mat_to_edgecl m)
-    val litd = enew Term.compare litl
-    fun smart_neg x = if is_neg x then dest_neg x else mk_neg x;
-    fun is_vacuous x = emem (smart_neg x) litd
-    fun is_elim x = emem x litd
-    val litl0 = filter is_lit (hyp clausethm)   
-  in
-    if exists is_vacuous litl0 then NONE else
-    let 
-      val litl1 = filter (not o is_elim) litl0
-      val litl2 = dict_sort compare_lit litl1
-      (* could be done on the Cthm *)
-      fun f (x,thm) = PURE_REWRITE_RULE [IMP_DISJ_THM] (DISCH x thm)
-      val newthm = foldl f clausethm (rev litl2)
-    in 
-      SOME newthm
-    end
-  end;
-  
-fun distribute cliquen size thm =
-  let
-    val vl = List.tabulate (size,X)
-    val vll = subsets_of_size cliquen vl;
-  in
-    map (UNDISCH_ALL o C SPECL thm) vll
-  end;
-
-val c4524b = ASSUME (noclique 24 (4,true));
-val c4524r = ASSUME (noclique 24 (5,false));  
-val thm4524b = distribute 4 24 (ASSUME c4524b);
-val thm4524r = distribute 5 24 (ASSUME c4524r);
-
-fun implied_by_C4524 (m35i,m44i) =
-  let 
-    val thm4524bl = map (SIMP_RULE bool_ss []) 
-      (List.mapPartial (reduce_thm (m35i,m44i)) thm4524b)
-    val thm4524rl = map (SIMP_RULE bool_ss []) 
-      (List.mapPartial (reduce_thm (m35i,m44i)) thm4524r)
-  in
-    thm4524bl @ thm4524rl
-  end;
-  
-  
- 
-fun to_first_order gluethm1 = 
+fun to_first_order thm = 
   let
     fun get_atom x = if is_neg x then dest_neg x else x;
     val litl = mk_fast_set Term.compare 
-      (List.concat (map (fst o strip_imp) (hyp gluethm1)))
+      (List.concat (map (fst o strip_imp) (hyp thm)))
     val atoml = mk_fast_set Term.compare (map get_atom litl)
     fun sate_to_foe v = 
       let val (a,b,c) = (triple_of_list o String.tokens (fn x => x = #"_") 
@@ -311,10 +245,8 @@ fun to_first_order gluethm1 =
     fun f x = {redex = x, residue = sate_to_foe x}
     val sub = map f atoml
   in
-    INST sub gluethm1
+    INST sub thm
   end;
-  
-  
 
 (* -------------------------------------------------------------------------
    Adding assumptions about where the graphs are located.
@@ -322,13 +254,18 @@ fun to_first_order gluethm1 =
    The 4,4 graph is on vertices greater or equal to 8.
    ------------------------------------------------------------------------- *)
 
+val C4524b_DEF = DB.fetch "ramseyDef" "C4524b_DEF";
+val C4524r_DEF = DB.fetch "ramseyDef" "C4524r_DEF";
+val C4524b_THM = (UNDISCH o fst o EQ_IMP_RULE o SPEC_ALL) C4524b_DEF;
+val C4524r_THM = (UNDISCH o fst o EQ_IMP_RULE o SPEC_ALL) C4524r_DEF;
+
 fun get_clemma tm =
   let 
     val litl = fst (strip_imp tm) 
     val edgecl = map dest_lit litl 
     val nl = List.concat (map (fn ((a,b),_) => [a,b]) edgecl)
     val (il,b) = (mk_fast_set Int.compare nl, snd (hd edgecl) = 1)
-    val cthm0 = if b then c4524b else c4524r
+    val cthm0 = if b then C4524b_THM else C4524r_THM
     val xl = map X il
   in
     DISCHL litl (UNDISCH_ALL (SPECL xl cthm0))
@@ -360,7 +297,9 @@ fun create_gluethm (m35i,m44i) =
   in
     gluethm8
   end
-  
+
+
+
 fun regroup_conjuncts conj35 conj44 gluethm9 =
   let
     val lemmal = CONJUNCTS (ASSUME conj35) @ CONJUNCTS (ASSUME conj44)
@@ -372,14 +311,20 @@ fun regroup_conjuncts conj35 conj44 gluethm9 =
     val gluethm11 = PROVE_HYPL lemmal gluethm10;
     val _ = if length (hyp gluethm11) = 3 then () 
             else raise ERR "regroup_conjuncts" "2"
-    val gluethm12 = DISCHL (filter (not o is_forall) (hyp gluethm11)) gluethm11
+    fun test x = not (is_forall x) andalso not (is_cdeftm x)
+    val gluethm12 = DISCHL (filter test (hyp gluethm11)) gluethm11
   in
     GENL (x8 @ y16) gluethm12
   end;
+  
+
 
 (* -------------------------------------------------------------------------
    Preparing the two enumeration theorems and listing graphs
    ------------------------------------------------------------------------- *)
+
+val R358 = DB.fetch "ramseyEnum" "R358";
+val R4416 = DB.fetch "ramseyEnum" "R4416";
 
 val R358p = prepare_rthm R358;
 val g358l = filter is_gtm (hyp R358p);
@@ -427,73 +372,33 @@ fun IMPOSSIBLE_35 g35i =
    Final step
    ------------------------------------------------------------------------- *)
 
-val lemmal = map IMPOSSIBLE_35 g358il;
-val finalthm1 = PROVE_HYPL lemmal R358p;
+val finalthm = PROVE_HYPL (map IMPOSSIBLE_35 g358il) R358p;
+val finalthm1 = UNDISCH_ALL (BETA_RULE (DISCH_ALL finalthm));
 
+val lemma1 = ASSUME ``!(x:num) (y:num). E x y <=> E y x``; 
+val lemma2 = GENL [``x:num``,``y:num``] (SPECL [``x + 8``,``y + 8``] lemma1);
+
+val finalthm2 = PROVE_HYP lemma2 finalthm1;
 
 (* -------------------------------------------------------------------------
    Theorem without the proof (requires C definitions)
    ------------------------------------------------------------------------- *)
 (*
-val finalthm2 = mk_thm 
-   ([``∀(x0:num) (x1:num) (x2:num) (x3:num) (x4:num).
-      ¬E x0 x1 ⇒
-      ¬E x0 x2 ⇒
-      ¬E x0 x3 ⇒
-      ¬E x0 x4 ⇒
-      ¬E x1 x2 ⇒
-      ¬E x1 x3 ⇒
-      ¬E x1 x4 ⇒
-      ¬E x2 x3 ⇒
-      ¬E x2 x4 ⇒
-      ¬E x3 x4 ⇒
-      x0 < 24 ⇒
-      x1 < 24 ⇒
-      x2 < 24 ⇒
-      x3 < 24 ⇒
-      x4 < 24 ⇒
-      x0 ≠ x1 ⇒
-      x0 ≠ x2 ⇒
-      x0 ≠ x3 ⇒
-      x0 ≠ x4 ⇒
-      x1 ≠ x2 ⇒
-      x1 ≠ x3 ⇒
-      x1 ≠ x4 ⇒
-      x2 ≠ x3 ⇒
-      x2 ≠ x4 ⇒
-      x3 ≠ x4 ⇒
-      F``,
-    ``∀(x0:num) (x1:num) (x2:num) (x3:num).
-      E x0 x1 ⇒
-      E x0 x2 ⇒
-      E x0 x3 ⇒
-      E x1 x2 ⇒
-      E x1 x3 ⇒
-      E x2 x3 ⇒
-      x0 < 24 ⇒
-      x1 < 24 ⇒
-      x2 < 24 ⇒
-      x3 < 24 ⇒
-      x0 ≠ x1 ⇒
-      x0 ≠ x2 ⇒
-      x0 ≠ x3 ⇒
-      x1 ≠ x2 ⇒
-      x1 ≠ x3 ⇒
-      x2 ≠ x3 ⇒
-      F``, 
-      ``∀(x:num) (y:num). E x y ⇔ E y x``,
-    ``∀(x:num) (y:num). (λx y. E (x + 8) (y + 8)) x y ⇔ (λx y. E (x + 8) (y + 8)) y x``,
-    ``C358b E``, ``C358r E``, ``C4416b (λx y. E (x + 8) (y + 8))``,
-    ``C4416r (λx y. E (x + 8) (y + 8))``], F);
-
-(* Check that the theorem created using mk_thm is equal to proper theorem *)
-term_eq (concl finalthm1) (concl finalthm2);
-list_compare Term.compare (hyp finalthm1,hyp finalthm2);
-
+val finalthm2_alt = mk_thm 
+   ([``!(x:num) (y:num). E x y <=> E y x``, 
+     ``C358b E``, ``C358r E``, ``C4416b (\x y. E (x + 8) (y + 8))``,
+     ``C4416r (\x y. E (x + 8) (y + 8))``, ``C4524b E``, ``C4524r E``]
+    , F);
 *)
 
+(* -------------------------------------------------------------------------
+   Check that the theorem created using mk_thm is equal to proper theorem
+   ------------------------------------------------------------------------- *)
 
-
+(*
+term_eq (concl finalthm2) (concl finalthm2_alt);
+list_compare Term.compare (hyp finalthm2,hyp finalthm2_alt);
+*)
 
 
 
