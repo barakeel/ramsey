@@ -383,7 +383,39 @@ val finalthm2 = PROVE_HYP lemma2 finalthm1;
 (* -------------------------------------------------------------------------
    Theorem without the proof (requires C definitions)
    ------------------------------------------------------------------------- *)
+
 (*
+load "syntax"; load "graph";
+open HolKernel boolLib Parse simpLib boolSimps BasicProvers
+local open numTheory prim_recTheory SatisfySimps DefnBase in end
+open aiLib kernel syntax graph;
+
+fun mk_cdef size (bluen,redn) b tm = 
+  let
+    val s = "C" ^ its bluen ^ its redn ^ its size ^ 
+      (if b then "b" else "r")
+    val v = mk_var (s,``:(num -> num -> bool) -> bool``)
+    val eqtm = mk_eq (mk_comb (v,E), tm)
+  in
+    new_definition (s ^ "_DEF", eqtm)
+  end
+
+fun mk_both_cdef size (bluen,redn) =
+  let
+    val postm = noclique size (bluen,true)
+    val negtm = noclique size (redn,false)
+    val posdef = mk_cdef size (bluen,redn) true postm
+    val negdef = mk_cdef size (bluen,redn) false negtm
+  in
+    ()
+  end;
+
+mk_both_cdef 24 (4,5);  
+mk_both_cdef 8 (3,5);
+mk_both_cdef 16 (4,4);
+
+show_assums := true;
+show_oracles := true;
 val finalthm2_alt = mk_thm 
    ([``!(x:num) (y:num). E x y <=> E y x``, 
      ``C358b E``, ``C358r E``, ``C4416b (\x y. E (x + 8) (y + 8))``,

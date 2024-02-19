@@ -2,7 +2,7 @@
 (* Definitions of R35, R44 and R45 graphs                                *)
 (* ===================================================================== *)
 
-(* load "ramseySyntax"; load "graph"; *)
+(* load "syntax"; load "graph"; *)
 
 open HolKernel boolLib Parse simpLib boolSimps BasicProvers
 local open numTheory prim_recTheory SatisfySimps DefnBase in end
