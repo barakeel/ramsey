@@ -65,7 +65,6 @@ fun mk_domain size =
   in
     (vl, list_mk_imp (boundl @ diffl,F))
   end
-  
 
 fun term_of_graph graph = 
   let 

@@ -24,11 +24,27 @@ val y16 = List.tabulate (16,Y);
 
 val Eshift = ``\x y. (E (x+8) (y+8): bool)``;
 
+fun lit_of_edgec ((i,j),c) = 
+  if c = 1 then list_mk_comb (E,[X i,X j])
+  else if c = 2 then mk_neg (list_mk_comb (E,[X i,X j]))
+  else raise ERR "lit_of_edgec" ""
+  
+(* -------------------------------------------------------------------------
+   Convert graph terms to matrices
+   ------------------------------------------------------------------------- *)
+
+fun is_gtm tm = is_forall tm andalso is_imp (snd (strip_forall tm))
+
+fun litl_of_gtm gtm =
+  let val tml = (strip_conj o fst o dest_imp o snd o strip_forall) gtm in
+    filter is_lit tml
+  end
+
 fun get_ij atom = 
   let val (x1,x2) = pair_of_list (snd (strip_comb atom)) in
     (Xnum x1, Xnum x2)
   end;
-  
+ 
 fun dest_lit lit = 
   let 
     val b = is_neg lit 
@@ -38,17 +54,37 @@ fun dest_lit lit =
     ((i1,i2), if (not b) then 1 else 2)
   end
 
+fun mat_of_gtm size gtm =
+  edgecl_to_mat size (map dest_lit (litl_of_gtm gtm))
+
+
 fun compare_lit (lit1,lit2) = 
   cpl_compare (cpl_compare Int.compare Int.compare) Int.compare
   (dest_lit lit1, dest_lit lit2)
 
-fun litl_of_gtm gtm =
-  let val tml = (fst o strip_imp o snd o strip_forall) gtm in
-    filter is_lit tml
-  end
+(* -------------------------------------------------------------------------
+   Convert shifted graph terms to matrices
+   ------------------------------------------------------------------------- *)
+ 
+fun get_ij_shifted atom = 
+  let 
+    val (t1,t2) = pair_of_list (snd (strip_comb atom)) 
+    val f = Xnum o rand o rator
+  in
+    (f t1, f t2)
+  end 
   
-fun mat_of_gtm size gtm =
-  edgecl_to_mat size (map dest_lit (litl_of_gtm gtm))
+fun dest_lit_shifted lit =
+  let 
+    val b = is_neg lit 
+    val atom = if b then dest_neg lit else lit
+    val (i1,i2) = get_ij_shifted atom
+  in
+    ((i1,i2), if (not b) then 1 else 2)
+  end
+   
+fun mat_of_gtm_shifted size gtm =
+  edgecl_to_mat size (map dest_lit_shifted (litl_of_gtm gtm))
 
 (* -------------------------------------------------------------------------
    Arithmetical theorems
@@ -68,7 +104,7 @@ val DIFF_IMP_DIFF_ADD8 = TAC_PROOF
   SIMP_TAC arith_ss []);
 
 (* -------------------------------------------------------------------------
-   Convert A => B => C to A /\ B => C
+   Convert !x. A => B => C to !x. A /\ B => C
    ------------------------------------------------------------------------- *)
 
 fun IMP_AND_CONV tm = 
@@ -86,6 +122,20 @@ fun IMP_AND_CONV tm =
   in
     IMP_ANTISYM_RULE (DISCH_ALL thm3) (DISCH_ALL thm6)
   end;
+
+(* -------------------------------------------------------------------------
+   Convert A \/ ~B \/ C to ~A => B => ~C => F
+   ------------------------------------------------------------------------- *)
+
+val NOT_NOT_THM = PROVE [] ``!x. ~(~x) <=> x``;
+val OR_FALSE_THM = PROVE [] ``!x. x \/ F <=> x``;
+fun OR_IMP_CONV tm = 
+  let
+    val alttm = list_mk_disj (strip_disj tm @ [F]) 
+    val thm = PURE_REWRITE_CONV [DISJ_EQ_IMP] alttm
+  in
+    PURE_REWRITE_RULE [OR_FALSE_THM,NOT_NOT_THM] thm
+  end
 
 (* -------------------------------------------------------------------------
    ``((?x:num. R(x)) /\ (!x:num. R(x) ==> F)) ==> F``
@@ -131,7 +181,6 @@ val R4416 = DB.fetch "ramseyEnum" "R4416";
    Forward proof
    ------------------------------------------------------------------------- *)
 
-
 fun get_gdeftm rthm = 
   let 
     fun test x = is_const (rator x) andalso 
@@ -148,23 +197,23 @@ fun prepare_rthm rthm =
     val thm0 = DISCH (get_gdeftm rthm) rthm
     val def = DB.fetch "ramseyDef" (s ^ "_DEF")
     val thm1 = PURE_ONCE_REWRITE_RULE [def] thm0
+    val thm2 = UNDISCH_SPLIT thm1
+    val gtml = filter is_gtm (hyp thm2)
+    fun f (gtm,thm) = UNDISCH (PURE_REWRITE_RULE [IMP_AND_CONV gtm] 
+      (DISCH gtm thm))
   in
-    UNDISCH_SPLIT thm1
-  end;
-  
-fun graph_case35 gtm rthmp =
-  let val thm0 = DISCH gtm rthmp in
-    PURE_REWRITE_RULE [IMP_AND_CONV gtm] thm0
+    foldl f thm2 gtml
   end
 
-fun graph_case44 gtm rthmp = 
-  let 
-    val thm0 = DISCH gtm rthmp 
-    val thm1 = PURE_REWRITE_RULE [IMP_AND_CONV gtm] thm0
-    val thm2 = BETA_RULE (INST [{redex = E, residue = Eshift}] thm1)
-    val conv = RENAME_VARS_CONV (map (fst o dest_var) y16)
+fun shift_rthm rthm = 
+  let
+    val thm0 = INST [{redex = E, residue = Eshift}] rthm
+    val gtml = filter is_gtm (hyp thm0)
+    val conv1 = RENAME_VARS_CONV (map (fst o dest_var) y16)
+    val conv2 = CONV_RULE (RATOR_CONV (RAND_CONV conv))
+    fun f (gtm,thm) = (UNDISCH o conv2 o BETA_RULE o DISCH gtm) thm 
   in
-    CONV_RULE (RATOR_CONV (RAND_CONV conv)) thm2
+    foldl f thm0 gtml
   end
 
 (* -------------------------------------------------------------------------
@@ -195,20 +244,16 @@ fun get_gluemap gluescript =
 
 val glued = dnew (cpl_compare IntInf.compare IntInf.compare)
               (List.concat (map get_gluemap gluescriptl));
-  
 
 (* -------------------------------------------------------------------------
    Convert to first-order and do unit propagation
    ------------------------------------------------------------------------- *)
 
-(* 
-todo: avoid term_of_graph and produce the literals directly 
-todo: remove the cache from term_of_graph 
-*)
 fun reduce_thm (m35i,m44i) clausethm =
   let 
-    val diagterm = term_of_graph (diag_mat (unzip_mat m35i) (unzip_mat m44i))
-    val litd = enew Term.compare (litl_of_gtm diagterm)
+    val m = diag_mat (unzip_mat m35i) (unzip_mat m44i)
+    val litl = map lit_of_edgec (mat_to_edgecl m)
+    val litd = enew Term.compare litl
     fun smart_neg x = if is_neg x then dest_neg x else mk_neg x;
     fun is_vacuous x = emem (smart_neg x) litd
     fun is_elim x = emem x litd
@@ -234,8 +279,8 @@ fun distribute cliquen size thm =
     map (UNDISCH_ALL o C SPECL thm) vll
   end;
 
-val c4524b = noclique 24 (4,true);
-val c4524r = noclique 24 (5,false);  
+val c4524b = ASSUME (noclique 24 (4,true));
+val c4524r = ASSUME (noclique 24 (5,false));  
 val thm4524b = distribute 4 24 (ASSUME c4524b);
 val thm4524r = distribute 5 24 (ASSUME c4524r);
 
@@ -248,12 +293,14 @@ fun implied_by_C4524 (m35i,m44i) =
   in
     thm4524bl @ thm4524rl
   end;
+  
+  
  
 fun to_first_order gluethm1 = 
   let
     fun get_atom x = if is_neg x then dest_neg x else x;
     val litl = mk_fast_set Term.compare 
-      (List.concat (map strip_disj (hyp gluethm1)))
+      (List.concat (map (fst o strip_imp) (hyp gluethm1)))
     val atoml = mk_fast_set Term.compare (map get_atom litl)
     fun sate_to_foe v = 
       let val (a,b,c) = (triple_of_list o String.tokens (fn x => x = #"_") 
@@ -266,6 +313,8 @@ fun to_first_order gluethm1 =
   in
     INST sub gluethm1
   end;
+  
+  
 
 (* -------------------------------------------------------------------------
    Adding assumptions about where the graphs are located.
@@ -273,13 +322,27 @@ fun to_first_order gluethm1 =
    The 4,4 graph is on vertices greater or equal to 8.
    ------------------------------------------------------------------------- *)
 
-(* todo: the *)
+fun get_clemma tm =
+  let 
+    val litl = fst (strip_imp tm) 
+    val edgecl = map dest_lit litl 
+    val nl = List.concat (map (fn ((a,b),_) => [a,b]) edgecl)
+    val (il,b) = (mk_fast_set Int.compare nl, snd (hd edgecl) = 1)
+    val cthm0 = if b then c4524b else c4524r
+    val xl = map X il
+  in
+    DISCHL litl (UNDISCH_ALL (SPECL xl cthm0))
+  end
 
-fun create_gluethm (m35i,m44i) thyname thmname = 
+fun create_gluethm (m35i,m44i) = 
   let
-    val gluethm1 = UNDISCH_SPLIT (DB.fetch thyname thmname);
-    val gluethm2 = to_first_order gluethm1;
-    val lemmal = implied_by_C4524 (m35i,m44i); (* slow *)
+    val (thyname,thmname) = dfind (m35i,m44i) glued
+    val _ = load ("glue8/" ^ thyname ^ "Theory")
+    val gluethm1 = UNDISCH_SPLIT (DB.fetch thyname thmname)
+    val lemmal = map (UNDISCH o snd o EQ_IMP_RULE o OR_IMP_CONV) (hyp gluethm1)
+    val gluethm1' = PROVE_HYPL lemmal gluethm1
+    val gluethm2 = to_first_order gluethm1'
+    val lemmal = map get_clemma (hyp gluethm2)
     val gluethm3 = PROVE_HYPL lemmal gluethm2;
     val int8 = numSyntax.term_of_int 8;
     val gluethm4 = 
@@ -296,19 +359,15 @@ fun create_gluethm (m35i,m44i) thyname thmname =
     val gluethm8 = PROVE_HYPL lemmal gluethm7
   in
     gluethm8
-  end;
+  end
   
-
-fun regroup_conjuncts gluethm9 =
+fun regroup_conjuncts conj35 conj44 gluethm9 =
   let
-    val f = fst o dest_imp o snd o strip_forall o fst o dest_imp o concl
-    val tm35 = f R358p_hd;
-    val tm44 = f R4416p_hd;
-    val lemmal = CONJUNCTS (ASSUME tm35) @ CONJUNCTS (ASSUME tm44)
+    val lemmal = CONJUNCTS (ASSUME conj35) @ CONJUNCTS (ASSUME conj44)
     val gluethm10 = PROVE_HYPL lemmal gluethm9;
     val _ = if length (hyp gluethm10) = 4 then () 
             else raise ERR "regroup_conjuncts" "1"
-    val lemma = ASSUME (mk_conj (tm35,tm44));
+    val lemma = ASSUME (mk_conj (conj35,conj44));
     val lemmal = [CONJUNCT1 lemma, CONJUNCT2 lemma];
     val gluethm11 = PROVE_HYPL lemmal gluethm10;
     val _ = if length (hyp gluethm11) = 3 then () 
@@ -318,26 +377,59 @@ fun regroup_conjuncts gluethm9 =
     GENL (x8 @ y16) gluethm12
   end;
 
+(* -------------------------------------------------------------------------
+   Preparing the two enumeration theorems and listing graphs
+   ------------------------------------------------------------------------- *)
 
-
-
-val g358l = (strip_conj o rhs o snd o strip_forall o concl) G358_DEF;
-val g4416l = (strip_conj o rhs o snd o strip_forall o concl) 
-(* this def should be applied to Eshift *) G4416_DEF;
 val R358p = prepare_rthm R358;
-val R358p_hd = graph_case35 (hd g358l) R358p;
-val R4416p = prepare_rthm R4416;
-val R4416p_hd = graph_case44 (hd g4416l) R4416p;
-val m358i = zip_mat (mat_of_gtm 8 (hd g358l));
-val m4416i = zip_mat (mat_of_gtm 16 (hd g4416l));
-val (thyname,thmname) = dfind (m358i,m4416i) glued;
-load ("glue8/" ^ thyname ^ "Theory");
-val gluethm9 = create_gluethm thyname thmname;
-val gluethm13 = regroup_conjuncts gluethm9;
-val finalthm1 = LIST_CONJ [ASSUME (concl R358p_hd),R4416p_hd,gluethm13];
-val finalthm2 = Ho_Rewrite.PURE_ONCE_REWRITE_RULE [elim_exists 8] finalthm1;
-val DISCH (last g4416l) finalthm2;
+val g358l = filter is_gtm (hyp R358p);
+val g358il = map_assoc (zip_mat o mat_of_gtm 8) g358l;
 
+val R4416p = shift_rthm (prepare_rthm R4416);
+val g4416l = filter is_gtm (hyp R4416p);
+val g4416il = map_assoc (zip_mat o mat_of_gtm_shifted 16) g4416l;
 
+val l = dict_sort (cpl_compare IntInf.compare IntInf.compare) 
+  (cartesian_product (map snd g358il) (map snd g4416il));
+if l = dkeys glued then () else raise ERR "" "";
+
+(* -------------------------------------------------------------------------
+   Proving that it is impossible to have a specific 3,5 graph
+   by composing it with all possible 4,4 graphs
+   ------------------------------------------------------------------------- *)
+
+val g35i = hd g358il;
+
+val IMP_FF = PROVE [] ``!x. (x ==> F) ==> F <=> x``;
+
+fun IMPOSSIBLE_35 g35i =
+  let
+    val elimthm = elim_exists 8
+    val (g35,m35i) = g35i
+    val conj35 = (fst o dest_imp o snd o strip_forall) g35
+    val assume35 = ASSUME (mk_imp (g35,F))
+    fun loop g44il thm = case g44il of [] => thm | (g44,m44i) :: m =>
+      let
+        val conj44 = (fst o dest_imp o snd o strip_forall) g44
+        val assume44 = DISCH g44 thm
+        val gluethm = regroup_conjuncts conj35 conj44 
+          (create_gluethm (m35i,m44i))
+        val conjthm = LIST_CONJ [assume35,assume44,gluethm]
+        val newthm = Ho_Rewrite.PURE_ONCE_REWRITE_RULE [elimthm] conjthm
+      in
+        loop m newthm
+      end
+    val thm1 = loop g4416il R4416p
+    val thm2 = PURE_ONCE_REWRITE_RULE [IMP_FF] (DISCH (mk_imp (g35,F)) thm1)
+  in
+    thm2
+  end;
+
+(* -------------------------------------------------------------------------
+   Final step
+   ------------------------------------------------------------------------- *)
+
+val lemmal = map IMPOSSIBLE_35 g358il;
+val finalthm = PROVE_HYPL lemmal R358p;
 
 
