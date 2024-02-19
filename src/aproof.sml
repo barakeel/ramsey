@@ -398,8 +398,6 @@ if l = dkeys glued then () else raise ERR "" "";
    by composing it with all possible 4,4 graphs
    ------------------------------------------------------------------------- *)
 
-val g35i = hd g358il;
-
 val IMP_FF = PROVE [] ``!x. (x ==> F) ==> F <=> x``;
 
 fun IMPOSSIBLE_35 g35i =
@@ -430,6 +428,72 @@ fun IMPOSSIBLE_35 g35i =
    ------------------------------------------------------------------------- *)
 
 val lemmal = map IMPOSSIBLE_35 g358il;
-val finalthm = PROVE_HYPL lemmal R358p;
+val finalthm1 = PROVE_HYPL lemmal R358p;
+
+
+(* -------------------------------------------------------------------------
+   Theorem without the proof (requires C definitions)
+   ------------------------------------------------------------------------- *)
+(*
+val finalthm2 = mk_thm 
+   ([``∀(x0:num) (x1:num) (x2:num) (x3:num) (x4:num).
+      ¬E x0 x1 ⇒
+      ¬E x0 x2 ⇒
+      ¬E x0 x3 ⇒
+      ¬E x0 x4 ⇒
+      ¬E x1 x2 ⇒
+      ¬E x1 x3 ⇒
+      ¬E x1 x4 ⇒
+      ¬E x2 x3 ⇒
+      ¬E x2 x4 ⇒
+      ¬E x3 x4 ⇒
+      x0 < 24 ⇒
+      x1 < 24 ⇒
+      x2 < 24 ⇒
+      x3 < 24 ⇒
+      x4 < 24 ⇒
+      x0 ≠ x1 ⇒
+      x0 ≠ x2 ⇒
+      x0 ≠ x3 ⇒
+      x0 ≠ x4 ⇒
+      x1 ≠ x2 ⇒
+      x1 ≠ x3 ⇒
+      x1 ≠ x4 ⇒
+      x2 ≠ x3 ⇒
+      x2 ≠ x4 ⇒
+      x3 ≠ x4 ⇒
+      F``,
+    ``∀(x0:num) (x1:num) (x2:num) (x3:num).
+      E x0 x1 ⇒
+      E x0 x2 ⇒
+      E x0 x3 ⇒
+      E x1 x2 ⇒
+      E x1 x3 ⇒
+      E x2 x3 ⇒
+      x0 < 24 ⇒
+      x1 < 24 ⇒
+      x2 < 24 ⇒
+      x3 < 24 ⇒
+      x0 ≠ x1 ⇒
+      x0 ≠ x2 ⇒
+      x0 ≠ x3 ⇒
+      x1 ≠ x2 ⇒
+      x1 ≠ x3 ⇒
+      x2 ≠ x3 ⇒
+      F``, 
+      ``∀(x:num) (y:num). E x y ⇔ E y x``,
+    ``∀(x:num) (y:num). (λx y. E (x + 8) (y + 8)) x y ⇔ (λx y. E (x + 8) (y + 8)) y x``,
+    ``C358b E``, ``C358r E``, ``C4416b (λx y. E (x + 8) (y + 8))``,
+    ``C4416r (λx y. E (x + 8) (y + 8))``], F);
+
+(* Check that the theorem created using mk_thm is equal to proper theorem *)
+term_eq (concl finalthm1) (concl finalthm2);
+list_compare Term.compare (hyp finalthm1,hyp finalthm2);
+
+*)
+
+
+
+
 
 
