@@ -33,11 +33,6 @@ fun invsatlit ((i,j),c) =
 
 fun satclause clause = list_mk_disj (map invsatlit clause)
 
-val overlap_clauses = ref []
-
-
-  
-
 fun ramsey_clauses_mat (bluen,redn) mat =
   List.mapPartial (reduce_clause mat []) 
     (ramsey_clauses_bare (mat_size mat) (bluen,redn));
@@ -56,6 +51,42 @@ fun glue_pb (bluen,redn) m1i m2i =
   end
   
 fun glue (bluen,redn) m1i m2i = SAT_PROVE (glue_pb (bluen,redn) m1i m2i)
+
+(* -------------------------------------------------------------------------
+   Overlap problem
+   ------------------------------------------------------------------------- *)
+
+fun overlap_clauses (par,cl) = 
+  let 
+    val holel = all_holes (unzip_mat par)
+    val clall = nauty.all_inst_wperm par
+    val cmp = cpl_compare IntInf.compare (list_compare Int.compare)
+    val d = enew cmp cl
+    val clnot = filter (fn x => not (emem x d)) clall
+    fun f (c,perm) = 
+      let 
+        val m = unzip_mat c
+        val newm = mat_permute (m,mat_size m) (mk_permf (invert_perm perm))
+        fun g (a,b) = ((a,b), mat_sub (newm,a,b))
+      in
+        map g holel
+      end
+  in
+    map f clnot
+  end;
+
+fun overlap_pb (bluen,redn) (p1,cl1) (p2,cl2) =
+  let 
+    val m = diag_mat (unzip_mat p1) (unzip_mat p2)
+    val clausel = ramsey_clauses_mat (bluen,redn) m @ 
+                  overlap_clauses (p1,cl1) @
+                  overlap_clauses (p2,cl2)
+  in
+    satpb_of_clausel clausel
+  end
+  
+fun glue_overlap (bluen,redn) (p1,cl1) (p2,cl2) =
+  SAT_PROVE (overlap_pb (bluen,redn) (p1,cl1) (p2,cl2))
 
 (* -------------------------------------------------------------------------
    Sampling from a large cartesian product
@@ -163,9 +194,11 @@ load "gen"; open gen;
 
 val cover = read_cover 10 (3,5);
 val (par,cl) = hd cover;
-val parm = unzip_mat par;
-val holel = all_holes (unzip_mat par);
-val 
+
+
+  
+val overlap_clauses =;
+
 
 *)
 
