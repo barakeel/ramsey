@@ -139,7 +139,7 @@ fun benchmark expname n c1 c2 =
     val pbl = random_cartesian_subset n c1 c2
     val _ = smlExecScripts.buildheap_dir := dir
     val rl = smlParallel.parmap_queue_extern ncore benchspec () pbl
-    fun f ((c1e,c2e),r) = infts c1e ^ "," ^ infts c2e ^ " " ^ r
+    fun f ((c1e,c2e),r) = infts c1e ^ "," ^ infts c2e ^ " " ^ rts r
     val mean = average_real rl
     val maxt = list_rmax rl
     val expt = (mean * Real.fromInt (n1 * n2)) / (60.0 * 60.0 * 24.0);
@@ -153,6 +153,7 @@ fun benchmark expname n c1 c2 =
 (*
 export TMPDIR="$PWD/tmp";
 mkdir tmp;
+find /tmp -maxdepth 1 -type f -name 'MLTEMP*' ! -exec lsof {} \; -exec rm {} \;
 
 load "glue"; open aiLib kernel graph glue;
 load "enum"; open enum;
@@ -163,19 +164,15 @@ val c2c = read_enum 14 (4,4);
 val c1 = read_par 10 (3,5);
 val c2 = read_par 14 (4,4);
 
-fun f x = int_pow 2 (number_of_holes (unzip_mat x));
-val h1 = sum_int (map f c1); 
-length c1c;
-val h2 = sum_int (map f c2);
-length c2c;
+val expname = "e0e0bis";
+benchmark expname 100 c1c c2c;
+val sl1 = readl (selfdir ^ "/exp/" ^ expname ^ "/summary");
+val sl2 = readl (selfdir ^ "/exp/" ^ expname ^ "/sattime");
+
+(* trying to find a corellation between speed and features *)
 
 
-val expname = "e4e4bis";
-benchmark expname 100 c1 c2;
-val sl = readl (selfdir ^ "/exp/" ^ expname ^ "/summary");
 
-(* stop hol *)
-find /tmp -maxdepth 1 -type f -name 'MLTEMP*' ! -exec lsof {} \; -exec rm {} \;
 *)
 
 
