@@ -67,7 +67,6 @@ fun dest_lit lit =
 fun mat_of_gtm size gtm =
   edgecl_to_mat size (map dest_lit (litl_of_gtm gtm))
 
-
 fun compare_lit (lit1,lit2) = 
   cpl_compare (cpl_compare Int.compare Int.compare) Int.compare
   (dest_lit lit1, dest_lit lit2)
@@ -316,9 +315,7 @@ fun regroup_conjuncts conj35 conj44 gluethm9 =
   in
     GENL (x8 @ y16) gluethm12
   end;
-  
-
-
+ 
 (* -------------------------------------------------------------------------
    Preparing the two enumeration theorems and listing graphs
    ------------------------------------------------------------------------- *)
@@ -340,7 +337,7 @@ if l = dkeys glued then () else raise ERR "" "";
 
 (* -------------------------------------------------------------------------
    Proving that it is impossible to have a specific 3,5 graph
-   by composing it with all possible 4,4 graphs
+   by proving that there is no glueing with all possible 4,4 graphs
    ------------------------------------------------------------------------- *)
 
 val IMP_FF = PROVE [] ``!x. (x ==> F) ==> F <=> x``;
@@ -415,7 +412,7 @@ mk_both_cdef 8 (3,5);
 mk_both_cdef 16 (4,4);
 
 show_assums := true;
-show_oracles := true;
+show_tags := true;
 val finalthm2_alt = mk_thm 
    ([``!(x:num) (y:num). E x y <=> E y x``, 
      ``C358b E``, ``C358r E``, ``C4416b (\x y. E (x + 8) (y + 8))``,

@@ -139,22 +139,21 @@ fun benchmark expname n c1 c2 =
     val pbl = random_cartesian_subset n c1 c2
     val _ = smlExecScripts.buildheap_dir := dir
     val rl = smlParallel.parmap_queue_extern ncore benchspec () pbl
-    fun f r = rts r
+    fun f ((c1e,c2e),r) = infts c1e ^ "," ^ infts c2e ^ " " ^ r
     val mean = average_real rl
     val maxt = list_rmax rl
     val expt = (mean * Real.fromInt (n1 * n2)) / (60.0 * 60.0 * 24.0);
+    val heads = String.concatWith " " 
+      (map rts [expt,mean,maxt] @ map its [n,n1,n2,n1*n2])
   in
-    writel (dir ^ "/summary") 
-      (map rts [expt,mean,maxt] @
-       map its [n,n1,n2,n1*n2] @
-       map f rl)
+    writel (dir ^ "/summary") [heads];
+    writel (dir ^ "/sattime") (map f (combine (pbl,rl)))
   end
 
 (*
 export TMPDIR="$PWD/tmp";
 mkdir tmp;
 
-(* start hol *)
 load "glue"; open aiLib kernel graph glue;
 load "enum"; open enum;
 load "gen"; open gen;
