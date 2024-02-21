@@ -77,7 +77,5 @@ sig
   val apply_coloring : mat -> coloring -> mat
   
   
-  
-  
    
 end

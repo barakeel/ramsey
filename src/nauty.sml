@@ -179,6 +179,17 @@ fun normalize_nauty graph =
   let val vertexl = List.tabulate (mat_size graph,I) in 
     snd (normalize_nauty_aux graph [vertexl])
   end
+
+fun all_inst_wperm mi =
+  let
+    val m = unzip_mat mi
+    val edgel = all_holes m
+    val coloringl = all_coloring edgel
+    fun f coloring = normalize_nauty_wperm (apply_coloring m coloring)
+  in
+    map_fst zip_mat (map f coloringl)
+  end
+
  
 (*
 load "nauty"; open aiLib kernel graph nauty;

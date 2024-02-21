@@ -155,6 +155,21 @@ fun benchmark expname n c1 c2 =
     writel (dir ^ "/sattime") (map f (combine (pbl,rl)))
   end
 
+
+(*
+load "glue"; open aiLib kernel graph glue;
+load "enum"; open enum;
+load "gen"; open gen;
+
+val cover = read_cover 10 (3,5);
+val (par,cl) = hd cover;
+val parm = unzip_mat par;
+val holel = all_holes (unzip_mat par);
+val 
+
+*)
+
+
 (*
 export TMPDIR="$PWD/tmp";
 mkdir tmp;
@@ -169,11 +184,8 @@ val c2c = read_enum 14 (4,4);
 val c1 = read_par 10 (3,5);
 val c2 = read_par 14 (4,4);
 
-val c1' = read_cover 10 (3,5);
-val (par,cl) = hd c1';
 
-val parm = unzip_mat par;
-val holel = all_holes (unzip_mat par);
+
 
 
 val c2' = read_cover 14 (4,4);
