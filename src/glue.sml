@@ -33,6 +33,11 @@ fun invsatlit ((i,j),c) =
 
 fun satclause clause = list_mk_disj (map invsatlit clause)
 
+val overlap_clauses = ref []
+
+
+  
+
 fun ramsey_clauses_mat (bluen,redn) mat =
   List.mapPartial (reduce_clause mat []) 
     (ramsey_clauses_bare (mat_size mat) (bluen,redn));
@@ -164,14 +169,53 @@ val c2c = read_enum 14 (4,4);
 val c1 = read_par 10 (3,5);
 val c2 = read_par 14 (4,4);
 
+val c1' = read_cover 10 (3,5);
+val (par,cl) = hd c1';
+
+val parm = unzip_mat par;
+val holel = all_holes (unzip_mat par);
+
+
+val c2' = read_cover 14 (4,4);
+
+fun compute_overlap_clauses (par,cl) = 
+
 val expname = "e0e0bis";
-benchmark expname 100 c1c c2c;
+benchmark expname 200 c1c c2c;
 val sl1 = readl (selfdir ^ "/exp/" ^ expname ^ "/summary");
 val sl2 = readl (selfdir ^ "/exp/" ^ expname ^ "/sattime");
 
+
+
+
+
 (* trying to find a corellation between speed and features *)
+fun f s =
+  let 
+    val (sa,sb) = pair_of_list (String.tokens Char.isSpace s)
+    val (sa1,sa2) = pair_of_list (String.tokens (fn x => x = #",") sa)
+  in
+    ((stinf sa1, stinf sa2), valOf (Real.fromString sb))
+  end
 
+val timel = map f sl2;
+val ((a,b),t) = hd timel;
 
+fun score (a,b) = 
+  let 
+    val m = diag_mat (unzip_mat a) (unzip_mat b);
+    val clausel = ramsey_clauses_mat (4,5) m;
+    val lenl = map length clausel;
+    val l = dlist (count_dict (dempty Int.compare) lenl);
+    fun sc_one (a,b) = int_div b (int_pow 2 a)
+  in
+    sum_real (map sc_one l)
+  end
+  
+val scorel = map (fn (a,t) => (score a,t)) timel;
+val scorel1 = dict_sort (fst_compare Real.compare) scorel;
+map snd scorel1;
+app print_endline (map (rts o snd) scorel1);
 
 *)
 

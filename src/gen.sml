@@ -17,27 +17,6 @@ val normalize_nauty = total_time nauty_time normalize_nauty
    Getting all_leafs of 
    ------------------------------------------------------------------------- *) 
 
-fun apply_coloring m edgecl = 
-   let 
-     val newm = mat_copy m
-     fun f ((i,j),c) = mat_update_sym (newm,i,j,c) 
-   in
-     app f edgecl; newm
-   end
-
-fun all_coloring edgel = 
-  let
-    val edgebothl =
-      let 
-        val l = ref []
-        fun f (i,j) = l := [((i,j),blue),((i,j),red)] :: !l 
-      in 
-        (app f edgel; !l)
-      end
-  in
-    cartesian_productl edgebothl
-  end
-
 fun all_leafs_wperm_aux (iall,inew) uset m =
   let
     val edgel = all_holes m

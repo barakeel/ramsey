@@ -94,10 +94,6 @@ fun matKn size n =
        (b = size andalso a >= n) orelse (a=b) 
     then 0 else 1);
 
-fun random_shape size color =
-   mat_tabulate (size,fn (a,b) => if a=b then 0 else 
-    if random_real () < 0.5 then 0 else color)
-
 (* -------------------------------------------------------------------------
    Neighbors
    ------------------------------------------------------------------------- *)
@@ -347,50 +343,33 @@ fun random_subgraph subsize m =
   end
 
 (* -------------------------------------------------------------------------
-   Properties
+   Generalizations and colorings
    ------------------------------------------------------------------------- *)
 
-fun is_ackset shape =
-  let val neighborl = all_neighbor 1 shape in
-    length (mk_fast_set (list_compare Int.compare) neighborl) =
-    length neighborl
-  end;
+fun apply_coloring m edgecl = 
+   let 
+     val newm = mat_copy m
+     fun f ((i,j),c) = mat_update_sym (newm,i,j,c) 
+   in
+     app f edgecl; newm
+   end
 
-fun not_automorphic shape =
-  let 
-    val shapesize = mat_size shape
-    val perml0 = permutations (List.tabulate (shapesize, I))
-    fun f x = mat_permute (shape,shapesize) (mk_permf x)
-    val matl = map f perml0
-  in
-    length (mk_fast_set mat_compare matl) = length perml0 
-  end
-
-fun has_cycle color m =
+fun all_coloring edgel = 
   let
-    val initneighv = Vector.tabulate (mat_size m, neighbor_of color m);
-    val initindexl = List.tabulate (mat_size m,I)
-    fun loop neighv indexl =
+    val edgebothl =
       let 
-        val (reml,newindexl) =
-          partition (fn x => null (Vector.sub(neighv,x))) indexl
-      in
-        if null newindexl then false else
-        if null reml then true else 
-        let val newneighv = Vector.map 
-          (fn l => filter (fn x => not (mem x reml)) l) neighv 
-        in 
-          loop newneighv newindexl
-        end
+        val l = ref []
+        fun f (i,j) = l := [((i,j),blue),((i,j),red)] :: !l 
+      in 
+        (app f edgel; !l)
       end
   in
-    loop initneighv initindexl
+    cartesian_productl edgebothl
   end
-    
-fun random_shape_nocycle n color = 
-  let val r = random_shape n color in 
-    if has_cycle color r then random_shape_nocycle n color else r
-  end
+
+(* -------------------------------------------------------------------------
+   Properties
+   ------------------------------------------------------------------------- *)
 
 fun number_of_edges m = 
   let 

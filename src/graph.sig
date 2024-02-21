@@ -42,8 +42,6 @@ sig
   (* matrices *)
   val random_mat : int -> mat
   val random_full_mat : int -> mat
-  val random_shape : int -> int -> mat
-  val random_shape_nocycle : int -> int -> mat
   val matK : int -> mat
   val diag_mat : mat -> mat -> mat
   val extend_mat : mat -> int -> mat
@@ -62,8 +60,6 @@ sig
   val inneighbor_of : int -> mat -> int -> int list
   
   (* properties *)
-  val is_ackset : mat -> bool
-  val not_automorphic : mat -> bool
   val number_of_edges : mat -> int
   val number_of_holes : mat -> int
   val all_holes : mat -> (int * int) list
@@ -75,6 +71,12 @@ sig
   (* converting from matrix representation to list of edges *)
   val mat_to_edgecl : mat -> coloring
   val edgecl_to_mat : int -> coloring -> mat
+  
+  (* applying colorings *)
+  val all_coloring : (int * int) list -> coloring list
+  val apply_coloring : mat -> coloring -> mat
+  
+  
   
   
    
