@@ -17,27 +17,6 @@ val max_hole = ref 8
    Instantiating graphs
    ------------------------------------------------------------------------- *) 
 
-fun apply_coloring m edgecl = 
-   let 
-     val newm = mat_copy m
-     fun f ((i,j),c) = mat_update_sym (newm,i,j,c) 
-   in
-     app f edgecl; newm
-   end
-
-fun all_coloring edgel = 
-  let
-    val edgebothl =
-      let 
-        val l = ref []
-        fun f (i,j) = l := [((i,j),blue),((i,j),red)] :: !l 
-      in 
-        (app f edgel; !l)
-      end
-  in
-    cartesian_productl edgebothl
-  end
-
 fun all_leafs_wperm_aux uset m edgel =
   let
     val coloringltop = all_coloring edgel

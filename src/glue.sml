@@ -12,8 +12,7 @@ val ERR = mk_HOL_ERR "glue"
 (* -------------------------------------------------------------------------
    Create clauses from graphs
    ------------------------------------------------------------------------- *)
-   
-(* this reduction step will need to be reproduced in the proof *)
+
 fun reduce_clause mat acc clause = case clause of
     [] => SOME (rev acc)
   | (lit as ((i,j),color)) :: m => 
@@ -22,7 +21,12 @@ fun reduce_clause mat acc clause = case clause of
         then reduce_clause mat (lit :: acc) m
       else if color = newcolor 
         then reduce_clause mat acc m else NONE
-    end;
+    end
+
+fun ramsey_clauses_mat (bluen,redn) mat =
+  List.mapPartial (reduce_clause mat []) 
+    (ramsey_clauses_bare (mat_size mat) (bluen,redn));
+
 
 fun satvar i j = mk_var ("E_" ^ its i ^ "_" ^ its j,bool)
 
@@ -33,9 +37,7 @@ fun invsatlit ((i,j),c) =
 
 fun satclause clause = list_mk_disj (map invsatlit clause)
 
-fun ramsey_clauses_mat (bluen,redn) mat =
-  List.mapPartial (reduce_clause mat []) 
-    (ramsey_clauses_bare (mat_size mat) (bluen,redn));
+
 
 fun satpb_of_clausel clausel =
   let val clausetml = map satclause clausel in
@@ -188,22 +190,6 @@ fun benchmark expname n c1 c2 =
 
 
 (*
-load "glue"; open aiLib kernel graph glue;
-load "enum"; open enum;
-load "gen"; open gen;
-
-val cover = read_cover 10 (3,5);
-val (par,cl) = hd cover;
-
-
-  
-val overlap_clauses =;
-
-
-*)
-
-
-(*
 export TMPDIR="$PWD/tmp";
 mkdir tmp;
 find /tmp -maxdepth 1 -type f -name 'MLTEMP*' ! -exec lsof {} \; -exec rm {} \;
@@ -212,28 +198,125 @@ load "glue"; open aiLib kernel graph glue;
 load "enum"; open enum;
 load "gen"; open gen;
 
-val c1c = read_enum 10 (3,5);
-val c2c = read_enum 14 (4,4);
-val c1 = read_par 10 (3,5);
-val c2 = read_par 14 (4,4);
+val c1 = hd (read_cover 10 (3,5));
+val c2 = hd (read_cover 14 (4,4));
+
+val (_,t1) = add_time (glue_overlap (4,5) c1) c2;
+
+val (_,t2) = add_time (glue (4,5) (fst c1)) (fst c2);
+*)
 
 
-
-
-
-val c2' = read_cover 14 (4,4);
-
-fun compute_overlap_clauses (par,cl) = 
-
+(*
+load "glue"; open aiLib kernel graph glue;
+load "enum"; open enum;
+load "gen"; open gen;
 val expname = "e0e0bis";
-benchmark expname 200 c1c c2c;
 val sl1 = readl (selfdir ^ "/exp/" ^ expname ^ "/summary");
 val sl2 = readl (selfdir ^ "/exp/" ^ expname ^ "/sattime");
 
+fun is_small_lit n ((i,j),c) = i < n andalso j < n;
+fun is_large_lit n ((i,j),c) = i >= n andalso j >= n;
+fun is_middle_lit n x = not (is_small_lit n x) andalso not (is_large_lit n x);
+fun get_small_lit l = filter (is_small_lit 10) l;
+fun get_large_lit l = filter (is_large_lit 10) l;
+fun get_middle_lit l = filter (is_middle_lit 10) l;
+fun match_one m ((i,j),c) = mat_sub (m,i,j) = c;
+fun match_all m clause = all (match_one m) clause;
 
 
+val (clausel4524,t) = add_time (sat.ramsey_clauses_bare 24) (4,5);
+val clausel4524i = number_snd 0 clausel4524;
+val small0 = map_fst get_small_lit clausel4524i;
+val large0 = map_fst get_large_lit clausel4524i; 
+val middle = map get_middle_lit clausel4524;
+fun score_one l = int_div 1 (int_pow 2 (length l));
+val middlev = Vector.fromList (map score_one middle);
+fun sum_middlev l = 
+  let 
+    val sum = ref 0.0
+    fun f x = sum := !sum + Vector.sub (middlev,x) 
+  in 
+    app f l; !sum
+  end;
+  
+val c1 = hd (read_enum 10 (3,5));
+val d1 = hd (read_enum 14 (4,4));
 
+fun score2 (a,b) =
+  let
+    val m1 = unzip_mat a;
+    val small1 = map snd (filter (fn (clause,i) => match_all m1 clause) small0)
+    val m2 = diag_mat (mat_empty 10) (unzip_mat b)
+    val large1 = map snd (filter (fn (clause,i) => match_all m2 clause) large0)
+    val inter1 = inter_increasing small1 large1
+  in
+    sum_middlev inter1
+  end;
+  
 
+val (r,t) = add_time score2 (c1,d1);
+val (r',t) = add_time score (c1,d1);
+
+fun reduce_clause mat acc clause = case clause of
+    [] => SOME (rev acc)
+  | (lit as ((i,j),color)) :: m => 
+    let val newcolor = mat_sub (mat,i,j) in
+      if newcolor = 0 
+        then reduce_clause mat (lit :: acc) m
+      else if color = newcolor 
+        then reduce_clause mat acc m else NONE
+    end;
+ 
+val power2invv = 
+  Vector.tabulate (11,fn x => 1.0 / Math.pow (2.0,Real.fromInt x));
+
+fun len_clause_aux mat len clause = case clause of
+    [] => len
+  | (lit as ((i,j),color)) :: m => 
+    let val newcolor = mat_sub (mat,i,j) in
+      if newcolor = 0 
+        then len_clause_aux mat (len + 1) m
+      else if color = newcolor 
+        then len_clause_aux mat len m 
+      else 0
+    end;
+    
+fun len_clause mat clause = len_clause_aux mat 0 clause;
+
+fun sum_clausel mat clausel =
+  let 
+    val sum = ref 0.0
+    fun f clause = 
+      sum := Vector.sub (power2invv,len_clause mat clause) + (!sum)
+  in
+    app f clausel; !sum
+  end
+  
+idea: compute the score for each problem 
+      don't use the mapping from score to 
+
+fun score (a,b) = 
+  let 
+    val m1 = diag_mat (mat_empty (mat_size a)) b
+    val clausel = (List.mapPartial (reduce_clause m1 [])) clausel4525
+    val _ = print_endline (its (length clausel4525) ^ " " ^ 
+                           its (length clausel))
+    val m2 = diag_mat a (mat_empty (mat_size b))
+    val sc = sum_clausel m2 clausel;
+  in
+    1.0 / sc
+  end;
+
+timer_glob1 := 0.0;
+timer_glob2 := 0.0;
+val timel = map f sl2;
+val timel' = map_fst (fn (m1,m2) => (unzip_mat m1, unzip_mat m2)) timel;
+val (scorel,t) = add_time (map (fn (a,t) => (score a,t))) timel';
+  
+  
+  
+  
 (* trying to find a corellation between speed and features *)
 fun f s =
   let 
@@ -243,27 +326,31 @@ fun f s =
     ((stinf sa1, stinf sa2), valOf (Real.fromString sb))
   end
 
-val timel = map f sl2;
-val ((a,b),t) = hd timel;
 
+val scorel_sorted = dict_sort (fst_compare Real.compare) scorel;
+
+fun f (a,b) = rts a ^ " " ^ rts b;
+
+app print_endline (map (rts o fst) scorel_sorted);
+app print_endline (map (rts o snd) scorel_sorted);
+*)
+
+(* -------------------------------------------------------------------------
+   Old scoring function easier to varies the parameter
+   ------------------------------------------------------------------------- *)
+
+(*
 fun score (a,b) = 
   let 
-    val m = diag_mat (unzip_mat a) (unzip_mat b);
-    val clausel = ramsey_clauses_mat (4,5) m;
+    val m = diag_mat (unzip_mat a) (unzip_mat b)
+    val clausel = List.mapPartial (reduce_clause m []) clausel4525;
     val lenl = map length clausel;
-    val l = dlist (count_dict (dempty Int.compare) lenl);
+    val l = dlist (count_dict (dempty Int.compare) lenl)
     fun sc_one (a,b) = int_div b (int_pow 2 a)
   in
     sum_real (map sc_one l)
-  end
-  
-val scorel = map (fn (a,t) => (score a,t)) timel;
-val scorel1 = dict_sort (fst_compare Real.compare) scorel;
-map snd scorel1;
-app print_endline (map (rts o snd) scorel1);
-
+  end;
 *)
-
 
 (* -------------------------------------------------------------------------
    Write gluing scripts

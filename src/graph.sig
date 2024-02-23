@@ -40,6 +40,7 @@ sig
   val print_mat : mat -> unit
   
   (* matrices *)
+  val mat_empty : int -> mat
   val random_mat : int -> mat
   val random_full_mat : int -> mat
   val matK : int -> mat

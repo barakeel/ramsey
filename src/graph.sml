@@ -19,6 +19,8 @@ fun mat_update (m,i,j,x) = Array2.update(m,i,j,x)
 fun mat_update_sym (m,i,j,x) = 
   (mat_update (m,i,j,x); mat_update (m,j,i,x))
 
+fun mat_empty n = Array2.array (n,n,0);
+
 fun mat_tabulate (n,f) = Array2.tabulate Array2.RowMajor (n,n,f)
  
 fun mat_traverse f m = 

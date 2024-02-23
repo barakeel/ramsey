@@ -91,6 +91,47 @@ fun concat_cpermll (leafi,vleafsl) =
       ((leafi,idperm) :: List.concat (map #3 vleafsl))
   end
 
+fun sgen maxhole_loc (bluen,redn) leafi =
+  let
+    val leaf = unzip_mat leafi
+    val size = mat_size leaf
+    val (varv,clausev) = init_sgen size (bluen,redn) 
+    val sizev = Vector.map (fn x => length x - 1) clausev
+    val inita = Array.array (Vector.length clausev,0)    
+    fun update_numbera a v = 
+      let 
+        val il = Vector.sub (varv,v) 
+        fun g i = Array.update (a,i, Array.sub(a,i) + 1) 
+      in
+        app g il
+      end
+    val edgecl = mat_to_edgecl leaf
+    val _ = app (update_numbera inita) (map enc_edgec edgecl)
+    fun try () = 
+      let
+        val locala = Array.tabulate 
+          (Array.length inita, fn i => Array.sub (inita,i))
+        val vlopp = shuffle (map (enc_edgec o opposite) edgecl)
+        fun test v = 
+          let val clausel = Vector.sub (varv,v) in
+            all (fn x => Array.sub (locala, x) < Vector.sub(sizev,x)) clausel
+          end
+        fun sgen_loop vl result = 
+          if length result >= maxhole_loc then rev result else
+          case vl of
+            [] => rev result
+          | v :: rem => (update_numbera locala v;
+                         sgen_loop (filter test rem) 
+                           (fst (dec_edgec v) :: result))
+      in
+        sgen_loop (filter test vlopp) []
+      end 
+  in  
+    try ()
+  end;
+
+
+
 fun sgeneralize (bluen,redn) uset leafi =
   let
     val leaf = unzip_mat leafi
