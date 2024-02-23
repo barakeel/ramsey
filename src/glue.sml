@@ -187,6 +187,23 @@ fun benchmark expname n c1 c2 =
     writel (dir ^ "/summary") [heads];
     writel (dir ^ "/sattime") (map f (combine (pbl,rl)))
   end
+  
+fun benchmark_pbl expname pbl = 
+  let
+    val expdir = selfdir ^ "/exp"
+    val dir = expdir ^ "/" ^ expname
+    val _ = app mkDir_err [expdir,dir]
+    val _ = smlExecScripts.buildheap_dir := dir
+    val rl = smlParallel.parmap_queue_extern ncore benchspec () pbl
+    fun f ((c1e,c2e),r) = infts c1e ^ "," ^ infts c2e ^ " " ^ rts r
+    val mean = average_real rl
+    val maxt = list_rmax rl
+    val heads = String.concatWith " " (map rts [mean,maxt])
+  in
+    writel (dir ^ "/summary") [heads];
+    writel (dir ^ "/sattime") (map f (combine (pbl,rl)))
+  end
+  
 
 
 (*
@@ -214,6 +231,34 @@ load "gen"; open gen;
 val expname = "e0e0bis";
 val sl1 = readl (selfdir ^ "/exp/" ^ expname ^ "/summary");
 val sl2 = readl (selfdir ^ "/exp/" ^ expname ^ "/sattime");
+
+fun f s =
+  let 
+    val (sa,sb) = pair_of_list (String.tokens Char.isSpace s)
+    val (sa1,sa2) = pair_of_list (String.tokens (fn x => x = #",") sa)
+  in
+    ((stinf sa1, stinf sa2), valOf (Real.fromString sb))
+  end
+
+val pbl1 = map (fst o f) sl2;
+
+fun sgenx n b =
+  let
+    val m = unzip_mat b
+    val edgel = sgen n (4,5) b
+    fun f (a,b) = mat_update_sym (m,a,b,0)
+    val _ = app f edgel
+  in
+    zip_mat m
+  end;
+
+val pbl2 = map_snd (sgenx 1) pbl1;
+
+
+
+
+
+
 
 fun is_small_lit n ((i,j),c) = i < n andalso j < n;
 fun is_large_lit n ((i,j),c) = i >= n andalso j >= n;
@@ -310,21 +355,13 @@ fun score (a,b) =
 
 timer_glob1 := 0.0;
 timer_glob2 := 0.0;
-val timel = map f sl2;
+
 val timel' = map_fst (fn (m1,m2) => (unzip_mat m1, unzip_mat m2)) timel;
 val (scorel,t) = add_time (map (fn (a,t) => (score a,t))) timel';
   
   
   
   
-(* trying to find a corellation between speed and features *)
-fun f s =
-  let 
-    val (sa,sb) = pair_of_list (String.tokens Char.isSpace s)
-    val (sa1,sa2) = pair_of_list (String.tokens (fn x => x = #",") sa)
-  in
-    ((stinf sa1, stinf sa2), valOf (Real.fromString sb))
-  end
 
 
 val scorel_sorted = dict_sort (fst_compare Real.compare) scorel;
