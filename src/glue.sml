@@ -176,6 +176,7 @@ fun benchmark expname n c1 c2 =
     val n2 = length c2
     val pbl = random_cartesian_subset n c1 c2
     val _ = smlExecScripts.buildheap_dir := dir
+    val _ = smlExecScripts.buildheap_options :=  "--maxheap " ^ its memory
     val rl = smlParallel.parmap_queue_extern ncore benchspec () pbl
     fun f ((c1e,c2e),r) = infts c1e ^ "," ^ infts c2e ^ " " ^ rts r
     val mean = average_real rl
