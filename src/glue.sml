@@ -232,13 +232,19 @@ val expname = "e0e0bis";
 val sl1 = readl (selfdir ^ "/exp/" ^ expname ^ "/summary");
 val sl2 = readl (selfdir ^ "/exp/" ^ expname ^ "/sattime");
 
-fun f s =
-  let 
-    val (sa,sb) = pair_of_list (String.tokens Char.isSpace s)
-    val (sa1,sa2) = pair_of_list (String.tokens (fn x => x = #",") sa)
-  in
-    ((stinf sa1, stinf sa2), valOf (Real.fromString sb))
-  end
+fun read_sattime expname =
+  let
+    val filename = selfdir ^ "/exp/" ^ expname ^ "/sattime"
+    fun f s =
+      let 
+        val (sa,sb) = pair_of_list (String.tokens Char.isSpace s)
+        val (sa1,sa2) = pair_of_list (String.tokens (fn x => x = #",") sa)
+      in
+        ((stinf sa1, stinf sa2), valOf (Real.fromString sb))
+      end
+   in
+     map f (readl filename)
+   end;
 
 val pbl1 = map (fst o f) sl2;
 
@@ -252,56 +258,103 @@ fun sgenx n b =
     zip_mat m
   end;
 
-val pbl2 = map_snd (sgenx 1) pbl1;
+val pbl2 = map_snd (sgenx 2) pbl1;
+val expname = "e0e2";
+benchmark_pbl "e0e2" pbl2;
+readl (selfdir ^ "/exp/" ^ expname ^ "/summary");
 
 
-
-
-
-
-
-fun is_small_lit n ((i,j),c) = i < n andalso j < n;
-fun is_large_lit n ((i,j),c) = i >= n andalso j >= n;
-fun is_middle_lit n x = not (is_small_lit n x) andalso not (is_large_lit n x);
-fun get_small_lit l = filter (is_small_lit 10) l;
-fun get_large_lit l = filter (is_large_lit 10) l;
-fun get_middle_lit l = filter (is_middle_lit 10) l;
-fun match_one m ((i,j),c) = mat_sub (m,i,j) = c;
-fun match_all m clause = all (match_one m) clause;
-
-
-val (clausel4524,t) = add_time (sat.ramsey_clauses_bare 24) (4,5);
-val clausel4524i = number_snd 0 clausel4524;
-val small0 = map_fst get_small_lit clausel4524i;
-val large0 = map_fst get_large_lit clausel4524i; 
-val middle = map get_middle_lit clausel4524;
-fun score_one l = int_div 1 (int_pow 2 (length l));
-val middlev = Vector.fromList (map score_one middle);
-fun sum_middlev l = 
-  let 
-    val sum = ref 0.0
-    fun f x = sum := !sum + Vector.sub (middlev,x) 
-  in 
-    app f l; !sum
-  end;
-  
-val c1 = hd (read_enum 10 (3,5));
-val d1 = hd (read_enum 14 (4,4));
-
-fun score2 (a,b) =
+fun mk_data expname = 
   let
-    val m1 = unzip_mat a;
-    val small1 = map snd (filter (fn (clause,i) => match_all m1 clause) small0)
-    val m2 = diag_mat (mat_empty 10) (unzip_mat b)
-    val large1 = map snd (filter (fn (clause,i) => match_all m2 clause) large0)
-    val inter1 = inter_increasing small1 large1
+    val l1 = read_sattime expname
+    val l2 = map_fst score l1
+    val l3 = dict_sort (fst_compare Real.compare) l2
   in
-    sum_middlev inter1
+    app print_endline (map (rts o fst) l3);
+    print_endline "###";
+    app print_endline (map (rts o snd) l3)
+  end;
+    
+mk_data "e0e2";
+
+load "enum"; open aiLib kernel graph enum;
+
+
+fun number_of_cliques m (n,color) =
+  let 
+    val vl = List.tabulate (mat_size m, I)
+    val cliquel = subsets_of_size n vl
+    fun is_uniform x = 
+      let 
+        val edgel = all_pairs x 
+        fun test (i,j) = mat_sub (m,i,j) = color 
+      in
+        all test edgel
+      end
+  in
+    ((n,color), Real.fromInt (length (filter is_uniform cliquel)))
+  end;
+
+
+val enum3510 = read_enum 10 (3,5);
+val enum4414 = read_enum 14 (4,4);
+
+val clique35 = [(1,1),(2,1),(2,2),(3,2),(4,2)];
+val clique44 = [(3,1),(2,1),(3,2),(2,2),(1,2)];
+
+fun get_stats35 m = map (number_of_cliques m) clique35;
+fun get_stats44 m = map (number_of_cliques m) clique44;
+
+fun get_average35 enum =
+  let val l = map (map snd o get_stats35 o unzip_mat) enum in
+    map average_real (list_combine l)
+  end;
+
+fun get_average44 enum =
+  let val l = map (map snd o get_stats44 o unzip_mat) enum in
+    map average_real (list_combine l)
   end;
   
+val average3510 = combine (clique35, get_average35 enum3510);
+val average4414 = combine (clique44, get_average44 enum4414);
 
-val (r,t) = add_time score2 (c1,d1);
-val (r',t) = add_time score (c1,d1);
+(* lower number is more difficult *)
+fun difficulty stats35 stats45 =
+  let 
+    val l = combine (stats35,stats45)
+    fun f (((n1,_),r1),((n2,_),r2)) = 
+      r1 * r2 * (1.0 / Math.pow (2.0, Real.fromInt (n1 * n2)))
+  in
+    sum_real (map f l)
+  end;
+  
+difficulty average3510 average4414; 
+    
+difficulty (get_stats35 (unzip_mat (hd enum3510))) average4414;
+
+fun score3510 x = (x, difficulty (get_stats35 (unzip_mat x)) average4414);
+fun score4414 x = (x, difficulty average3510 (get_stats44 (unzip_mat x)));
+
+val enum3510sc = map score3510 enum3510;
+val enum4414sc = map score4414 enum4414;
+
+val enum3510sorted = dict_sort compare_rmax enum3510sc;
+val enum4414sorted = dict_sort compare_rmax enum4414sc;
+
+
+
+fun number_of_blueedges m = 
+  let 
+    val y = ref 0 
+    fun f (i,j,x) = if x = 1 then incr y else ()
+  in
+    mat_traverse f m; 
+    !y
+  end  
+
+
+
+val clausel4524 = sat.ramsey_clauses_bare 24 (4,5);
 
 fun reduce_clause mat acc clause = case clause of
     [] => SOME (rev acc)
@@ -312,64 +365,47 @@ fun reduce_clause mat acc clause = case clause of
       else if color = newcolor 
         then reduce_clause mat acc m else NONE
     end;
- 
-val power2invv = 
-  Vector.tabulate (11,fn x => 1.0 / Math.pow (2.0,Real.fromInt x));
-
-fun len_clause_aux mat len clause = case clause of
-    [] => len
-  | (lit as ((i,j),color)) :: m => 
-    let val newcolor = mat_sub (mat,i,j) in
-      if newcolor = 0 
-        then len_clause_aux mat (len + 1) m
-      else if color = newcolor 
-        then len_clause_aux mat len m 
-      else 0
-    end;
-    
-fun len_clause mat clause = len_clause_aux mat 0 clause;
-
-fun sum_clausel mat clausel =
-  let 
-    val sum = ref 0.0
-    fun f clause = 
-      sum := Vector.sub (power2invv,len_clause mat clause) + (!sum)
-  in
-    app f clausel; !sum
-  end
-  
-idea: compute the score for each problem 
-      don't use the mapping from score to 
 
 fun score (a,b) = 
   let 
-    val m1 = diag_mat (mat_empty (mat_size a)) b
-    val clausel = (List.mapPartial (reduce_clause m1 [])) clausel4525
-    val _ = print_endline (its (length clausel4525) ^ " " ^ 
-                           its (length clausel))
-    val m2 = diag_mat a (mat_empty (mat_size b))
-    val sc = sum_clausel m2 clausel;
+    val m = diag_mat (unzip_mat a) (unzip_mat b)
+    val clausel = List.mapPartial (reduce_clause m []) clausel4524;
+    val lenl = map length clausel;
+    val l = dlist (count_dict (dempty Int.compare) lenl)
+    fun sc_one (a,b) = int_div b (int_pow 2 a)
   in
-    1.0 / sc
+    sum_real (map sc_one l)
   end;
 
-timer_glob1 := 0.0;
-timer_glob2 := 0.0;
+val e0e1sattime = read_sattime "e0e1";
+val (e0e1score,t) = add_time (map_fst score) e0e1sattime;
+val e0e1sorted = dict_sort (fst_compare Real.compare) e0e1score;
+app print_endline (map (rts o fst) e0e1sorted);
+app print_endline (map (rts o snd) e0e1sorted);
 
-val timel' = map_fst (fn (m1,m2) => (unzip_mat m1, unzip_mat m2)) timel;
-val (scorel,t) = add_time (map (fn (a,t) => (score a,t))) timel';
+val e0e0sattime = read_sattime "e0e0bis";
+val (e0e0score,t) = add_time (map_fst score) e0e0sattime;
+val e0e0sorted = dict_sort (fst_compare Real.compare) e0e0score;
+app print_endline (map (rts o fst) e0e0sorted);
+app print_endline (map (rts o snd) e0e0sorted);
+
+
+val d = dnew (cpl_compare IntInf.compare IntInf.compare) e0e0sattime;
+
+fun find_inst_sc ((a,b),sc) =
+  let 
+    val instl = map fst (nauty.all_inst_wperm b)
+    val candl = map (fn x => (a,x)) instl
+    val cand = valOf (List.find (fn x => dmem x d) candl)
+  in
+    ((a,b),(sc,dfind cand d))
+  end;
   
-  
-  
-  
-
-
-val scorel_sorted = dict_sort (fst_compare Real.compare) scorel;
-
-fun f (a,b) = rts a ^ " " ^ rts b;
-
-app print_endline (map (rts o fst) scorel_sorted);
-app print_endline (map (rts o snd) scorel_sorted);
+val l = map (snd o find_inst_sc) e0e1sattime;
+fun f (a,b) = (b,a/b); 
+val l1 = dict_sort (fst_compare Real.compare) (map f l);
+app print_endline (map (rts o fst) l1);
+app print_endline (map (rts o snd) l1);
 *)
 
 (* -------------------------------------------------------------------------
@@ -377,16 +413,7 @@ app print_endline (map (rts o snd) scorel_sorted);
    ------------------------------------------------------------------------- *)
 
 (*
-fun score (a,b) = 
-  let 
-    val m = diag_mat (unzip_mat a) (unzip_mat b)
-    val clausel = List.mapPartial (reduce_clause m []) clausel4525;
-    val lenl = map length clausel;
-    val l = dlist (count_dict (dempty Int.compare) lenl)
-    fun sc_one (a,b) = int_div b (int_pow 2 a)
-  in
-    sum_real (map sc_one l)
-  end;
+
 *)
 
 (* -------------------------------------------------------------------------

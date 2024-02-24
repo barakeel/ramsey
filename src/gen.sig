@@ -7,6 +7,7 @@ sig
   (* parameters *)
   val select_number1 : int ref
   val select_number2 : int ref
+  val test_flag : bool ref
   
   (* parallelization *)
   val genspec : ((int * int) * IntInf.int Redblackset.set, IntInf.int, 

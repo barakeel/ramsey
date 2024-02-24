@@ -6,7 +6,7 @@
 structure gen :> gen =
 struct   
 
-open HolKernel Abbrev boolLib aiLib kernel graph nauty syntax
+open HolKernel Abbrev boolLib aiLib kernel graph nauty syntax enum
 val ERR = mk_HOL_ERR "gen"
 type vleafs = int * int * (IntInf.int * int list) list  
 
@@ -42,6 +42,71 @@ fun all_leafs_wperm_aux (iall,inew) uset m =
 
 fun all_leafs_wperm uset m = all_leafs_wperm_aux (ref 0, ref 0) uset m
 
+(* -------------------------------------------------------------------------
+   Scoring generalizations: lower number is better.
+   ------------------------------------------------------------------------- *)
+
+val clique35 = [(1,1),(2,1),(2,2),(3,2),(4,2)]
+val clique44 = [(3,1),(2,1),(3,2),(2,2),(1,2)]
+
+fun number_of_cliques m (n,color) =
+  let 
+    val vl = List.tabulate (mat_size m, I)
+    val cliquel = subsets_of_size n vl
+    fun is_uniform x = 
+      let 
+        val edgel = all_pairs x 
+        fun test (i,j) = mat_sub (m,i,j) = color 
+      in
+        all test edgel
+      end
+  in
+    ((n,color), Real.fromInt (length (filter is_uniform cliquel)))
+  end
+
+fun get_stats35 m = map (number_of_cliques m) clique35
+fun get_stats44 m = map (number_of_cliques m) clique44
+
+fun get_average35 enum =
+  let val l = map (map snd o get_stats35 o unzip_mat) enum in
+    map average_real (list_combine l)
+  end
+
+fun get_average44 enum =
+  let val l = map (map snd o get_stats44 o unzip_mat) enum in
+    map average_real (list_combine l)
+  end
+
+fun difficulty stats35 stats45 =
+  let 
+    val l = combine (stats35,stats45)
+    fun f (((n1,_),r1),((n2,_),r2)) = 
+      r1 * r2 * (1.0 / Math.pow (2.0, Real.fromInt (n1 * n2)))
+  in
+    sum_real (map f l)
+  end
+
+fun init_scored size (bluen,redn) =
+  if (bluen,redn) = (3,5) then
+    let 
+      val enum35 = read_enum size (3,5)
+      val enum44 = read_enum (24-size) (4,4)
+      val average44 = combine (clique44, get_average44 enum44)
+      fun score35 x = difficulty (get_stats35 (unzip_mat x)) average44
+    in
+      dnew IntInf.compare (map_assoc score35 enum35)
+    end
+  else if (bluen,redn) = (4,4) then
+    let 
+      val enum35 = read_enum (24-size) (3,5)
+      val enum44 = read_enum size (4,4)
+      val average35 = combine (clique35, get_average35 enum35)
+      fun score44 x = difficulty average35 (get_stats44 (unzip_mat x))
+    in
+      dnew IntInf.compare (map_assoc score44 enum44)
+    end
+  else raise ERR "init_scored" "unexpected"
+  
 (* -------------------------------------------------------------------------
    Cover
    ------------------------------------------------------------------------- *)
@@ -285,11 +350,21 @@ fun update_uset selectn pl (uset,result) =
     update_uset (selectn + 1) newpl (newuset,newresult)
   end
 
+val test_flag = ref false
+val scored_glob = ref (dempty IntInf.compare)
+
 fun loop_scover_para ncore (bluen,redn) uset result = 
   if elength uset <= 0 then rev result else
   let
     val n = Int.min (!select_number1, elength uset)
-    val ul = random_subset n (elist uset)
+    val ul = if !test_flag then 
+      let 
+        fun f x = dfind x (!scored_glob)
+        val ulscore = dict_sort compare_rmax (map_assoc f (elist uset))  
+      in
+        map fst (first_n n ulscore)
+      end
+      else random_subset n (elist uset)
     val n' = Int.min (n,ncore)
     val param = ((bluen,redn),uset)
     val _ = clean_dir (selfdir ^ "/parallel_search")
@@ -299,14 +374,31 @@ fun loop_scover_para ncore (bluen,redn) uset result =
     loop_scover_para ncore (bluen,redn) newuset newresult
   end
 
+
+fun check_cover cover uset =
+  let 
+    val _ = print_endline "checking cover" 
+    val instl = mk_fast_set IntInf.compare 
+      (map fst (List.concat (map snd cover)))
+  in
+    if elist uset = instl 
+    then ()
+    else raise ERR "check_cover" ""
+  end
+
 fun compute_scover_para ncore size (bluen,redn) = 
   let
+    val _ = if !test_flag 
+            then scored_glob := init_scored size (bluen,redn)
+            else ()
     val id = its bluen ^ its redn ^ its size
     val file = selfdir ^ "/enum/enum" ^ id
     val uset = enew IntInf.compare (map stinf (readl file));
     val _ = smlExecScripts.buildheap_options :=  "--maxheap " ^ its memory
+    val cover = loop_scover_para ncore (bluen,redn) uset []
+    val _ = check_cover cover uset
   in
-    loop_scover_para ncore (bluen,redn) uset []
+    cover
   end
 
 (* -------------------------------------------------------------------------
@@ -375,15 +467,25 @@ fun gen (bluen,redn) (minsize,maxsize) =
     ignore (range (minsize,maxsize,f))
   end
   
+  
+  
+  
 (*
 load "gen"; open sat aiLib kernel graph gen;
+
+test_flag := true;
 select_number1 := 313;
 select_number2 := 1;
-val (_,t35) = add_time (gen (3,5)) (5,13);
+val (_,t35) = add_time (gen (3,5)) (10,10);
+
 select_number1 := 1000;
 select_number2 := 100;
-val (_,t44) = add_time (gen (4,4)) (4,17);
+val (_,t44) = add_time (gen (4,4)) (14,14);
 *)
+
+(* -------------------------------------------------------------------------
+   Safety check function
+   ------------------------------------------------------------------------- *)
 
 (* 
 (* safety check *)
@@ -399,14 +501,6 @@ val inst4410 =
   mk_fast_set IntInf.compare (map fst (List.concat (map snd cover4410)));
 val inst4410' = read_enum 10 (4,4);
 list_compare IntInf.compare (inst4410,inst4410');
-*)
-
-(*
-(* overlap *)
-
-
-
-
 *)
 
 

@@ -257,7 +257,6 @@ fun szip_mat m = IntInf.toString (zip_mat m)
 fun sunzip_mat s = unzip_mat (valOf (IntInf.fromString s))
 
 
-
 local open IntInf in
 
 fun zip_full m =
