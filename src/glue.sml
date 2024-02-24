@@ -204,24 +204,39 @@ fun benchmark_pbl expname pbl =
     writel (dir ^ "/sattime") (map f (combine (pbl,rl)))
   end
   
+(* -------------------------------------------------------------------------
+   Running on one example
+   ------------------------------------------------------------------------- *)
 
+(*
+load "glue"; open aiLib kernel graph glue;
+load "enum"; open enum;
+load "gen"; open gen;
+val c1 = hd (read_cover 10 (3,5));
+val c2 = hd (read_cover 14 (4,4));
+val (_,t1) = add_time (glue_overlap (4,5) c1) c2;
+val (_,t2) = add_time (glue (4,5) (fst c1)) (fst c2);
+*)
+
+(* -------------------------------------------------------------------------
+   Benchmarking
+   ------------------------------------------------------------------------- *)
 
 (*
 export TMPDIR="$PWD/tmp";
 mkdir tmp;
 find /tmp -maxdepth 1 -type f -name 'MLTEMP*' ! -exec lsof {} \; -exec rm {} \;
 
-load "glue"; open aiLib kernel graph glue;
-load "enum"; open enum;
-load "gen"; open gen;
+load "glue"; open aiLib kernel graph enum gen glue;
 
-val c1 = hd (read_cover 10 (3,5));
-val c2 = hd (read_cover 14 (4,4));
-
-val (_,t1) = add_time (glue_overlap (4,5) c1) c2;
-
-val (_,t2) = add_time (glue (4,5) (fst c1)) (fst c2);
+val set1 = read_par 10 (3,5);
+val set2 = read_par 14 (4,4);
+benchmark "e4e4test" n set1 set2;
 *)
+
+(* -------------------------------------------------------------------------
+   Analysis of the relation between size/number of clauses and speed
+   ------------------------------------------------------------------------- *)
 
 
 (*
@@ -246,114 +261,6 @@ fun read_sattime expname =
      map f (readl filename)
    end;
 
-val pbl1 = map (fst o f) sl2;
-
-fun sgenx n b =
-  let
-    val m = unzip_mat b
-    val edgel = sgen n (4,5) b
-    fun f (a,b) = mat_update_sym (m,a,b,0)
-    val _ = app f edgel
-  in
-    zip_mat m
-  end;
-
-val pbl2 = map_snd (sgenx 2) pbl1;
-val expname = "e0e2";
-benchmark_pbl "e0e2" pbl2;
-readl (selfdir ^ "/exp/" ^ expname ^ "/summary");
-
-
-fun mk_data expname = 
-  let
-    val l1 = read_sattime expname
-    val l2 = map_fst score l1
-    val l3 = dict_sort (fst_compare Real.compare) l2
-  in
-    app print_endline (map (rts o fst) l3);
-    print_endline "###";
-    app print_endline (map (rts o snd) l3)
-  end;
-    
-mk_data "e0e2";
-
-load "enum"; open aiLib kernel graph enum;
-
-
-fun number_of_cliques m (n,color) =
-  let 
-    val vl = List.tabulate (mat_size m, I)
-    val cliquel = subsets_of_size n vl
-    fun is_uniform x = 
-      let 
-        val edgel = all_pairs x 
-        fun test (i,j) = mat_sub (m,i,j) = color 
-      in
-        all test edgel
-      end
-  in
-    ((n,color), Real.fromInt (length (filter is_uniform cliquel)))
-  end;
-
-
-val enum3510 = read_enum 10 (3,5);
-val enum4414 = read_enum 14 (4,4);
-
-val clique35 = [(1,1),(2,1),(2,2),(3,2),(4,2)];
-val clique44 = [(3,1),(2,1),(3,2),(2,2),(1,2)];
-
-fun get_stats35 m = map (number_of_cliques m) clique35;
-fun get_stats44 m = map (number_of_cliques m) clique44;
-
-fun get_average35 enum =
-  let val l = map (map snd o get_stats35 o unzip_mat) enum in
-    map average_real (list_combine l)
-  end;
-
-fun get_average44 enum =
-  let val l = map (map snd o get_stats44 o unzip_mat) enum in
-    map average_real (list_combine l)
-  end;
-  
-val average3510 = combine (clique35, get_average35 enum3510);
-val average4414 = combine (clique44, get_average44 enum4414);
-
-(* lower number is more difficult *)
-fun difficulty stats35 stats45 =
-  let 
-    val l = combine (stats35,stats45)
-    fun f (((n1,_),r1),((n2,_),r2)) = 
-      r1 * r2 * (1.0 / Math.pow (2.0, Real.fromInt (n1 * n2)))
-  in
-    sum_real (map f l)
-  end;
-  
-difficulty average3510 average4414; 
-    
-difficulty (get_stats35 (unzip_mat (hd enum3510))) average4414;
-
-fun score3510 x = (x, difficulty (get_stats35 (unzip_mat x)) average4414);
-fun score4414 x = (x, difficulty average3510 (get_stats44 (unzip_mat x)));
-
-val enum3510sc = map score3510 enum3510;
-val enum4414sc = map score4414 enum4414;
-
-val enum3510sorted = dict_sort compare_rmax enum3510sc;
-val enum4414sorted = dict_sort compare_rmax enum4414sc;
-
-
-
-fun number_of_blueedges m = 
-  let 
-    val y = ref 0 
-    fun f (i,j,x) = if x = 1 then incr y else ()
-  in
-    mat_traverse f m; 
-    !y
-  end  
-
-
-
 val clausel4524 = sat.ramsey_clauses_bare 24 (4,5);
 
 fun reduce_clause mat acc clause = case clause of
@@ -377,44 +284,22 @@ fun score (a,b) =
     sum_real (map sc_one l)
   end;
 
-val e0e1sattime = read_sattime "e0e1";
-val (e0e1score,t) = add_time (map_fst score) e0e1sattime;
-val e0e1sorted = dict_sort (fst_compare Real.compare) e0e1score;
-app print_endline (map (rts o fst) e0e1sorted);
-app print_endline (map (rts o snd) e0e1sorted);
-
-val e0e0sattime = read_sattime "e0e0bis";
-val (e0e0score,t) = add_time (map_fst score) e0e0sattime;
-val e0e0sorted = dict_sort (fst_compare Real.compare) e0e0score;
-app print_endline (map (rts o fst) e0e0sorted);
-app print_endline (map (rts o snd) e0e0sorted);
-
-
-val d = dnew (cpl_compare IntInf.compare IntInf.compare) e0e0sattime;
-
-fun find_inst_sc ((a,b),sc) =
-  let 
-    val instl = map fst (nauty.all_inst_wperm b)
-    val candl = map (fn x => (a,x)) instl
-    val cand = valOf (List.find (fn x => dmem x d) candl)
+fun mk_data expname = 
+  let
+    val l1 = read_sattime expname
+    val l2 = map_fst score l1
+    val l3 = dict_sort (fst_compare Real.compare) l2
   in
-    ((a,b),(sc,dfind cand d))
+    app print_endline (map (rts o fst) l3);
+    print_endline "###";
+    app print_endline (map (rts o snd) l3)
   end;
-  
-val l = map (snd o find_inst_sc) e0e1sattime;
-fun f (a,b) = (b,a/b); 
-val l1 = dict_sort (fst_compare Real.compare) (map f l);
-app print_endline (map (rts o fst) l1);
-app print_endline (map (rts o snd) l1);
-*)
-
-(* -------------------------------------------------------------------------
-   Old scoring function easier to varies the parameter
-   ------------------------------------------------------------------------- *)
-
-(*
+    
+mk_data "e0e0bis";
 
 *)
+
+
 
 (* -------------------------------------------------------------------------
    Write gluing scripts

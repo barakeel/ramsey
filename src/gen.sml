@@ -438,6 +438,7 @@ fun read_par size (bluen,redn) =
 fun write_cover size (bluen,redn) cover = 
   let 
     val dir = selfdir ^ "/gen"
+    val _ = mkDir_err dir
     val file = dir ^ "/gen" ^ its bluen ^ its redn ^ its size
     fun f (p,cperml) = 
       let fun g (c,perm) = infts c ^ "_" ^ 
@@ -467,9 +468,7 @@ fun gen (bluen,redn) (minsize,maxsize) =
     ignore (range (minsize,maxsize,f))
   end
   
-  
-  
-  
+
 (*
 load "gen"; open sat aiLib kernel graph gen;
 
@@ -481,26 +480,8 @@ val (_,t35) = add_time (gen (3,5)) (10,10);
 select_number1 := 1000;
 select_number2 := 100;
 val (_,t44) = add_time (gen (4,4)) (14,14);
-*)
 
-(* -------------------------------------------------------------------------
-   Safety check function
-   ------------------------------------------------------------------------- *)
-
-(* 
-(* safety check *)
-load "gen"; load "enum"; open sat aiLib kernel graph enum gen;
-val cover3510 = read_cover 10 (3,5);
-val inst3510 =
-  mk_fast_set IntInf.compare (map fst (List.concat (map snd cover3510)));
-val inst3510' = read_enum 10 (3,5);
-list_compare IntInf.compare (inst3510,inst3510');
-
-val cover4410 = read_cover 10 (4,4);
-val inst4410 =
-  mk_fast_set IntInf.compare (map fst (List.concat (map snd cover4410)));
-val inst4410' = read_enum 10 (4,4);
-list_compare IntInf.compare (inst4410,inst4410');
+(* experiment e4e4test *)
 *)
 
 
