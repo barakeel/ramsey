@@ -194,6 +194,7 @@ fun benchmark_pbl expname pbl =
     val dir = expdir ^ "/" ^ expname
     val _ = app mkDir_err [expdir,dir]
     val _ = smlExecScripts.buildheap_dir := dir
+    val _ = smlExecScripts.buildheap_options :=  "--maxheap " ^ its memory
     val rl = smlParallel.parmap_queue_extern ncore benchspec () pbl
     fun f ((c1e,c2e),r) = infts c1e ^ "," ^ infts c2e ^ " " ^ rts r
     val mean = average_real rl
@@ -228,10 +229,11 @@ mkdir tmp;
 find /tmp -maxdepth 1 -type f -name 'MLTEMP*' ! -exec lsof {} \; -exec rm {} \;
 
 load "glue"; open aiLib kernel graph enum gen glue;
-
 val set1 = read_par 10 (3,5);
 val set2 = read_par 14 (4,4);
-benchmark "e4e4test" n set1 set2;
+benchmark "e4e4test" 200 set1 set2;
+val sl1 = readl (selfdir ^ "/exp/" ^ expname ^ "/summary");
+val sl2 = readl (selfdir ^ "/exp/" ^ expname ^ "/sattime");
 *)
 
 (* -------------------------------------------------------------------------
