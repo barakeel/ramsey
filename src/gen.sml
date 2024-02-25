@@ -69,13 +69,21 @@ fun get_stats44 m = map (number_of_cliques m) clique44
 
 fun get_average35 enum =
   let val l = map (map snd o get_stats35 o unzip_mat) enum in
-    map average_real (list_combine l)
+    combine (clique35, map average_real (list_combine l))
   end
 
 fun get_average44 enum =
   let val l = map (map snd o get_stats44 o unzip_mat) enum in
-    map average_real (list_combine l)
+    combine (clique44, map average_real (list_combine l))
   end
+
+(*
+load "gen"; open enum gen;
+val enum3510 = read_enum 10 (3,5);
+val enum4414 = read_enum 14 (4,4);
+
+*)
+
 
 fun difficulty stats35 stats45 =
   let 
@@ -91,7 +99,7 @@ fun init_scored size (bluen,redn) =
     let 
       val enum35 = read_enum size (3,5)
       val enum44 = read_enum (24-size) (4,4)
-      val average44 = combine (clique44, get_average44 enum44)
+      val average44 = get_average44 enum44
       fun score35 x = difficulty (get_stats35 (unzip_mat x)) average44
     in
       dnew IntInf.compare (map_assoc score35 enum35)
@@ -100,7 +108,7 @@ fun init_scored size (bluen,redn) =
     let 
       val enum35 = read_enum (24-size) (3,5)
       val enum44 = read_enum size (4,4)
-      val average35 = combine (clique35, get_average35 enum35)
+      val average35 = get_average35 enum35
       fun score44 x = difficulty average35 (get_stats44 (unzip_mat x))
     in
       dnew IntInf.compare (map_assoc score44 enum44)

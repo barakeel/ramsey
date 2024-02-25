@@ -227,11 +227,12 @@ val (_,t2) = add_time (glue (4,5) (fst c1)) (fst c2);
 (*
 export TMPDIR="$PWD/tmp";
 mkdir tmp;
-find /tmp -maxdepth 1 -type f -name 'MLTEMP*' ! -exec lsof {} \; -exec rm {} \;
+find /tmp -maxdepth 1 -type f -name 'MLTEMP*' ! -exec rm {} \;
 
 load "glue"; open aiLib kernel graph enum gen glue;
 val set1 = read_par 10 (3,5);
 val set2 = read_par 14 (4,4);
+val expname = "e4e4test";
 benchmark "e4e4test" 200 set1 set2;
 val sl1 = readl (selfdir ^ "/exp/" ^ expname ^ "/summary");
 val sl2 = readl (selfdir ^ "/exp/" ^ expname ^ "/sattime");

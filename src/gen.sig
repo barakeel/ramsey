@@ -9,6 +9,9 @@ sig
   val select_number2 : int ref
   val test_flag : bool ref
   
+  val get_average35 : IntInf.int list -> ((int * int) * real) list
+  val get_average44 : IntInf.int list -> ((int * int) * real) list
+  
   (* parallelization *)
   val genspec : ((int * int) * IntInf.int Redblackset.set, IntInf.int, 
     IntInf.int * vleafs list) smlParallel.extspec
