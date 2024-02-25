@@ -81,8 +81,13 @@ fun get_average44 enum =
 load "gen"; open enum gen;
 val enum3510 = read_enum 10 (3,5);
 val enum4414 = read_enum 14 (4,4);
-
+val average3510 = get_average35 enum3510;
+val average4414 = get_average44 enum4414;
 *)
+val average3510 = [((1, 1), 10.0), ((2, 1), 15.01916933), ((2, 2), 29.98083067),
+  ((3, 2), 32.48242812), ((4, 2), 10.93610224)];
+val average4414 = [((3, 1), 35.81875306), ((2, 1), 45.5), ((3, 2), 35.81875306),
+    ((2, 2), 45.5), ((1, 2), 14.0)];
 
 
 fun difficulty stats35 stats45 =
@@ -193,7 +198,8 @@ fun sgen maxhole_loc (bluen,redn) leafi =
           if length result >= maxhole_loc then rev result else
           case vl of
             [] => rev result
-          | v :: rem => (update_numbera locala v;
+          | v :: rem => 
+            (update_numbera locala v;
                          sgen_loop (filter test rem) 
                            (fst (dec_edgec v) :: result))
       in
@@ -203,8 +209,28 @@ fun sgen maxhole_loc (bluen,redn) leafi =
     try ()
   end;
 
+fun poke_hole leaf edgel = 
+  let 
+    val newleaf = mat_copy leaf
+    fun f (i,j) = mat_update_sym (newleaf,i,j,0)
+    val _ = app f edgel
+  in
+    newleaf
+  end
 
-
+fun scorev (bluen,redn) leaf result v =
+  let 
+    val edgel = map (fst o dec_edgec o #1) result
+    val edge = fst (dec_edgec v)
+    val newleaf = poke_hole leaf (edge :: edgel)
+  in
+    if (bluen,redn) = (3,5)
+    then difficulty (get_stats35 newleaf) average4414
+    else if (blue,redn) = (4,4) 
+    then difficulty average3510 (get_stats44 newleaf)
+    else raise ERR "scorev" ""
+  end
+    
 fun sgeneralize (bluen,redn) uset leafi =
   let
     val leaf = unzip_mat leafi
@@ -232,7 +258,9 @@ fun sgeneralize (bluen,redn) uset leafi =
           end
         fun sgen_loop vl result = 
           if length result >= maxhole then rev result else
-          case vl of
+          case map fst (dict_sort compare_rmax 
+                (map_assoc (scorev (bluen,redn) leaf result) vl)) 
+          of
             [] => rev result
           | v :: rem => 
             let 
