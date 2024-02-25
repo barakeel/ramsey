@@ -36,13 +36,6 @@ val ncore = (string_to_int (dfind "ncore" configd) handle NotFound => 32)
 val real_time = rflag "real_time" 0.0
 val abstract_time = iflag "abstract_time" 0
 
-(* used in gen.sml when constructing cover *)
-(* at least one new graph should be covered per "mincover" generated graphs *)
-val mincover = rflag "mincover" 8.0
-(* maximum number of holes in a generalization *)
-val maxhole = iflag "maxhole" 8 
-
-
 (* -------------------------------------------------------------------------
    Logging
    ------------------------------------------------------------------------- *)
@@ -56,7 +49,6 @@ fun log s =
   if !disable_log then () 
   else if !store_log then (print_endline s; append_endline (!logfile) s)
   else print_endline s
-
 
 (* -------------------------------------------------------------------------
    Dictionaries shortcuts
@@ -133,10 +125,6 @@ val (l,t) = add_time (subsets_of_size 3) (List.tabulate (7,I));
    ------------------------------------------------------------------------- *)
 
 fun range (a,b,f) = List.tabulate (b-a+1,fn i => f (i+a));
-
-
-
-
 
 val infts = IntInf.toString
 val stinf = valOf o IntInf.fromString

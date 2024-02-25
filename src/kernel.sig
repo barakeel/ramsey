@@ -13,10 +13,6 @@ sig
   val real_time : real
   val abstract_time : int
   
-  (* generalization/cover parameters *)
-  val mincover : real
-  val maxhole : int
-  
   (* logging *)
   val disable_log : bool ref
   val store_log : bool ref

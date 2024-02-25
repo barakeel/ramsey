@@ -233,7 +233,6 @@ load "glue"; open aiLib kernel graph enum gen glue;
 
 val expname = "e4e4mult";
 clean_dir (selfdir ^ "/gen");
-test_flag := false;
 select_number1 := 313;
 select_number2 := 1;
 val (_,t35) = add_time (gen (3,5)) (10,10);

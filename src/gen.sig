@@ -5,10 +5,13 @@ sig
   type vleafs = int * int * (IntInf.int * int list) list  
   
   (* parameters *)
+  val maxhole : int ref
+  val exponent : real ref
   val select_number1 : int ref
   val select_number2 : int ref
-  val test_flag : bool ref
+  val mincover : real ref
   
+  (* scoring number of shapes *)
   val get_average35 : IntInf.int list -> ((int * int) * real) list
   val get_average44 : IntInf.int list -> ((int * int) * real) list
   

@@ -10,8 +10,15 @@ open HolKernel Abbrev boolLib aiLib kernel graph nauty syntax enum
 val ERR = mk_HOL_ERR "gen"
 type vleafs = int * int * (IntInf.int * int list) list  
 
-val nauty_time = ref 0.0
-val normalize_nauty = total_time nauty_time normalize_nauty
+(* -------------------------------------------------------------------------
+   Global parameters
+   ------------------------------------------------------------------------- *) 
+
+val maxhole = ref 8 
+val exponent = ref 1.0
+val mincover = ref (1.0 / 8.0)
+val select_number1 = ref 240
+val select_number2 = ref 120
 
 (* -------------------------------------------------------------------------
    Getting all_leafs of 
@@ -257,7 +264,7 @@ fun sgeneralize (bluen,redn) uset leafi =
             all (fn x => Array.sub (locala, x) < Vector.sub(sizev,x)) clausel
           end
         fun sgen_loop vl result = 
-          if length result >= maxhole then rev result else
+          if length result >= (!maxhole) then rev result else
           case map fst (dict_sort compare_rmax 
                 (map_assoc (scorev (bluen,redn) leaf result) vl)) 
           of
@@ -270,7 +277,7 @@ fun sgeneralize (bluen,redn) uset leafi =
               val (d,e) = all_leafs_wperm uset sibling
               val maxn = elength e
             in
-              if mincover * Real.fromInt (dlength d) >= Real.fromInt maxn
+              if Real.fromInt (dlength d) / Real.fromInt maxn >= (!mincover)
               then (update_numbera locala v;
                     sgen_loop (filter test rem) ((v,maxn,dlist d) :: result)) 
               else sgen_loop rem result
@@ -347,7 +354,7 @@ fun remove_vleafsl_aux uset (leafi,vleafsl) acc = case vleafsl of
     [] => SOME (leafi, rev acc)
   | (v,maxn,cperml) :: m =>  
     let val newcperml = filter (fn x => emem (fst x) uset) cperml in
-      if mincover * Real.fromInt (length newcperml) >= Real.fromInt maxn 
+      if Real.fromInt (length newcperml) / Real.fromInt maxn >= !mincover 
       then remove_vleafsl_aux uset (leafi,m) ((v,maxn,newcperml) :: acc)
       else NONE
     end
@@ -357,8 +364,6 @@ fun remove_vleafsl uset (leafi,vleafsl) =
   then NONE 
   else remove_vleafsl_aux uset (leafi,vleafsl) []
 
-val select_number1 = ref 240
-val select_number2 = ref 120
 
 fun score_leafv br (leafi,vl) =
   let 
@@ -367,7 +372,7 @@ fun score_leafv br (leafi,vl) =
     val cover = List.concat (map (map fst o #3) vl)
     val covern = Real.fromInt (elength (enew IntInf.compare cover))
   in
-    diffn * covern
+    Math.pow (diffn,!exponent) * covern
   end
 
 fun update_uset br selectn pl (uset,result) =
@@ -393,21 +398,11 @@ fun update_uset br selectn pl (uset,result) =
     update_uset br (selectn + 1) newpl (newuset,newresult)
   end
 
-val test_flag = ref false
-val scored_glob = ref (dempty IntInf.compare)
-
 fun loop_scover_para ncore (bluen,redn) uset result = 
   if elength uset <= 0 then rev result else
   let
     val n = Int.min (!select_number1, elength uset)
-    val ul = if !test_flag then 
-      let 
-        fun f x = dfind x (!scored_glob)
-        val ulscore = dict_sort compare_rmax (map_assoc f (elist uset))  
-      in
-        map fst (first_n n ulscore)
-      end
-      else random_subset n (elist uset)
+    val ul = random_subset n (elist uset)
     val n' = Int.min (n,ncore)
     val param = ((bluen,redn),uset)
     val _ = clean_dir (selfdir ^ "/parallel_search")
@@ -431,9 +426,6 @@ fun check_cover cover uset =
 
 fun compute_scover_para ncore size (bluen,redn) = 
   let
-    val _ = if !test_flag 
-            then scored_glob := init_scored size (bluen,redn)
-            else ()
     val id = its bluen ^ its redn ^ its size
     val file = selfdir ^ "/enum/enum" ^ id
     val uset = enew IntInf.compare (map stinf (readl file));
