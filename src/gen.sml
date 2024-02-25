@@ -17,30 +17,26 @@ val normalize_nauty = total_time nauty_time normalize_nauty
    Getting all_leafs of 
    ------------------------------------------------------------------------- *) 
 
-fun all_leafs_wperm_aux (iall,inew) uset m =
+fun all_leafs_wperm uset m =
   let
     val edgel = all_holes m
     val coloringltop = all_coloring edgel
-    val d = ref (dempty IntInf.compare)
     fun loop d e coloringl = case coloringl of 
-        [] => (!iall,!inew,d,e)
+        [] => (d,e)
       | coloring :: cont =>
         let 
           val child = apply_coloring m coloring     
           val (normm,perm) = normalize_nauty_wperm child
           val normi = zip_mat normm
           val newe = eadd normi e
-          val _ = incr iall
         in
           if emem normi uset
-          then (incr inew; loop (dadd normi perm d) newe cont)   
+          then loop (dadd normi perm d) newe cont
           else loop d newe cont
         end
   in
     loop (dempty IntInf.compare) (eempty IntInf.compare) coloringltop 
   end
-
-fun all_leafs_wperm uset m = all_leafs_wperm_aux (ref 0, ref 0) uset m
 
 (* -------------------------------------------------------------------------
    Scoring generalizations: lower number is better.
@@ -271,10 +267,10 @@ fun sgeneralize (bluen,redn) uset leafi =
               val edgel = map (fst o dec_edgec o #1) result
               val edge = fst (dec_edgec v)
               val sibling = build_sibling leaf edgel edge
-              val (iall,inew,d,e) = all_leafs_wperm uset sibling
+              val (d,e) = all_leafs_wperm uset sibling
               val maxn = elength e
             in
-              if mincover * inew >= iall
+              if mincover * Real.fromInt (dlength d) >= Real.fromInt maxn
               then (update_numbera locala v;
                     sgen_loop (filter test rem) ((v,maxn,dlist d) :: result)) 
               else sgen_loop rem result
@@ -351,7 +347,7 @@ fun remove_vleafsl_aux uset (leafi,vleafsl) acc = case vleafsl of
     [] => SOME (leafi, rev acc)
   | (v,maxn,cperml) :: m =>  
     let val newcperml = filter (fn x => emem (fst x) uset) cperml in
-      if mincover * length newcperml > maxn 
+      if mincover * Real.fromInt (length newcperml) >= Real.fromInt maxn 
       then remove_vleafsl_aux uset (leafi,m) ((v,maxn,newcperml) :: acc)
       else NONE
     end

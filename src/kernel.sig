@@ -14,7 +14,7 @@ sig
   val abstract_time : int
   
   (* generalization/cover parameters *)
-  val mincover : int
+  val mincover : real
   val maxhole : int
   
   (* logging *)

@@ -231,7 +231,7 @@ find /tmp -maxdepth 1 -type f -name 'MLTEMP*' ! -exec rm {} \;
 
 load "glue"; open aiLib kernel graph enum gen glue;
 
-val expname = "e4e4test3";
+val expname = "e4e4mult";
 clean_dir (selfdir ^ "/gen");
 test_flag := false;
 select_number1 := 313;

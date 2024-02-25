@@ -38,7 +38,7 @@ val abstract_time = iflag "abstract_time" 0
 
 (* used in gen.sml when constructing cover *)
 (* at least one new graph should be covered per "mincover" generated graphs *)
-val mincover = iflag "mincover" 8
+val mincover = rflag "mincover" 8.0
 (* maximum number of holes in a generalization *)
 val maxhole = iflag "maxhole" 8 
 
