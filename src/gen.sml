@@ -21,6 +21,15 @@ val select_number1 = ref 240
 val select_number2 = ref 120
 
 (* -------------------------------------------------------------------------
+   Convert colored edges to int
+   ------------------------------------------------------------------------- *) 
+
+fun enc_color (x,c) = if c = 1 then 2 * x else 2 * x + 1;
+fun enc_edgec (e,c) = enc_color (edge_to_var e,c);
+fun dec_edgec x = (var_to_edge (x div 2), (x mod 2) + 1);
+fun opposite (e,x) = (e,3 - x)
+
+(* -------------------------------------------------------------------------
    Getting all_leafs of 
    ------------------------------------------------------------------------- *) 
 
@@ -80,7 +89,7 @@ fun get_average44 enum =
     combine (clique44, map average_real (list_combine l))
   end
 
-(*
+(* todo: make it work in general for all possible sizes
 load "gen"; open enum gen;
 val enum3510 = read_enum 10 (3,5);
 val enum4414 = read_enum 14 (4,4);
@@ -91,7 +100,6 @@ val average3510 = [((1, 1), 10.0), ((2, 1), 15.01916933), ((2, 2), 29.98083067),
   ((3, 2), 32.48242812), ((4, 2), 10.93610224)];
 val average4414 = [((3, 1), 35.81875306), ((2, 1), 45.5), ((3, 2), 35.81875306),
     ((2, 2), 45.5), ((1, 2), 14.0)];
-
 
 fun difficulty stats35 stats45 =
   let 
@@ -122,15 +130,46 @@ fun init_scored size (bluen,redn) =
       dnew IntInf.compare (map_assoc score44 enum44)
     end
   else raise ERR "init_scored" "unexpected"
+
+fun poke_hole leaf edgel = 
+  let 
+    val newleaf = mat_copy leaf
+    fun f (i,j) = mat_update_sym (newleaf,i,j,0)
+    val _ = app f edgel
+  in
+    newleaf
+  end
+
+fun scorem (bluen,redn) m =
+  if (bluen,redn) = (3,5)
+  then difficulty (get_stats35 m) average4414
+  else if (bluen,redn) = (4,4) 
+  then difficulty average3510 (get_stats44 m)
+  else raise ERR "scorem" ""
+
+fun score_leaf br leaf edgel = scorem br (poke_hole leaf edgel)
+
+fun scorev br leaf result v =
+  let 
+    val edgel = map (fst o dec_edgec o #1) result
+    val edge = fst (dec_edgec v)
+  in
+    score_leaf br leaf (edge :: edgel)
+  end
+
+fun score_leafv br (leafi,vl) =
+  let 
+    val edgel = map (fst o dec_edgec o #1) vl 
+    val diffn = score_leaf br (unzip_mat leafi) edgel
+    val cover = List.concat (map (map fst o #3) vl)
+    val covern = Real.fromInt (elength (enew IntInf.compare cover))
+  in
+    Math.pow (diffn,!exponent) * covern
+  end
   
 (* -------------------------------------------------------------------------
    Cover
    ------------------------------------------------------------------------- *)
-
-fun enc_color (x,c) = if c = 1 then 2 * x else 2 * x + 1;
-fun enc_edgec (e,c) = enc_color (edge_to_var e,c);
-fun dec_edgec x = (var_to_edge (x div 2), (x mod 2) + 1);
-fun opposite (e,x) = (e,3 - x)
 
 fun init_sgen size (bluen,redn) = 
   let
@@ -172,71 +211,7 @@ fun concat_cpermll (leafi,vleafsl) =
       ((leafi,idperm) :: List.concat (map #3 vleafsl))
   end
 
-fun sgen maxhole_loc (bluen,redn) leafi =
-  let
-    val leaf = unzip_mat leafi
-    val size = mat_size leaf
-    val (varv,clausev) = init_sgen size (bluen,redn) 
-    val sizev = Vector.map (fn x => length x - 1) clausev
-    val inita = Array.array (Vector.length clausev,0)    
-    fun update_numbera a v = 
-      let 
-        val il = Vector.sub (varv,v) 
-        fun g i = Array.update (a,i, Array.sub(a,i) + 1) 
-      in
-        app g il
-      end
-    val edgecl = mat_to_edgecl leaf
-    val _ = app (update_numbera inita) (map enc_edgec edgecl)
-    fun try () = 
-      let
-        val locala = Array.tabulate 
-          (Array.length inita, fn i => Array.sub (inita,i))
-        val vlopp = shuffle (map (enc_edgec o opposite) edgecl)
-        fun test v = 
-          let val clausel = Vector.sub (varv,v) in
-            all (fn x => Array.sub (locala, x) < Vector.sub(sizev,x)) clausel
-          end
-        fun sgen_loop vl result = 
-          if length result >= maxhole_loc then rev result else
-          case vl of
-            [] => rev result
-          | v :: rem => 
-            (update_numbera locala v;
-                         sgen_loop (filter test rem) 
-                           (fst (dec_edgec v) :: result))
-      in
-        sgen_loop (filter test vlopp) []
-      end 
-  in  
-    try ()
-  end;
 
-fun poke_hole leaf edgel = 
-  let 
-    val newleaf = mat_copy leaf
-    fun f (i,j) = mat_update_sym (newleaf,i,j,0)
-    val _ = app f edgel
-  in
-    newleaf
-  end
-
-fun scorem (bluen,redn) m =
-  if (bluen,redn) = (3,5)
-  then difficulty (get_stats35 m) average4414
-  else if (bluen,redn) = (4,4) 
-  then difficulty average3510 (get_stats44 m)
-  else raise ERR "scorem" ""
-
-fun score_leaf br leaf edgel = scorem br (poke_hole leaf edgel)
-
-fun scorev br leaf result v =
-  let 
-    val edgel = map (fst o dec_edgec o #1) result
-    val edge = fst (dec_edgec v)
-  in
-    score_leaf br leaf (edge :: edgel)
-  end
 
 fun sgeneralize (bluen,redn) uset leafi =
   let
@@ -339,7 +314,10 @@ val genspec : ((int * int) * IntInf.int Redblackset.set, IntInf.int,
   reflect_globals = (fn () => "(" ^
     String.concatWith "; "
     ["smlExecScripts.buildheap_dir := " ^ mlquote 
-      (!smlExecScripts.buildheap_dir)] 
+      (!smlExecScripts.buildheap_dir),
+     "gen.maxhole := " ^ its (!maxhole),
+     "gen.exponent := " ^ rts (!exponent)
+    ] 
     ^ ")"),
   function = sgen_worker,
   write_param = write_infset,
@@ -363,17 +341,6 @@ fun remove_vleafsl uset (leafi,vleafsl) =
   if not (emem leafi uset) 
   then NONE 
   else remove_vleafsl_aux uset (leafi,vleafsl) []
-
-
-fun score_leafv br (leafi,vl) =
-  let 
-    val edgel = map (fst o dec_edgec o #1) vl 
-    val diffn = score_leaf br (unzip_mat leafi) edgel
-    val cover = List.concat (map (map fst o #3) vl)
-    val covern = Real.fromInt (elength (enew IntInf.compare cover))
-  in
-    Math.pow (diffn,!exponent) * covern
-  end
 
 fun update_uset br selectn pl (uset,result) =
   if elength uset <= 0 orelse 

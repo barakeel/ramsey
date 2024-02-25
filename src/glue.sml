@@ -206,6 +206,37 @@ fun benchmark_pbl expname pbl =
     writel (dir ^ "/sattime") (map f (combine (pbl,rl)))
   end
   
+fun tune (hole35,hole44,expo) = 
+  let 
+    fun msg s = append_endline (selfdir ^ "/log_bench_info") s
+    fun msg2 s = append_endline (selfdir ^ "/log_bench") s
+    val (a,b) = split_string "." (rts_round 3 expo)
+    val exps = a ^ "_" ^ b
+    val expname = "bench" ^ "_" ^ its hole35 ^ "_" ^ its hole44 ^ "_" ^ exps
+    val _ = msg expname
+    val _ = clean_dir (selfdir ^ "/gen")
+    val _ = exponent := expo
+    val _ = maxhole := hole35
+    val _ = select_number1 := 313
+    val _ = select_number2 := 1
+    val (_,t) = add_time (gen (3,5)) (10,10)
+    val _ = msg ("3510: " ^ rts_round 2 t) 
+    val _ = maxhole := hole44
+    val _ = select_number1 := 1000;
+    val _ = select_number2 := 100;
+    val (_,t) = add_time (gen (4,4)) (14,14)
+    val _ = msg ("4414: " ^ rts_round 2 t) 
+    val _ = cmd_in_dir selfdir ("cp -r gen gen_" ^ expname)
+    val set1 = read_par 10 (3,5)
+    val set2 = read_par 14 (4,4)
+    val (_,t) = add_time (benchmark expname 200 set1) set2
+    val _ = msg ("glue: " ^ rts_round 2 t) 
+    val s = hd (readl (selfdir ^ "/exp/" ^ expname ^ "/summary"))
+  in
+    msg2 (expname ^ " " ^ s)
+  end
+  
+
 (* -------------------------------------------------------------------------
    Running on one example
    ------------------------------------------------------------------------- *)
@@ -231,20 +262,17 @@ find /tmp -maxdepth 1 -type f -name 'MLTEMP*' ! -exec rm {} \;
 
 load "glue"; open aiLib kernel graph enum gen glue;
 
-val expname = "e4e4mult";
-clean_dir (selfdir ^ "/gen");
-select_number1 := 313;
-select_number2 := 1;
-val (_,t35) = add_time (gen (3,5)) (10,10);
-select_number1 := 1000;
-select_number2 := 100;
-val (_,t44) = add_time (gen (4,4)) (14,14);
-cmd_in_dir selfdir ("cp -r gen gen_" ^ expname);
+val parameterl = 
+  [(4,4,0.5),(4,4,2.0),(4,4,4.0),(4,4,8.0)] @
+  [(4,4,1.0),(5,3,1.0),(3,5,1.0),(3,4,1.0),(4,3,1.0),(5,4,1.0),(4,5,1.0)]
+                 
+app tune parameterl;
 
-val set1 = read_par 10 (3,5);
-val set2 = read_par 14 (4,4);
-benchmark expname 200 set1 set2;
-val sl1 = readl (selfdir ^ "/exp/" ^ expname ^ "/summary");
+
+
+
+
+
 
 *)
 

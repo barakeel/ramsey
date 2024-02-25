@@ -31,8 +31,4 @@ sig
   (* main *)
   val gen : int * int -> int * int -> unit
   
-  (* standalone random generalization *)
-  val sgen : int -> int * int -> IntInf.int -> (int * int) list
-
-
 end
