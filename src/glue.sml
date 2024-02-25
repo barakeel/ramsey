@@ -231,10 +231,9 @@ find /tmp -maxdepth 1 -type f -name 'MLTEMP*' ! -exec rm {} \;
 
 load "glue"; open aiLib kernel graph enum gen glue;
 
-val expname = "e4e4test2";
-
+val expname = "e4e4test3";
 clean_dir (selfdir ^ "/gen");
-test_flag := true;
+test_flag := false;
 select_number1 := 313;
 select_number2 := 1;
 val (_,t35) = add_time (gen (3,5)) (10,10);
@@ -247,7 +246,7 @@ val set1 = read_par 10 (3,5);
 val set2 = read_par 14 (4,4);
 benchmark expname 200 set1 set2;
 val sl1 = readl (selfdir ^ "/exp/" ^ expname ^ "/summary");
-val sl2 = readl (selfdir ^ "/exp/" ^ expname ^ "/sattime");
+
 *)
 
 (* -------------------------------------------------------------------------

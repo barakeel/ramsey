@@ -218,19 +218,23 @@ fun poke_hole leaf edgel =
     newleaf
   end
 
-fun scorev (bluen,redn) leaf result v =
+fun scorem (bluen,redn) m =
+  if (bluen,redn) = (3,5)
+  then difficulty (get_stats35 m) average4414
+  else if (bluen,redn) = (4,4) 
+  then difficulty average3510 (get_stats44 m)
+  else raise ERR "scorem" ""
+
+fun score_leaf br leaf edgel = scorem br (poke_hole leaf edgel)
+
+fun scorev br leaf result v =
   let 
     val edgel = map (fst o dec_edgec o #1) result
     val edge = fst (dec_edgec v)
-    val newleaf = poke_hole leaf (edge :: edgel)
   in
-    if (bluen,redn) = (3,5)
-    then difficulty (get_stats35 newleaf) average4414
-    else if (bluen,redn) = (4,4) 
-    then difficulty average3510 (get_stats44 newleaf)
-    else raise ERR "scorev" ""
+    score_leaf br leaf (edge :: edgel)
   end
-    
+
 fun sgeneralize (bluen,redn) uset leafi =
   let
     val leaf = unzip_mat leafi
@@ -360,17 +364,24 @@ fun remove_vleafsl uset (leafi,vleafsl) =
 val select_number1 = ref 240
 val select_number2 = ref 120
 
-fun size_of_vleafsl (vleafsl: vleafs list) = 
-  elength (enew IntInf.compare (List.concat (map (map fst o #3) vleafsl)))
+fun score_leafv br (leafi,vl) =
+  let 
+    val edgel = map (fst o dec_edgec o #1) vl 
+    val diffn = score_leaf br (unzip_mat leafi) edgel
+    val cover = List.concat (map (map fst o #3) vl)
+    val covern = Real.fromInt (elength (enew IntInf.compare cover))
+  in
+    diffn * covern
+  end
 
-fun update_uset selectn pl (uset,result) =
+fun update_uset br selectn pl (uset,result) =
   if elength uset <= 0 orelse 
      null pl orelse 
      selectn >= !select_number2 
      then (uset,result) else
   let 
-    val l1 = map_assoc (size_of_vleafsl o snd) pl
-    val l2 = dict_sort compare_imax l1
+    val l1 = map_assoc (score_leafv br) pl
+    val l2 = dict_sort compare_rmax l1
     val (leafi,vleafsl) = fst (hd l2) 
     val cperml = concat_cpermll (leafi,vleafsl)
     val keyl = map fst cperml
@@ -383,7 +394,7 @@ fun update_uset selectn pl (uset,result) =
                  its (elength newuset) ^ " remaining)" ^
                  " at depth " ^ its (length vleafsl))
   in
-    update_uset (selectn + 1) newpl (newuset,newresult)
+    update_uset br (selectn + 1) newpl (newuset,newresult)
   end
 
 val test_flag = ref false
@@ -405,7 +416,7 @@ fun loop_scover_para ncore (bluen,redn) uset result =
     val param = ((bluen,redn),uset)
     val _ = clean_dir (selfdir ^ "/parallel_search")
     val pl = smlParallel.parmap_queue_extern n' genspec param ul
-    val (newuset,newresult) = update_uset 0 pl (uset,result)
+    val (newuset,newresult) = update_uset (bluen,redn) 0 pl (uset,result)
   in
     loop_scover_para ncore (bluen,redn) newuset newresult
   end
