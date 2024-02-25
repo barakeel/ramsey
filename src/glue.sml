@@ -230,10 +230,22 @@ mkdir tmp;
 find /tmp -maxdepth 1 -type f -name 'MLTEMP*' ! -exec rm {} \;
 
 load "glue"; open aiLib kernel graph enum gen glue;
+
+val expname = "e4e4test2";
+
+clean_dir (selfdir ^ "/gen");
+test_flag := true;
+select_number1 := 313;
+select_number2 := 1;
+val (_,t35) = add_time (gen (3,5)) (10,10);
+select_number1 := 1000;
+select_number2 := 100;
+val (_,t44) = add_time (gen (4,4)) (14,14);
+cmd_in_dir selfdir ("cp -r gen gen_" ^ expname);
+
 val set1 = read_par 10 (3,5);
 val set2 = read_par 14 (4,4);
-val expname = "e4e4test";
-benchmark "e4e4test" 200 set1 set2;
+benchmark expname 200 set1 set2;
 val sl1 = readl (selfdir ^ "/exp/" ^ expname ^ "/summary");
 val sl2 = readl (selfdir ^ "/exp/" ^ expname ^ "/sattime");
 *)

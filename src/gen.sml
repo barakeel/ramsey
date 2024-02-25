@@ -226,7 +226,7 @@ fun scorev (bluen,redn) leaf result v =
   in
     if (bluen,redn) = (3,5)
     then difficulty (get_stats35 newleaf) average4414
-    else if (blue,redn) = (4,4) 
+    else if (bluen,redn) = (4,4) 
     then difficulty average3510 (get_stats44 newleaf)
     else raise ERR "scorev" ""
   end
@@ -508,16 +508,15 @@ fun gen (bluen,redn) (minsize,maxsize) =
 (*
 load "gen"; open sat aiLib kernel graph gen;
 
+clean_dir (selfdir ^ "/gen");
 test_flag := true;
 select_number1 := 313;
 select_number2 := 1;
 val (_,t35) = add_time (gen (3,5)) (10,10);
-
 select_number1 := 1000;
 select_number2 := 100;
 val (_,t44) = add_time (gen (4,4)) (14,14);
 
-(* experiment e4e4test *)
 *)
 
 
