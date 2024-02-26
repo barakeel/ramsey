@@ -271,11 +271,22 @@ app (tune "bench") parameterl1;
 val parameterl2 = [(4,4,1.0),(4,4,0.1),(4,4,10.0)];          
 app (tune "bench2") parameterl2;
 
+(* default *)
 val parameterl3 = [(4,4,0.0)];          
 app (tune "bench3") parameterl3;
 
+(* difficulty only *)
 val parameterl4 = [(4,4,1.0)];          
 app (tune "bench4") parameterl4;
+
+(* variable then difficulty *)
+val parameterl5 = [(4,4,1.0)];          
+app (tune "bench5") parameterl5;
+
+
+(* variable then difficulty *)
+val parameterl6 = [(4,4,0.5),(0,8,1.0),(8,0,1.0),(8,4,1.0),(4,8,1.0),(8,8,1.0)];          
+app (tune "bench5") parameterl5;
 *)
 
 (* -------------------------------------------------------------------------
