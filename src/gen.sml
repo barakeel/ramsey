@@ -171,8 +171,8 @@ fun score_leafv diffd br (leafi,vl) =
     val covern = Real.fromInt (elength (enew IntInf.compare cover))
   in
     if true 
-    then (* Real.fromInt (length vl)  + 
-         0.000001 * *) dfind (leafi,map #1 vl) diffd 
+    then Real.fromInt (length vl)  + 
+         0.000001 * dfind (leafi,map #1 vl) diffd 
     else dfind (leafi,map #1 vl) diffd * covern
   end
   
