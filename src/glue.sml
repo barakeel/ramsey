@@ -206,13 +206,13 @@ fun benchmark_pbl expname pbl =
     writel (dir ^ "/sattime") (map f (combine (pbl,rl)))
   end
   
-fun tune (hole35,hole44,expo) = 
+fun tune prefix (hole35,hole44,expo) = 
   let 
     fun msg s = append_endline (selfdir ^ "/log_bench_info") s
     fun msg2 s = append_endline (selfdir ^ "/log_bench") s
     val (a,b) = split_string "." (rts_round 3 expo)
     val exps = a ^ "_" ^ b
-    val expname = "bench" ^ "_" ^ its hole35 ^ "_" ^ its hole44 ^ "_" ^ exps
+    val expname = prefix ^ "_" ^ its hole35 ^ "_" ^ its hole44 ^ "_" ^ exps
     val _ = msg expname
     val _ = clean_dir (selfdir ^ "/gen")
     val _ = exponent := expo
@@ -262,13 +262,15 @@ find /tmp -maxdepth 1 -type f -name 'MLTEMP*' ! -exec rm {} \;
 
 load "glue"; open aiLib kernel graph enum gen glue;
 
-val parameterl = 
+val parameterl1 = 
   [(4,4,0.5),(4,4,2.0)] @
   [(4,4,1.0),(3,4,1.0),(4,3,1.0),(5,4,1.0),(4,5,1.0)];
+ 
+app (tune "bench") parameterl1; 
+ 
+val parameterl2 = [(4,4,1.0),(4,4,0.1),(4,4,10.0)]; 
                  
-app tune parameterl;
-
-
+app (tune "bench2") parameterl2;
 
 
 *)
