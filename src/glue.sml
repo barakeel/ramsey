@@ -271,7 +271,8 @@ app (tune "bench") parameterl1;
 val parameterl2 = [(4,4,1.0),(4,4,0.1),(4,4,10.0)];          
 app (tune "bench2") parameterl2;
 
-
+val parameterl3 = [(4,4,0.0)];          
+app (tune "bench3") parameterl3;
 *)
 
 (* -------------------------------------------------------------------------
