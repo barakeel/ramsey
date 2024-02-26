@@ -263,13 +263,10 @@ find /tmp -maxdepth 1 -type f -name 'MLTEMP*' ! -exec rm {} \;
 load "glue"; open aiLib kernel graph enum gen glue;
 
 val parameterl = 
-  [(4,4,0.5),(4,4,2.0),(4,4,4.0),(4,4,8.0)] @
-  [(4,4,1.0),(5,3,1.0),(3,5,1.0),(3,4,1.0),(4,3,1.0),(5,4,1.0),(4,5,1.0)]
+  [(4,4,0.5),(4,4,2.0)] @
+  [(4,4,1.0),(3,4,1.0),(4,3,1.0),(5,4,1.0),(4,5,1.0)];
                  
 app tune parameterl;
-
-
-
 
 
 

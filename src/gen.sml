@@ -157,14 +157,20 @@ fun scorev br leaf result v =
     score_leaf br leaf (edge :: edgel)
   end
 
-fun score_leafv br (leafi,vl) =
+fun score_leafv_diff br (leafi,vl) =
   let 
     val edgel = map (fst o dec_edgec o #1) vl 
     val diffn = score_leaf br (unzip_mat leafi) edgel
+  in
+    Math.pow (diffn,!exponent) 
+  end
+
+fun score_leafv diffd br (leafi,vl) =
+  let
     val cover = List.concat (map (map fst o #3) vl)
     val covern = Real.fromInt (elength (enew IntInf.compare cover))
   in
-    Math.pow (diffn,!exponent) * covern
+    dfind (leafi,map #1 vl) diffd * covern
   end
   
 (* -------------------------------------------------------------------------
@@ -342,13 +348,13 @@ fun remove_vleafsl uset (leafi,vleafsl) =
   then NONE 
   else remove_vleafsl_aux uset (leafi,vleafsl) []
 
-fun update_uset br selectn pl (uset,result) =
+fun update_uset diffd br selectn pl (uset,result) =
   if elength uset <= 0 orelse 
      null pl orelse 
      selectn >= !select_number2 
      then (uset,result) else
   let 
-    val l1 = map_assoc (score_leafv br) pl
+    val l1 = map_assoc (score_leafv diffd br) pl
     val l2 = dict_sort compare_rmax l1
     val (leafi,vleafsl) = fst (hd l2) 
     val cperml = concat_cpermll (leafi,vleafsl)
@@ -362,7 +368,7 @@ fun update_uset br selectn pl (uset,result) =
                  its (elength newuset) ^ " remaining)" ^
                  " at depth " ^ its (length vleafsl))
   in
-    update_uset br (selectn + 1) newpl (newuset,newresult)
+    update_uset diffd br (selectn + 1) newpl (newuset,newresult)
   end
 
 fun loop_scover_para ncore (bluen,redn) uset result = 
@@ -374,7 +380,11 @@ fun loop_scover_para ncore (bluen,redn) uset result =
     val param = ((bluen,redn),uset)
     val _ = clean_dir (selfdir ^ "/parallel_search")
     val pl = smlParallel.parmap_queue_extern n' genspec param ul
-    val (newuset,newresult) = update_uset (bluen,redn) 0 pl (uset,result)
+    val diffl1 = map_assoc (score_leafv_diff (bluen,redn)) pl
+    val diffl2 = map (fn ((a,b),c) => ((a, map #1 b),c)) diffl1
+    val diffd = dnew (cpl_compare IntInf.compare (list_compare Int.compare))
+      diffl2
+    val (newuset,newresult) = update_uset diffd (bluen,redn) 0 pl (uset,result)
   in
     loop_scover_para ncore (bluen,redn) newuset newresult
   end
