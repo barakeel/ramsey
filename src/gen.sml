@@ -170,7 +170,7 @@ fun score_leafv diffd br (leafi,vl) =
     val cover = List.concat (map (map fst o #3) vl)
     val covern = Real.fromInt (elength (enew IntInf.compare cover))
   in
-    dfind (leafi,map #1 vl) diffd * covern
+    if true then covern else dfind (leafi,map #1 vl) diffd * covern
   end
   
 (* -------------------------------------------------------------------------
@@ -218,7 +218,6 @@ fun concat_cpermll (leafi,vleafsl) =
   end
 
 
-
 fun sgeneralize (bluen,redn) uset leafi =
   let
     val leaf = unzip_mat leafi
@@ -246,8 +245,9 @@ fun sgeneralize (bluen,redn) uset leafi =
           end
         fun sgen_loop vl result = 
           if length result >= (!maxhole) then rev result else
-          case map fst (dict_sort compare_rmax 
-                (map_assoc (scorev (bluen,redn) leaf result) vl)) 
+          case (if true then vl else
+                map fst (dict_sort compare_rmax 
+                (map_assoc (scorev (bluen,redn) leaf result) vl))) 
           of
             [] => rev result
           | v :: rem => 
