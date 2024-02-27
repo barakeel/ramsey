@@ -206,7 +206,7 @@ fun benchmark_pbl expname pbl =
     writel (dir ^ "/sattime") (map f (combine (pbl,rl)))
   end
   
-fun tune prefix (case35,hole35,hole44,expo)  = 
+fun tune prefix (case35,hole35,hole44,expo,sel44big,sel44small)  = 
   let 
     val case44 = 24 - case35
     fun msg s = append_endline (selfdir ^ "/log_bench_info") s
@@ -214,7 +214,8 @@ fun tune prefix (case35,hole35,hole44,expo)  =
     val (a,b) = split_string "." (rts_round 3 expo)
     val exps = a ^ "_" ^ b
     val expname = prefix ^ "_" ^ its case35 ^ "_" ^ 
-      its hole35 ^ "_" ^ its hole44 ^ "_" ^ exps
+      its hole35 ^ "_" ^ its hole44 ^ "_" ^ exps ^ "_" ^ 
+      its sel44big ^ "_" ^ its sel44small
     val _ = msg expname
     val _ = clean_dir (selfdir ^ "/gen")
     val _ = exponent := expo
@@ -224,8 +225,8 @@ fun tune prefix (case35,hole35,hole44,expo)  =
     val (_,t) = add_time (gen (3,5)) (case35,case35)
     val _ = msg ("35: " ^ rts_round 2 t) 
     val _ = maxhole := hole44
-    val _ = select_number1 := 1000;
-    val _ = select_number2 := 100;
+    val _ = select_number1 := sel44big
+    val _ = select_number2 := sel44small
     val (_,t) = add_time (gen (4,4)) (case44,case44)
     val _ = msg ("44: " ^ rts_round 2 t) 
     val _ = cmd_in_dir selfdir ("cp -r gen gen_" ^ expname)
@@ -291,6 +292,9 @@ app (tune "bench6") parameterl6;
 
 val parameterl7 = [(8,8,0.5),(9,9,0.5),(10,10,0.5)];  
 app (tune "bench7") parameterl7;
+
+val parameterl8 = [(10,5,5,0.5),(12,4,4,0.5),(12,5,5,0.5)];  
+app (tune "bench8") parameterl8;
 
 *)
 

@@ -27,6 +27,6 @@ sig
   val benchspec : (unit, IntInf.int * IntInf.int, real) smlParallel.extspec
   val benchmark : string -> int -> IntInf.int list -> IntInf.int list -> unit
   val benchmark_pbl : string -> (IntInf.int * IntInf.int) list -> unit
-  val tune : string -> int * int * int * real -> unit
+  val tune : string -> int * int * int * real * int * int -> unit
   
 end
