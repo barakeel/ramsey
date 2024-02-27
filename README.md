@@ -145,7 +145,7 @@ show_assums := true;
 val thm = DB.fetch "ramseyEnum" "R4417";
 ```
 
-### Glueing (4 days)
+### Glueing (20 days)
 
 The first step is to generate proof scripts:
 Execute in HOL:

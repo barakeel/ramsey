@@ -184,6 +184,9 @@ fun difficulty stats35 stats45 =
   in
     sum_real (map f l)
   end
+  
+fun difficulty_pair (m1,m2) =
+  difficulty (get_stats35 (unzip_mat m1)) (get_stats44 (unzip_mat m2)) 
 
 fun poke_hole leaf edgel = 
   let 

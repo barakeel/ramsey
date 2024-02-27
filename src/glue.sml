@@ -55,42 +55,6 @@ fun glue_pb (bluen,redn) m1i m2i =
 fun glue (bluen,redn) m1i m2i = SAT_PROVE (glue_pb (bluen,redn) m1i m2i)
 
 (* -------------------------------------------------------------------------
-   Overlap problem
-   ------------------------------------------------------------------------- *)
-
-fun overlap_clauses (par,cl) = 
-  let 
-    val holel = all_holes (unzip_mat par)
-    val clall = nauty.all_inst_wperm par
-    val cmp = cpl_compare IntInf.compare (list_compare Int.compare)
-    val d = enew cmp cl
-    val clnot = filter (fn x => not (emem x d)) clall
-    fun f (c,perm) = 
-      let 
-        val m = unzip_mat c
-        val newm = mat_permute (m,mat_size m) (mk_permf (invert_perm perm))
-        fun g (a,b) = ((a,b), mat_sub (newm,a,b))
-      in
-        map g holel
-      end
-  in
-    map f clnot
-  end;
-
-fun overlap_pb (bluen,redn) (p1,cl1) (p2,cl2) =
-  let 
-    val m = diag_mat (unzip_mat p1) (unzip_mat p2)
-    val clausel = ramsey_clauses_mat (bluen,redn) m @ 
-                  overlap_clauses (p1,cl1) @
-                  overlap_clauses (p2,cl2)
-  in
-    satpb_of_clausel clausel
-  end
-  
-fun glue_overlap (bluen,redn) (p1,cl1) (p2,cl2) =
-  SAT_PROVE (overlap_pb (bluen,redn) (p1,cl1) (p2,cl2))
-
-(* -------------------------------------------------------------------------
    Sampling from a large cartesian product
    ------------------------------------------------------------------------- *)
 
@@ -240,6 +204,92 @@ fun tune prefix (case35,hole35,hole44,expo,sel44big,sel44small)  =
   end
   
 
+fun benchmark_pbl expname pbl = 
+  let
+    val expdir = selfdir ^ "/exp"
+    val dir = expdir ^ "/" ^ expname
+    val _ = app mkDir_err [expdir,dir]
+    val _ = smlExecScripts.buildheap_dir := dir
+    val _ = smlExecScripts.buildheap_options :=  "--maxheap " ^ its memory
+    val rl = smlParallel.parmap_queue_extern ncore benchspec () pbl
+    fun f ((c1e,c2e),r) = infts c1e ^ "," ^ infts c2e ^ " " ^ rts r
+    val mean = average_real rl
+    val maxt = list_rmax rl
+    val heads = String.concatWith " " (map rts [mean,maxt])
+  in
+    writel (dir ^ "/summary") [heads];
+    writel (dir ^ "/sattime") (map f (combine (pbl,rl)))
+  end
+
+(* -------------------------------------------------------------------------
+   Glueing generalizations
+   ------------------------------------------------------------------------- *)
+
+fun glue_one () (c1e,c2e) = 
+  let 
+    val m1 = diag_mat (unzip_mat c1e) (unzip_mat c2e)
+    val clausel = ramsey_clauses_mat (4,5) m1
+    val name = "r45_" ^ infts c1e ^ "_" ^ infts c2e 
+    val _ = new_theory name
+    val (thm,t) = add_time SAT_PROVE (satpb_of_clausel clausel)
+    val _ = print_endline ("time: " ^ rts t)
+    val _ = save_thm (name,thm)
+    val _ = export_theory ()
+  in
+    t
+  end
+
+fun write_unit file _ = ()
+fun read_unit file = ()
+fun write_infinf file (i1,i2) = writel file (map infts [i1,i2])
+fun read_infinf file = pair_of_list (map stinf (readl file))
+fun write_result file r = writel file [rts r]
+fun read_result file = (valOf o Real.fromString o hd o readl) file
+
+val gluespec : (unit, IntInf.int * IntInf.int, real) smlParallel.extspec =
+  {
+  self_dir = selfdir,
+  self = "glue.gluespec",
+  parallel_dir = selfdir ^ "/parallel_search",
+  reflect_globals = (fn () => "(" ^
+    String.concatWith "; "
+    ["smlExecScripts.buildheap_dir := " ^ mlquote 
+      (!smlExecScripts.buildheap_dir)] 
+    ^ ")"),
+  function = glue_one,
+  write_param = write_unit,
+  read_param = read_unit,
+  write_arg = write_infinf,
+  read_arg = read_infinf,
+  write_result = write_result,
+  read_result = read_result
+  }
+
+fun order_pbl ml1 ml2 = 
+  let 
+    val pbl1 = cartesian_product ml1 ml2
+    val pbl2 = map_assoc difficulty_pair pbl1
+  in
+    map fst (dict_sort compare_rmin pbl2)
+  end
+  
+fun glue_pbl expname pbl = 
+  let
+    val expdir = selfdir ^ "/exp"
+    val dir = expdir ^ "/" ^ expname
+    val _ = app mkDir_err [expdir,dir]
+    val _ = smlExecScripts.buildheap_dir := dir
+    val _ = smlExecScripts.buildheap_options :=  "--maxheap " ^ its memory
+    val rl = smlParallel.parmap_queue_extern ncore gluespec () pbl
+    fun f ((c1e,c2e),r) = infts c1e ^ "," ^ infts c2e ^ " " ^ rts r
+    val mean = average_real rl
+    val maxt = list_rmax rl
+    val heads = String.concatWith " " (map rts [mean,maxt])
+  in
+    writel (dir ^ "/summary") [heads];
+    writel (dir ^ "/sattime") (map f (combine (pbl,rl)))
+  end
+
 (* -------------------------------------------------------------------------
    Running on one example
    ------------------------------------------------------------------------- *)
@@ -293,15 +343,26 @@ app (tune "bench6") parameterl6;
 val parameterl7 = [(8,8,0.5),(9,9,0.5),(10,10,0.5)];  
 app (tune "bench7") parameterl7;
 
-val parameterl8 = [(10,5,5,0.5),(12,4,4,0.5),(12,5,5,0.5)];  
-app (tune "bench8") parameterl8;
+val parameterl8 = [(10,5,5,0.5)]
+
+val parameterl9 = [(12,8,8,0.5,1000,100)];  
+app (tune "bench9") parameterl9;
+
+(* could change big number to 10000 *)
+(* if it does not finish, change the number of core to 20 and memory to 16GB *)
+val case35 = 12;
+val case44 = 12;
+val set1 = read_par case35 (3,5)
+val set2 = read_par case44 (4,4)
+val expname = "bench9";
+val (_,t) = add_time (benchmark expname 40 set1) set2
+val s = hd (readl (selfdir ^ "/exp/" ^ expname ^ "/summary"));
 
 *)
 
 (* -------------------------------------------------------------------------
    Analysis of the relation between size/number of clauses and speed
    ------------------------------------------------------------------------- *)
-
 
 (*
 load "glue"; open aiLib kernel graph glue;
@@ -360,81 +421,10 @@ fun mk_data expname =
   end;
     
 mk_data "e0e0bis";
-
 *)
-
-
-
-(* -------------------------------------------------------------------------
-   Write gluing scripts
-   ------------------------------------------------------------------------- *)
-
-fun write_gluescript dirname (b1,r1,size1) (b2,r2,size2) (bluen,redn)    
-  (batchi,ipairl) = 
-  let 
-    val s1 = its b1 ^ its r1 ^ its size1
-    val s2 = its b2 ^ its r2 ^ its size2
-    val id = s1 ^ "_" ^ s2
-    val thyname = "ramseyGlue" ^ id ^ "_" ^ its batchi
-    val filename = selfdir ^ "/" ^ dirname ^ "/" ^ thyname ^ "Script.sml"
-    val param = "(" ^ its bluen ^ "," ^ its redn ^ ")"
-    val open_cmd = ["open HolKernel boolLib kernel glue"]
-    val newtheory_cmd = ["val _ = new_theory " ^ mlquote thyname]
-    fun save_cmd (i,(m1i,m2i)) = 
-      let 
-        val thmname = "Glue" ^ id ^ "_" ^ its i 
-        val graph1 = "(stinf " ^ mlquote (infts m1i) ^ ")"
-        val graph2 = "(stinf " ^ mlquote (infts m2i) ^ ")"
-        val argls = String.concatWith " " [param,graph1,graph2]
-      in
-        "val _ = save_thm (" ^  mlquote thmname ^ ", glue " ^ argls ^ ")"
-      end
-    val export_cmd = ["val _ = export_theory ()"]
-  in
-    writel filename (open_cmd @ newtheory_cmd @
-       map save_cmd ipairl @ export_cmd)
-  end
-
-fun write_gluescripts dirname batchsize
-  (b1,r1,size1) (b2,r2,size2) (bluen,redn) = 
-  let
-    val _ = mkDir_err (selfdir ^ "/" ^ dirname)
-    val parl1 = read_par size1 (b1,r1)
-    val _ = print_endline ("parl1: " ^ its (length parl1))
-    val parl2 = read_par size2 (b2,r2)
-    val _ = print_endline ("parl2: " ^ its (length parl2))
-    val pairl = cartesian_product parl1 parl2
-    val _ = print_endline ("pairl: " ^ its (length pairl))
-    fun difficulty (a,b) = 
-      number_of_holes (unzip_mat a) + number_of_holes (unzip_mat b)
-    val pairlsc = map_assoc difficulty pairl
-    val sortedl = map fst (dict_sort compare_imax pairlsc)
-    val ncut = (length sortedl div batchsize) + 1
-    val batchl = number_fst 0 (cut_modulo ncut (number_fst 0 sortedl))
-  in
-    app (write_gluescript dirname (b1,r1,size1) (b2,r2,size2) (bluen,redn))
-    batchl
-  end
 
 end (* struct *)
 
-(*
-load "glue"; open kernel glue;
-write_gluescripts "glue8" 1 (3,5,8) (4,4,16) (4,5);
-*)
 
-(*
-load "glue"; open kernel glue;
-fun f i = if i = 11 then () else 
-  write_gluescripts "glue" 1 (3,5,i) (4,4,24-i) (4,5);
-val _ = range (7,13,f);
-*)
-
-(*
-load "glue"; open kernel glue;
-fun f i = if i = 10 orelse i = 11 orelse i = 12 then () else 
-  write_gluescripts "glue" 1 (3,5,i) (4,4,24-i) (4,5);
-val _ = range (7,13,f);
-*)
 
 
