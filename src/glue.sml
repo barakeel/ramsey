@@ -234,7 +234,11 @@ fun glue_one () (c1e,c2e) =
     val (thm,t) = add_time SAT_PROVE (satpb_of_clausel clausel)
     val _ = print_endline ("time: " ^ rts t)
     val _ = save_thm (name,thm)
+    val olddir = OS.FileSys.getDir ()
+    val newdir = !smlExecScripts.buildheap_dir ^ "/theories"
+    val _ = OS.FileSys.chDir newdir
     val _ = export_theory ()
+    val _ = OS.FileSys.chDir olddir
   in
     t
   end
@@ -277,7 +281,7 @@ fun glue_pbl expname pbl =
   let
     val expdir = selfdir ^ "/exp"
     val dir = expdir ^ "/" ^ expname
-    val _ = app mkDir_err [expdir,dir]
+    val _ = app mkDir_err [expdir,dir,dir ^ "/theories"]
     val _ = smlExecScripts.buildheap_dir := dir
     val _ = smlExecScripts.buildheap_options :=  "--maxheap " ^ its memory
     val rl = smlParallel.parmap_queue_extern ncore gluespec () pbl
@@ -289,6 +293,25 @@ fun glue_pbl expname pbl =
     writel (dir ^ "/summary") [heads];
     writel (dir ^ "/sattime") (map f (combine (pbl,rl)))
   end
+
+(* -------------------------------------------------------------------------
+   Glueing
+   ------------------------------------------------------------------------- *)
+
+(*
+export TMPDIR="$PWD/tmp";
+mkdir tmp;
+find /tmp -maxdepth 1 -type f -name 'MLTEMP*' ! -exec rm {} \;
+
+load "glue"; open aiLib kernel graph enum gen glue;
+
+val ml1 = read_par 12 (3,5);
+val ml2 = read_par 12 (4,4);
+val pbl = order_pbl ml1 ml2;
+
+glue_pbl "glue_test" [last pbl];
+
+*)
 
 (* -------------------------------------------------------------------------
    Running on one example
