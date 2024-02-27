@@ -206,29 +206,31 @@ fun benchmark_pbl expname pbl =
     writel (dir ^ "/sattime") (map f (combine (pbl,rl)))
   end
   
-fun tune prefix (hole35,hole44,expo) = 
+fun tune prefix (case35,hole35,hole44,expo)  = 
   let 
+    val case44 = 24 - case35
     fun msg s = append_endline (selfdir ^ "/log_bench_info") s
     fun msg2 s = append_endline (selfdir ^ "/log_bench") s
     val (a,b) = split_string "." (rts_round 3 expo)
     val exps = a ^ "_" ^ b
-    val expname = prefix ^ "_" ^ its hole35 ^ "_" ^ its hole44 ^ "_" ^ exps
+    val expname = prefix ^ "_" ^ its case35 ^ "_" ^ 
+      its hole35 ^ "_" ^ its hole44 ^ "_" ^ exps
     val _ = msg expname
     val _ = clean_dir (selfdir ^ "/gen")
     val _ = exponent := expo
     val _ = maxhole := hole35
     val _ = select_number1 := 313
     val _ = select_number2 := 1
-    val (_,t) = add_time (gen (3,5)) (10,10)
-    val _ = msg ("3510: " ^ rts_round 2 t) 
+    val (_,t) = add_time (gen (3,5)) (case35,case35)
+    val _ = msg ("35: " ^ rts_round 2 t) 
     val _ = maxhole := hole44
     val _ = select_number1 := 1000;
     val _ = select_number2 := 100;
-    val (_,t) = add_time (gen (4,4)) (14,14)
-    val _ = msg ("4414: " ^ rts_round 2 t) 
+    val (_,t) = add_time (gen (4,4)) (case44,case44)
+    val _ = msg ("44: " ^ rts_round 2 t) 
     val _ = cmd_in_dir selfdir ("cp -r gen gen_" ^ expname)
-    val set1 = read_par 10 (3,5)
-    val set2 = read_par 14 (4,4)
+    val set1 = read_par case35 (3,5)
+    val set2 = read_par case44 (4,4)
     val (_,t) = add_time (benchmark expname 200 set1) set2
     val _ = msg ("glue: " ^ rts_round 2 t) 
     val s = hd (readl (selfdir ^ "/exp/" ^ expname ^ "/summary"))
@@ -284,9 +286,12 @@ val parameterl5 = [(4,4,1.0)];
 app (tune "bench5") parameterl5;
 
 
-(* variable then difficulty *)
-val parameterl6 = [(4,4,0.5),(0,8,1.0),(8,0,1.0),(8,4,1.0),(4,8,1.0),(8,8,1.0)];          
-app (tune "bench5") parameterl5;
+val parameterl6 = [(4,4,0.01),(4,4,0.1),(4,4,0.5)];
+app (tune "bench6") parameterl6;
+
+val parameterl7 = [(8,8,0.5),(9,9,0.5),(10,10,0.5)];  
+app (tune "bench7") parameterl7;
+
 *)
 
 (* -------------------------------------------------------------------------

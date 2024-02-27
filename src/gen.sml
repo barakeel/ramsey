@@ -89,17 +89,92 @@ fun get_average44 enum =
     combine (clique44, map average_real (list_combine l))
   end
 
-(* todo: make it work in general for all possible sizes
-load "gen"; open enum gen;
-val enum3510 = read_enum 10 (3,5);
-val enum4414 = read_enum 14 (4,4);
-val average3510 = get_average35 enum3510;
-val average4414 = get_average44 enum4414;
+
+(* 
+load "gen"; open kernel enum gen;
+range (5,13, fn k => (k, get_average35 (read_enum k (3,5))));
+range (4,17, fn k => (k, get_average44 (read_enum k (4,4))));
 *)
-val average3510 = [((1, 1), 10.0), ((2, 1), 15.01916933), ((2, 2), 29.98083067),
-  ((3, 2), 32.48242812), ((4, 2), 10.93610224)];
-val average4414 = [((3, 1), 35.81875306), ((2, 1), 45.5), ((3, 2), 35.81875306),
-    ((2, 2), 45.5), ((1, 2), 14.0)];
+
+
+val average35l =
+    [
+     (5,
+     [((1, 1), 5.0), ((2, 1), 3.538461538), ((2, 2), 6.461538462),
+      ((3, 2), 2.769230769), ((4, 2), 0.3846153846)]),
+    (6,
+     [((1, 1), 6.0), ((2, 1), 5.3125), ((2, 2), 9.6875), ((3, 2), 5.25),
+      ((4, 2), 0.84375)]),
+    (7,
+     [((1, 1), 7.0), ((2, 1), 7.267605634), ((2, 2), 13.73239437),
+      ((3, 2), 9.309859155), ((4, 2), 1.929577465)]),
+    (8,
+     [((1, 1), 8.0), ((2, 1), 9.61452514), ((2, 2), 18.38547486),
+      ((3, 2), 14.84916201), ((4, 2), 3.720670391)]),
+    (9,
+     [((1, 1), 9.0), ((2, 1), 12.10689655), ((2, 2), 23.89310345),
+      ((3, 2), 22.55517241), ((4, 2), 6.55862069)]),
+    (10,
+     [((1, 1), 10.0), ((2, 1), 15.01916933), ((2, 2), 29.98083067),
+      ((3, 2), 32.48242812), ((4, 2), 10.93610224)]),
+    (11,
+     [((1, 1), 11.0), ((2, 1), 18.36190476), ((2, 2), 36.63809524),
+      ((3, 2), 44.88571429), ((4, 2), 17.4)]),
+    (12,
+     [((1, 1), 12.0), ((2, 1), 22.16666667), ((2, 2), 43.83333333),
+      ((3, 2), 59.33333333), ((4, 2), 25.66666667)]),
+    (13,
+     [((1, 1), 13.0), ((2, 1), 26.0), ((2, 2), 52.0), ((3, 2), 78.0),
+      ((4, 2), 39.0)])];
+ 
+val average44l =  
+   [(4,
+     [((3, 1), 0.4444444444), ((2, 1), 3.0), ((3, 2), 0.4444444444),
+      ((2, 2), 3.0), ((1, 2), 4.0)]),
+    (5,
+     [((3, 1), 1.125), ((2, 1), 5.0), ((3, 2), 1.125), ((2, 2), 5.0),
+      ((1, 2), 5.0)]),
+    (6,
+     [((3, 1), 2.095238095), ((2, 1), 7.5), ((3, 2), 2.095238095),
+      ((2, 2), 7.5), ((1, 2), 6.0)]),
+    (7,
+     [((3, 1), 3.571823204), ((2, 1), 10.5), ((3, 2), 3.571823204),
+      ((2, 2), 10.5), ((1, 2), 7.0)]),
+    (8,
+     [((3, 1), 5.541125541), ((2, 1), 14.0), ((3, 2), 5.541125541),
+      ((2, 2), 14.0), ((1, 2), 8.0)]),
+    (9,
+     [((3, 1), 8.186994082), ((2, 1), 18.0), ((3, 2), 8.186994082),
+      ((2, 2), 18.0), ((1, 2), 9.0)]),
+    (10,
+     [((3, 1), 11.59094941), ((2, 1), 22.5), ((3, 2), 11.59094941),
+      ((2, 2), 22.5), ((1, 2), 10.0)]),
+    (11,
+     [((3, 1), 15.91500597), ((2, 1), 27.5), ((3, 2), 15.91500597),
+      ((2, 2), 27.5), ((1, 2), 11.0)]),
+    (12,
+     [((3, 1), 21.30271549), ((2, 1), 33.0), ((3, 2), 21.30271549),
+      ((2, 2), 33.0), ((1, 2), 12.0)]),
+    (13,
+     [((3, 1), 27.89530843), ((2, 1), 39.0), ((3, 2), 27.89530843),
+      ((2, 2), 39.0), ((1, 2), 13.0)]),
+    (14,
+     [((3, 1), 35.81875306), ((2, 1), 45.5), ((3, 2), 35.81875306),
+      ((2, 2), 45.5), ((1, 2), 14.0)]),
+    (15,
+     [((3, 1), 45.6015625), ((2, 1), 52.5), ((3, 2), 45.6015625),
+      ((2, 2), 52.5), ((1, 2), 15.0)]),
+    (16,
+     [((3, 1), 56.0), ((2, 1), 60.0), ((3, 2), 56.0), ((2, 2), 60.0),
+      ((1, 2), 16.0)]),
+    (17,
+     [((3, 1), 68.0), ((2, 1), 68.0), ((3, 2), 68.0), ((2, 2), 68.0),
+      ((1, 2), 17.0)])];
+
+val average35v = Vector.fromList 
+  (List.tabulate (5,fn _ => NONE) @ map (SOME o snd) average35l);
+val average44v = Vector.fromList 
+  (List.tabulate (4,fn _ => NONE) @ map (SOME o snd) average44l);
 
 fun difficulty stats35 stats45 =
   let 
@@ -109,27 +184,6 @@ fun difficulty stats35 stats45 =
   in
     sum_real (map f l)
   end
-
-fun init_scored size (bluen,redn) =
-  if (bluen,redn) = (3,5) then
-    let 
-      val enum35 = read_enum size (3,5)
-      val enum44 = read_enum (24-size) (4,4)
-      val average44 = get_average44 enum44
-      fun score35 x = difficulty (get_stats35 (unzip_mat x)) average44
-    in
-      dnew IntInf.compare (map_assoc score35 enum35)
-    end
-  else if (bluen,redn) = (4,4) then
-    let 
-      val enum35 = read_enum (24-size) (3,5)
-      val enum44 = read_enum size (4,4)
-      val average35 = get_average35 enum35
-      fun score44 x = difficulty average35 (get_stats44 (unzip_mat x))
-    in
-      dnew IntInf.compare (map_assoc score44 enum44)
-    end
-  else raise ERR "init_scored" "unexpected"
 
 fun poke_hole leaf edgel = 
   let 
@@ -142,9 +196,13 @@ fun poke_hole leaf edgel =
 
 fun scorem (bluen,redn) m =
   if (bluen,redn) = (3,5)
-  then difficulty (get_stats35 m) average4414
+  then difficulty 
+    (get_stats35 m) 
+    (valOf (Vector.sub (average44v,(24 - mat_size m))))
   else if (bluen,redn) = (4,4) 
-  then difficulty average3510 (get_stats44 m)
+  then difficulty 
+    (valOf (Vector.sub (average35v,(24 - mat_size m)))) 
+    (get_stats44 m)
   else raise ERR "scorem" ""
 
 fun score_leaf br leaf edgel = scorem br (poke_hole leaf edgel)
