@@ -239,7 +239,7 @@ fun tune_3512 prefix nex (hole35,hole44,expo)  =
   
 fun tune_3510 prefix nex (hole35,expo)  = 
   let 
-    val case35 = 12
+    val case35 = 10
     val case44 = 24 - case35
     fun msg s = append_endline (selfdir ^ "/log_bench_info") s
     fun msg2 s = append_endline (selfdir ^ "/log_bench") s
@@ -444,7 +444,8 @@ app (tune_3512 "bench12") parameterl12;
 val parameterl14 = [(10,2,5,0.5),(10,3,5,0.5),(10,2,6,0.5)];
 app (tune "bench14" 100) parameterl14;
 
-
+val parameterl15 = [(10,2,5,0.5),(10,3,5,0.5),(10,2,6,0.5)];
+app (tune_3510 "bench15" 100) parameterl14;
 *)
 
 (* -------------------------------------------------------------------------
