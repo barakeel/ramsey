@@ -237,7 +237,32 @@ fun tune_3512 prefix nex (hole35,hole44,expo)  =
     msg2 (expname ^ " " ^ s)
   end
   
-
+fun tune_3510 prefix nex (hole35,expo)  = 
+  let 
+    val case35 = 12
+    val case44 = 24 - case35
+    fun msg s = append_endline (selfdir ^ "/log_bench_info") s
+    fun msg2 s = append_endline (selfdir ^ "/log_bench") s
+    val (a,b) = split_string "." (rts_round 3 expo)
+    val exps = a ^ "_" ^ b
+    val expname = prefix ^ "_" ^ its case35 ^ "_" ^ its hole35 ^ "_0_" ^ exps
+    val _ = msg expname
+    val _ = clean_dir (selfdir ^ "/gen")
+    val _ = exponent := expo
+    val _ = maxhole := hole35
+    val _ = select_number1 := 313
+    val _ = select_number2 := 1
+    val (_,t) = add_time (gen (3,5)) (case35,case35)
+    val _ = msg ("35: " ^ rts_round 2 t)
+    val _ = cmd_in_dir selfdir ("cp -r gen gen_" ^ expname)
+    val set1 = read_par case35 (3,5)
+    val set2 = enum.read_enum case44 (4,4)
+    val (_,t) = add_time (benchmark expname nex set1) set2
+    val _ = msg ("glue: " ^ rts_round 2 t) 
+    val s = hd (readl (selfdir ^ "/exp/" ^ expname ^ "/summary"))
+  in
+    msg2 (expname ^ " " ^ s)
+  end
 
 
 
@@ -416,16 +441,9 @@ app (tune "bench11") parameterl11;
 val parameterl12 = [(0,8,0.5),(2,6,0.5),(1,8,0.5),(3,6,0.5),(2,8,0.5),(3,8,0.5)];
 app (tune_3512 "bench12") parameterl12;
 
+val parameterl14 = [(10,2,5,0.5),(10,3,5,0.5),(10,2,6,0.5)];
+app (tune "bench14" 100) parameterl14;
 
-(* could change big number to 10000 *)
-(* if it does not finish, change the number of core to 20 and memory to 16GB *)
-val case35 = 12;
-val case44 = 12;
-val set1 = read_par case35 (3,5)
-val set2 = read_par case44 (4,4)
-val expname = "bench9";
-val (_,t) = add_time (benchmark expname 40 set1) set2
-val s = hd (readl (selfdir ^ "/exp/" ^ expname ^ "/summary"));
 
 *)
 
