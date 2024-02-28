@@ -382,6 +382,10 @@ val finalthm2 = PROVE_HYP lemma2 finalthm1;
    ------------------------------------------------------------------------- *)
 
 (*
+
+
+
+
 load "syntax"; load "graph";
 open HolKernel boolLib Parse simpLib boolSimps BasicProvers
 local open numTheory prim_recTheory SatisfySimps DefnBase in end

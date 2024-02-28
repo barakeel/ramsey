@@ -170,7 +170,7 @@ fun benchmark_pbl expname pbl =
     writel (dir ^ "/sattime") (map f (combine (pbl,rl)))
   end
   
-fun tune prefix (case35,hole35,hole44,expo,sel44big,sel44small)  = 
+fun tune prefix nex (case35,hole35,hole44,expo)  = 
   let 
     val case44 = 24 - case35
     fun msg s = append_endline (selfdir ^ "/log_bench_info") s
@@ -178,8 +178,7 @@ fun tune prefix (case35,hole35,hole44,expo,sel44big,sel44small)  =
     val (a,b) = split_string "." (rts_round 3 expo)
     val exps = a ^ "_" ^ b
     val expname = prefix ^ "_" ^ its case35 ^ "_" ^ 
-      its hole35 ^ "_" ^ its hole44 ^ "_" ^ exps ^ "_" ^ 
-      its sel44big ^ "_" ^ its sel44small
+      its hole35 ^ "_" ^ its hole44 ^ "_" ^ exps
     val _ = msg expname
     val _ = clean_dir (selfdir ^ "/gen")
     val _ = exponent := expo
@@ -189,21 +188,21 @@ fun tune prefix (case35,hole35,hole44,expo,sel44big,sel44small)  =
     val (_,t) = add_time (gen (3,5)) (case35,case35)
     val _ = msg ("35: " ^ rts_round 2 t) 
     val _ = maxhole := hole44
-    val _ = select_number1 := sel44big
-    val _ = select_number2 := sel44small
+    val _ = select_number1 := 1000
+    val _ = select_number2 := 100
     val (_,t) = add_time (gen (4,4)) (case44,case44)
     val _ = msg ("44: " ^ rts_round 2 t) 
     val _ = cmd_in_dir selfdir ("cp -r gen gen_" ^ expname)
     val set1 = read_par case35 (3,5)
     val set2 = read_par case44 (4,4)
-    val (_,t) = add_time (benchmark expname 200 set1) set2
+    val (_,t) = add_time (benchmark expname nex set1) set2
     val _ = msg ("glue: " ^ rts_round 2 t) 
     val s = hd (readl (selfdir ^ "/exp/" ^ expname ^ "/summary"))
   in
     msg2 (expname ^ " " ^ s)
   end
   
-fun tune_3512 prefix (hole35,hole44,expo)  = 
+fun tune_3512 prefix nex (hole35,hole44,expo)  = 
   let 
     val case35 = 12
     val case44 = 24 - case35
@@ -231,7 +230,7 @@ fun tune_3512 prefix (hole35,hole44,expo)  =
     val _ = cmd_in_dir selfdir ("cp -r gen gen_" ^ expname)
     val set1 = read_par case35 (3,5)
     val set2 = read_par case44 (4,4)
-    val (_,t) = add_time (benchmark expname 100 set1) set2
+    val (_,t) = add_time (benchmark expname nex set1) set2
     val _ = msg ("glue: " ^ rts_round 2 t) 
     val s = hd (readl (selfdir ^ "/exp/" ^ expname ^ "/summary"))
   in
@@ -349,6 +348,10 @@ val pbl = order_pbl ml1 ml2;
 
 glue_pbl "glue3510" pbl;
 
+noclique 24 (4,true);   
+noclique 24 (5,false);
+
+
 *)
 
 (* -------------------------------------------------------------------------
@@ -409,6 +412,10 @@ val parameterl9 = [(12,8,8,0.5,1000,100)];
 
 val parameterl11 = [(12,6,6,0.5,1000,100)];
 app (tune "bench11") parameterl11;
+
+val parameterl12 = [(0,8,0.5),(2,6,0.5),(1,8,0.5),(3,6,0.5),(2,8,0.5),(3,8,0.5)];
+app (tune_3512 "bench12") parameterl12;
+
 
 (* could change big number to 10000 *)
 (* if it does not finish, change the number of core to 20 and memory to 16GB *)
