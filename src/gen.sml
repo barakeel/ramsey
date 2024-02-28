@@ -546,10 +546,11 @@ fun gen (bluen,redn) (minsize,maxsize) =
 load "gen"; open sat aiLib kernel graph gen;
 
 clean_dir (selfdir ^ "/gen");
-test_flag := true;
+exponent := 0.5;
+maxhole := 0;
 select_number1 := 313;
 select_number2 := 1;
-val (_,t35) = add_time (gen (3,5)) (10,10);
+val (_,t35) = add_time (gen (3,5)) (12,12);
 select_number1 := 1000;
 select_number2 := 100;
 val (_,t44) = add_time (gen (4,4)) (14,14);

@@ -146,26 +146,9 @@ val thm = DB.fetch "ramseyEnum" "R4417";
 ```
 
 ### Glueing (20 days)
-
-The first step is to generate proof scripts:
-Execute in HOL:
-```
-load "glue"; open kernel glue;
-fun f i = if i = 11 then () else
-  write_gluescripts "glue" 1 (3,5,i) (4,4,24-i) (4,5);
-val _ = range (7,13,f);
-```
-
-Warning: the config file does not affect the following step.
-Please check the memory consumptions regularly.
-
 Run from the `src` directory (preferably inside a screen `screen -S glue`):
 ```
 cd glue
-cp ../def/Holmakefile Holmakefile
-export TMPDIR="$PWD/tmp"
-mkdir tmp
-../../HOL/bin/Holmake --no_prereqs -j 40 | tee ../aaa_log_glue
 ```
 
 To be run at most one hour after starting the previous process,

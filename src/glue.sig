@@ -13,6 +13,7 @@ sig
   val benchmark : string -> int -> IntInf.int list -> IntInf.int list -> unit
   val benchmark_pbl : string -> (IntInf.int * IntInf.int) list -> unit
   val tune : string -> int * int * int * real * int * int -> unit
+  val tune_3512 : string -> int * int * real -> unit
   
   (* creating theories *)
   val gluespec : (unit, IntInf.int * IntInf.int, real) smlParallel.extspec

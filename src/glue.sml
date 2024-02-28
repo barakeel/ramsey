@@ -203,6 +203,44 @@ fun tune prefix (case35,hole35,hole44,expo,sel44big,sel44small)  =
     msg2 (expname ^ " " ^ s)
   end
   
+fun tune_3512 prefix (hole35,hole44,expo)  = 
+  let 
+    val case35 = 12
+    val case44 = 24 - case35
+    fun msg s = append_endline (selfdir ^ "/log_bench_info") s
+    fun msg2 s = append_endline (selfdir ^ "/log_bench") s
+    val (a,b) = split_string "." (rts_round 3 expo)
+    val exps = a ^ "_" ^ b
+    val expname = prefix ^ "_" ^ its case35 ^ "_" ^ 
+      its hole35 ^ "_" ^ its hole44 ^ "_" ^ exps
+    val _ = msg expname
+    val _ = clean_dir (selfdir ^ "/gen")
+    val _ = exponent := expo
+    val _ = maxhole := hole35
+    val _ = select_number1 := 313
+    val _ = select_number2 := 1
+    val (_,t) = add_time (gen (3,5)) (case35,case35)
+    val _ = msg ("35: " ^ rts_round 2 t) 
+    val _ = 
+      if hole44 = 8 
+        then cmd_in_dir selfdir "cp gen_e88/gen4412 gen/gen4412"
+      else if hole44 = 6
+        then cmd_in_dir selfdir 
+          "cp gen_bench11_12_6_6_0_5_1000_100/gen4412 gen/gen4412"
+      else raise ERR "tune_3512" ""
+    val _ = cmd_in_dir selfdir ("cp -r gen gen_" ^ expname)
+    val set1 = read_par case35 (3,5)
+    val set2 = read_par case44 (4,4)
+    val (_,t) = add_time (benchmark expname 100 set1) set2
+    val _ = msg ("glue: " ^ rts_round 2 t) 
+    val s = hd (readl (selfdir ^ "/exp/" ^ expname ^ "/summary"))
+  in
+    msg2 (expname ^ " " ^ s)
+  end
+  
+
+
+
 
 fun benchmark_pbl expname pbl = 
   let
@@ -305,11 +343,11 @@ find /tmp -maxdepth 1 -type f -name 'MLTEMP*' ! -exec rm {} \;
 
 load "glue"; open aiLib kernel graph enum gen glue;
 
-val ml1 = read_par 12 (3,5);
-val ml2 = read_par 12 (4,4);
+val ml1 = read_par 10 (3,5);
+val ml2 = read_par 14 (4,4);
 val pbl = order_pbl ml1 ml2;
 
-glue_pbl "glue_test" [last pbl];
+glue_pbl "glue3510" pbl;
 
 *)
 
@@ -321,10 +359,9 @@ glue_pbl "glue_test" [last pbl];
 load "glue"; open aiLib kernel graph glue;
 load "enum"; open enum;
 load "gen"; open gen;
-val c1 = hd (read_cover 10 (3,5));
-val c2 = hd (read_cover 14 (4,4));
-val (_,t1) = add_time (glue_overlap (4,5) c1) c2;
-val (_,t2) = add_time (glue (4,5) (fst c1)) (fst c2);
+val c1 = hd (read_par 10 (3,5));
+val c2 = hd (read_par 14 (4,4));
+val (_,t2) = add_time (glue (4,5) c1) c2;
 *)
 
 (* -------------------------------------------------------------------------
@@ -368,8 +405,10 @@ app (tune "bench7") parameterl7;
 
 val parameterl8 = [(10,5,5,0.5)]
 
-val parameterl9 = [(12,8,8,0.5,1000,100)];  
-app (tune "bench9") parameterl9;
+val parameterl9 = [(12,8,8,0.5,1000,100)];
+
+val parameterl11 = [(12,6,6,0.5,1000,100)];
+app (tune "bench11") parameterl11;
 
 (* could change big number to 10000 *)
 (* if it does not finish, change the number of core to 20 and memory to 16GB *)
