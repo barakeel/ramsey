@@ -373,8 +373,7 @@ val pbl = order_pbl ml1 ml2;
 
 glue_pbl "glue3510" pbl;
 
-noclique 24 (4,true);   
-noclique 24 (5,false);
+
 
 
 *)
@@ -424,7 +423,6 @@ app (tune "bench4") parameterl4;
 val parameterl5 = [(4,4,1.0)];          
 app (tune "bench5") parameterl5;
 
-
 val parameterl6 = [(4,4,0.01),(4,4,0.1),(4,4,0.5)];
 app (tune "bench6") parameterl6;
 
@@ -432,20 +430,19 @@ val parameterl7 = [(8,8,0.5),(9,9,0.5),(10,10,0.5)];
 app (tune "bench7") parameterl7;
 
 val parameterl8 = [(10,5,5,0.5)]
-
 val parameterl9 = [(12,8,8,0.5,1000,100)];
-
 val parameterl11 = [(12,6,6,0.5,1000,100)];
 app (tune "bench11") parameterl11;
 
-val parameterl12 = [(0,8,0.5),(2,6,0.5),(1,8,0.5),(3,6,0.5),(2,8,0.5),(3,8,0.5)];
+val parameterl12 = 
+  [(0,8,0.5),(2,6,0.5),(1,8,0.5),(3,6,0.5),(2,8,0.5),(3,8,0.5)];
 app (tune_3512 "bench12") parameterl12;
 
 val parameterl14 = [(10,2,5,0.5),(10,3,5,0.5),(10,2,6,0.5)];
 app (tune "bench14" 100) parameterl14;
 
-val parameterl15 = [(10,2,5,0.5),(10,3,5,0.5),(10,2,6,0.5)];
-app (tune_3510 "bench15" 100) parameterl14;
+val parameterl15 = [(4,0.5),(5,0.5),(6,0.5),(7,0.5),(8,0.5)];
+app (tune_3510 "bench15" 100) parameterl15;
 *)
 
 (* -------------------------------------------------------------------------
@@ -510,6 +507,25 @@ fun mk_data expname =
     
 mk_data "e0e0bis";
 *)
+
+(* -------------------------------------------------------------------------
+   Analysis of the relation between size/number of clauses and speed
+   ------------------------------------------------------------------------- *)
+
+(*
+load "glue"; open aiLib kernel graph enum gen glue;
+val c1 = random_elem (read_par 10 (3,5));
+val c2 = random_elem (read_par 14 (4,4));
+val (thm,t2) = add_time (glue (4,5) c1) c2;
+number_of_holes (unzip_mat c1); number_of_holes (unzip_mat c2);
+show_assums := true;
+
+
+  
+*)
+
+
+
 
 end (* struct *)
 
