@@ -329,7 +329,8 @@ fun run_script_pbl dir pbl =
   end
 
 (* -------------------------------------------------------------------------
-   Glueing
+   Glueing:
+   Using gen_bench6_4_4_0_5 for 3,5,10
    ------------------------------------------------------------------------- *)
 
 (*
@@ -338,12 +339,70 @@ mkdir tmp;
 find /tmp -maxdepth 1 -type f -name 'MLTEMP*' ! -exec rm {} \;
 
 load "glue"; open aiLib kernel graph enum gen glue;
-
 val ml1 = read_par 10 (3,5);
 val ml2 = read_par 14 (4,4);
 val pbl = shuffle (cartesian_product ml1 ml2);
+val (pbl1,pbl2) = part_n (length pbl div 2) pbl;
+fun f (i1,i2) = infts i1 ^ " " ^ infts i2;
+writel "glue3510_pbl_dai05" (map f pbl1);
+writel "glue3510_pbl_dai06" (map f pbl2);
+
+load "glue"; open aiLib kernel graph enum gen glue;
+fun g s = 
+  let val (s1,s2) = pair_of_list (String.tokens Char.isSpace s) in
+    (stinf s1, stinf s2)
+  end;
+val pbl_dai05 = map g (readl (selfdir ^ "/glue3510_pbl_dai05"));
+run_script_pbl (selfdir ^ "/glue3510_dai05") pbl_dai05;
+
+load "glue"; open aiLib kernel graph enum gen glue;
+fun g s = 
+  let val (s1,s2) = pair_of_list (String.tokens Char.isSpace s) in
+    (stinf s1, stinf s2)
+  end;
+val pbl_dai06 = map g (readl (selfdir ^ "/glue3510_pbl_dai06"));
+
+run_script_pbl (selfdir ^ "/glue3510_dai06") pbl_dai06;
+*)
+
+(* -------------------------------------------------------------------------
+   Glueing: Using gen_bench12_12_0_8_0_5 for 3,5,10
+   ------------------------------------------------------------------------- *)
+
+(*
+export TMPDIR="$PWD/tmp";
+mkdir tmp;
+find /tmp -maxdepth 1 -type f -name 'MLTEMP*' ! -exec rm {} \;
+
+load "glue"; open aiLib kernel graph enum gen glue;
+val ml1 = read_par 12 (3,5);
+val ml2 = read_par 12 (4,4);
+val pbl = shuffle (cartesian_product ml1 ml2);
+val (pbl1,pbl2) = part_n (length pbl div 2) pbl;
+fun f (i1,i2) = infts i1 ^ " " ^ infts i2;
+writel "glue3512_pbl_dai07" (map f pbl1);
+writel "glue3512_pbl_dai04" (map f pbl2);
+
+load "glue"; open aiLib kernel graph enum gen glue;
+fun g s = 
+  let val (s1,s2) = pair_of_list (String.tokens Char.isSpace s) in
+    (stinf s1, stinf s2)
+  end;
+val pbl_dai07 = map g (readl (selfdir ^ "/glue3512_pbl_dai07"));
+run_script_pbl (selfdir ^ "/glue3512_dai07") pbl_dai07;
+
+
+load "glue"; open aiLib kernel graph enum gen glue;
+fun g s = 
+  let val (s1,s2) = pair_of_list (String.tokens Char.isSpace s) in
+    (stinf s1, stinf s2)
+  end;
+val pbl_dai04 = map g (readl (selfdir ^ "/glue3512_pbl_dai04"));
+run_script_pbl (selfdir ^ "/glue3512_dai04") pbl_dai04;
 
 *)
+
+
 
 (* -------------------------------------------------------------------------
    Running on one example
