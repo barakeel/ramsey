@@ -5,7 +5,7 @@
 structure glue :> glue =
 struct   
 
-open HolKernel Abbrev boolLib aiLib kernel graph sat gen syntax
+open HolKernel Abbrev boolLib aiLib kernel graph sat gen syntax gluepost
   minisatProve
 val ERR = mk_HOL_ERR "glue"
 
@@ -287,49 +287,31 @@ fun benchmark_pbl expname pbl =
    Glueing generalizations
    ------------------------------------------------------------------------- *)
 
-fun glue_one () (c1e,c2e) = 
+fun glue_pair (m1,m2) = 
   let 
-    val m1 = diag_mat (unzip_mat c1e) (unzip_mat c2e)
-    val clausel = ramsey_clauses_mat (4,5) m1
-    val name = "r45_" ^ infts c1e ^ "_" ^ infts c2e 
-    val _ = new_theory name
-    val (thm,t) = add_time SAT_PROVE (satpb_of_clausel clausel)
-    val _ = print_endline ("time: " ^ rts t)
-    val _ = save_thm (name,thm)
-    val olddir = OS.FileSys.getDir ()
-    val newdir = !smlExecScripts.buildheap_dir ^ "/theories"
-    val _ = OS.FileSys.chDir newdir
-    val _ = export_theory ()
-    val _ = OS.FileSys.chDir olddir
+    val diag = diag_mat (unzip_mat m1) (unzip_mat m2)
+    val clausel = ramsey_clauses_mat (4,5) diag
   in
-    t
+    post (SAT_PROVE (satpb_of_clausel clausel))
   end
 
-fun write_unit file _ = ()
-fun read_unit file = ()
-fun write_infinf file (i1,i2) = writel file (map infts [i1,i2])
-fun read_infinf file = pair_of_list (map stinf (readl file))
-fun write_result file r = writel file [rts r]
-fun read_result file = (valOf o Real.fromString o hd o readl) file
+fun write_script file (m1,m2) =
+  let
+    val (m1s,m2s) = (infts m1, infts m2)
+    val name = "r45_" ^ m1s ^ "_" ^ m2s
+    val sl = 
+     ["open HolKernel kernel glue",
+      "val _ = new_theory " ^ mlquote name,
+      "val _ = save_thm (" ^ mlquote name ^ 
+          ", glue_pair (stinf " ^ mlquote m1s ^ ", stinf " ^ mlquote m2s ^ "))",
+      "val _ = export_theory ()"]
+  in 
+    writel file sl
+  end
 
-val gluespec : (unit, IntInf.int * IntInf.int, real) smlParallel.extspec =
-  {
-  self_dir = selfdir,
-  self = "glue.gluespec",
-  parallel_dir = selfdir ^ "/parallel_search",
-  reflect_globals = (fn () => "(" ^
-    String.concatWith "; "
-    ["smlExecScripts.buildheap_dir := " ^ mlquote 
-      (!smlExecScripts.buildheap_dir)] 
-    ^ ")"),
-  function = glue_one,
-  write_param = write_unit,
-  read_param = read_unit,
-  write_arg = write_infinf,
-  read_arg = read_infinf,
-  write_result = write_result,
-  read_result = read_result
-  }
+(* -------------------------------------------------------------------------
+   Ordering problems
+   ------------------------------------------------------------------------- *)
 
 fun order_pbl ml1 ml2 = 
   let 
@@ -339,22 +321,6 @@ fun order_pbl ml1 ml2 =
     map fst (dict_sort compare_rmin pbl2)
   end
   
-fun glue_pbl expname pbl = 
-  let
-    val expdir = selfdir ^ "/exp"
-    val dir = expdir ^ "/" ^ expname
-    val _ = app mkDir_err [expdir,dir,dir ^ "/theories"]
-    val _ = smlExecScripts.buildheap_dir := dir
-    val _ = smlExecScripts.buildheap_options :=  "--maxheap " ^ its memory
-    val rl = smlParallel.parmap_queue_extern ncore gluespec () pbl
-    fun f ((c1e,c2e),r) = infts c1e ^ "," ^ infts c2e ^ " " ^ rts r
-    val mean = average_real rl
-    val maxt = list_rmax rl
-    val heads = String.concatWith " " (map rts [mean,maxt])
-  in
-    writel (dir ^ "/summary") [heads];
-    writel (dir ^ "/sattime") (map f (combine (pbl,rl)))
-  end
 
 (* -------------------------------------------------------------------------
    Glueing
@@ -509,17 +475,18 @@ mk_data "e0e0bis";
 *)
 
 (* -------------------------------------------------------------------------
-   Analysis of the relation between size/number of clauses and speed
+   Post-processing test
    ------------------------------------------------------------------------- *)
 
 (*
 load "glue"; open aiLib kernel graph enum gen glue;
 val c1 = random_elem (read_par 10 (3,5));
 val c2 = random_elem (read_par 14 (4,4));
-val (thm,t2) = add_time (glue (4,5) c1) c2;
-number_of_holes (unzip_mat c1); number_of_holes (unzip_mat c2);
 show_assums := true;
+val (thm,t2) = add_time (glue (4,5) c1) c2;
 
+load "gluepost"; open gluepost;
+val (thm1,t3) = add_time post thm;
 
   
 *)
