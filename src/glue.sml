@@ -308,19 +308,25 @@ fun write_script file (m1,m2) =
   in 
     writel file sl
   end
-
-(* -------------------------------------------------------------------------
-   Ordering problems
-   ------------------------------------------------------------------------- *)
-
-fun order_pbl ml1 ml2 = 
+  
+fun run_script_one dir (m1,m2) = 
   let 
-    val pbl1 = cartesian_product ml1 ml2
-    val pbl2 = map_assoc difficulty_pair pbl1
+    val (m1s,m2s) = (infts m1, infts m2)
+    val file = dir ^ "/" ^ m1s ^ "_" ^ m2s ^ "_script.sml" 
   in
-    map fst (dict_sort compare_rmin pbl2)
+    write_script file (m1,m2);
+    smlExecScripts.exec_script file  
   end
   
+fun run_script_pbl dir pbl =
+  let 
+    val _ = smlExecScripts.buildheap_dir := dir ^ "/buildheap"
+    val _ = smlExecScripts.buildheap_options :=  "--maxheap " ^ its memory
+    val _ = app mkDir_err [dir,!smlExecScripts.buildheap_dir]
+    val _  = writel (dir ^ "/Holmakefile") ["INCLUDES = .."]
+  in
+    smlParallel.parapp_queue ncore (run_script_one dir) pbl
+  end
 
 (* -------------------------------------------------------------------------
    Glueing
@@ -335,13 +341,7 @@ load "glue"; open aiLib kernel graph enum gen glue;
 
 val ml1 = read_par 10 (3,5);
 val ml2 = read_par 14 (4,4);
-
-
-val pbl = order_pbl ml1 ml2;
-
-
-
-
+val pbl = shuffle (cartesian_product ml1 ml2);
 
 *)
 
@@ -483,9 +483,27 @@ mk_data "e0e0bis";
 load "glue"; open aiLib kernel graph enum gen glue;
 val m1 = random_elem (read_par 10 (3,5));
 val m2 = random_elem (read_par 14 (4,4));
+val file = selfdir ^ "/test/test_script.sml";
 write_script "test/testScript.sml" (m1,m2);
+smlExecScripts.exec_script file;
+*)
 
-  
+
+(* -------------------------------------------------------------------------
+   Need to add the name of the file preceding by the name of the
+   file without extension see examples in glue.ui/glue.uo.  
+   To do: take the template from test and write for every theories.
+   ------------------------------------------------------------------------- *)
+
+(*
+../../HOL/bin/genscriptdep r45_5906672232746139298160_52208130772457040261063496832654741770335254Theory.sig > r45_5906672232746139298160_52208130772457040261063496832654741770335254Theory.ui
+
+../../HOL/bin/genscriptdep r45_5906672232746139298160_52208130772457040261063496832654741770335254Theory.sml > r45_5906672232746139298160_52208130772457040261063496832654741770335254Theory.uo
+
+Globals.print_thy_loads := true;
+load "test/r45_5906672232746139298160_52208130772457040261063496832654741770335254Theory";
+
+open r45_5906672232746139298160_52208130772457040261063496832654741770335254Theory;
 *)
 
 

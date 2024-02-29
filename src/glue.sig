@@ -16,13 +16,10 @@ sig
   val tune_3512 : string -> int -> int * int * real -> unit
   val tune_3510 : string -> int -> int * real -> unit
   
-  (* creating theories *)
+  
+  (* like Holmake but can limit the memory of each process *)
   val glue_pair : (IntInf.int * IntInf.int) -> thm
   val write_script : string -> (IntInf.int * IntInf.int) -> unit
-  val order_pbl : IntInf.int list -> IntInf.int list -> 
-    (IntInf.int * IntInf.int) list
- 
-  
-  
+  val run_script_pbl : string -> (IntInf.int * IntInf.int) list -> unit
   
 end
