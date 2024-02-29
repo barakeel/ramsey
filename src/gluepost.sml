@@ -5,7 +5,7 @@
 structure gluepost :> gluepost =
 struct   
 
-open HolKernel Abbrev boolLib aiLib kernel syntax graph sat gen 
+open HolKernel Abbrev boolLib bossLib aiLib kernel syntax graph sat gen 
 val ERR = mk_HOL_ERR "gluepost"
 
 fun get_ij atom = 

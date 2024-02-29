@@ -335,9 +335,10 @@ load "glue"; open aiLib kernel graph enum gen glue;
 
 val ml1 = read_par 10 (3,5);
 val ml2 = read_par 14 (4,4);
+
+
 val pbl = order_pbl ml1 ml2;
 
-glue_pbl "glue3510" pbl;
 
 
 
@@ -480,13 +481,9 @@ mk_data "e0e0bis";
 
 (*
 load "glue"; open aiLib kernel graph enum gen glue;
-val c1 = random_elem (read_par 10 (3,5));
-val c2 = random_elem (read_par 14 (4,4));
-show_assums := true;
-val (thm,t2) = add_time (glue (4,5) c1) c2;
-
-load "gluepost"; open gluepost;
-val (thm1,t3) = add_time post thm;
+val m1 = random_elem (read_par 10 (3,5));
+val m2 = random_elem (read_par 14 (4,4));
+write_script "test/testScript.sml" (m1,m2);
 
   
 *)
