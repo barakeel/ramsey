@@ -1,0 +1,72 @@
+
+(* -------------------------------------------------------------------------
+   Dai-04 restart
+   ------------------------------------------------------------------------- *)
+
+(* restarting *)
+load "kernel"; open aiLib kernel;
+val filel = listDir (selfdir ^ "/glue3512_dai04");
+val filel1 = filter (String.isSuffix "Theory.sml") filel;
+val filel2 = map (fn s => fst (split_string "Theory" s)) filel1;
+fun f s = 
+  let val (s1,s2,s3) = triple_of_list (String.tokens (fn x => x = #"_") s) in
+    (stinf s2, stinf s3)
+  end;
+val pbldone = enew (cpl_compare IntInf.compare IntInf.compare) (map f filel2);
+fun g s = 
+  let val (s1,s2) = pair_of_list (String.tokens Char.isSpace s) in
+    (stinf s1, stinf s2)
+  end;
+val pbl_dai04 = map g (readl (selfdir ^ "/glue3512_pbl_dai04"));
+val pbl_dai04_restart1 = filter (fn x => not (emem x pbldone)) pbl_dai04;
+fun fii (i1,i2) = infts i1 ^ " " ^ infts i2;
+writel "glue3512_pbl_dai04_restart1" (map fii pbl_dai04_restart1);
+
+
+(* restarting *)
+export TMPDIR="$PWD/tmp";
+mkdir tmp;
+
+load "glue"; open aiLib kernel graph enum gen glue;
+fun g s = 
+  let val (s1,s2) = pair_of_list (String.tokens Char.isSpace s) in
+    (stinf s1, stinf s2)
+  end;
+val pbl_dai04_restart1 = map g (readl (selfdir ^ "/glue3512_pbl_dai04_restart1"));
+run_script_pbl (selfdir ^ "/glue3512_dai04") pbl_dai04_restart1;
+
+(* -------------------------------------------------------------------------
+   Dai-07 restart
+   ------------------------------------------------------------------------- *)
+
+(* restarting *)
+load "kernel"; open aiLib kernel;
+val filel = listDir (selfdir ^ "/glue3512_dai07");
+val filel1 = filter (String.isSuffix "Theory.sml") filel;
+val filel2 = map (fn s => fst (split_string "Theory" s)) filel1;
+fun f s = 
+  let val (s1,s2,s3) = triple_of_list (String.tokens (fn x => x = #"_") s) in
+    (stinf s2, stinf s3)
+  end;
+val pbldone = enew (cpl_compare IntInf.compare IntInf.compare) (map f filel2);
+fun g s = 
+  let val (s1,s2) = pair_of_list (String.tokens Char.isSpace s) in
+    (stinf s1, stinf s2)
+  end;
+val pbl_dai07 = map g (readl (selfdir ^ "/glue3512_pbl_dai07"));
+val pbl_dai07_restart1 = filter (fn x => not (emem x pbldone)) pbl_dai07;
+fun fii (i1,i2) = infts i1 ^ " " ^ infts i2;
+writel "glue3512_pbl_dai07_restart1" (map fii pbl_dai07_restart1);
+
+
+(* restarting (after waiting for 30 seconds) *)
+export TMPDIR="$PWD/tmp";
+mkdir tmp;
+
+load "glue"; open aiLib kernel graph enum gen glue;
+fun g s = 
+  let val (s1,s2) = pair_of_list (String.tokens Char.isSpace s) in
+    (stinf s1, stinf s2)
+  end;
+val pbl_dai07_restart1 = map g (readl (selfdir ^ "/glue3512_pbl_dai07_restart1"));
+run_script_pbl (selfdir ^ "/glue3512_dai07") pbl_dai07_restart1;
