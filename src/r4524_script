@@ -4,10 +4,30 @@
 
 load "syntax"; open aiLib kernel syntax;
 load "graph"; open graph;
+load "sat"; open sat;
+show_assums := true;
 
 val ERR = mk_HOL_ERR "test";
-val bluethm = ASSUME (noclique 24 (4,true));
-val redthm = ASSUME (noclique 24 (5,false));
+
+(* -------------------------------------------------------------------------
+   Importing graph
+   ------------------------------------------------------------------------- *)
+
+fun read_mat () =
+  let 
+    val sl = readl (selfdir ^ "/r4524");
+    fun f s = 
+      map (fn x => if x = "F" then 2 else 1) (String.tokens Char.isSpace s);
+    val ill = map f sl;
+    val vv = Vector.fromList (map Vector.fromList ill);
+    val m = mat_tabulate (Vector.length vv, (fn (i,j) => 
+       if i = j then 0 else Vector.sub (Vector.sub (vv,i),j)));  
+  in
+    m
+  end;
+
+val m4524 = read_mat ();
+val edgecl4524 = mat_to_edgecl m4524;
 
 (* -------------------------------------------------------------------------
    Syntax
@@ -25,11 +45,42 @@ fun ijtm (i,j) =
   mk_conj (mk_eq (ivar, numSyntax.term_of_int i), 
            mk_eq (jvar, numSyntax.term_of_int j));
 fun ijtm2 (i,j) = mk_disj (ijtm (i,j),ijtm (j,i));
-val abstm = list_mk_abs ([ivar,jvar], list_mk_disj (map ijtm2 edgel));
 fun ijctm ((i,j),c) = 
   if c = 1 then mk_conj (ijtm (i,j),ijtm (j,i))
   else if c = 2 then mk_neg (mk_conj (ijtm (i,j),ijtm (j,i)))
   else raise ERR "ijctm" "";
+
+
+fun mk_domainl cliquen size =
+  let
+    val vl = List.tabulate (cliquen,X)
+    fun f v = (v,numSyntax.mk_less (v,numSyntax.term_of_int size))
+    val boundl = map f vl
+    val pairvl = all_pairs vl
+    val diffl = map (fn (a,b) => mk_neg (mk_eq (a,b))) pairvl
+  in
+    (boundl,diffl)
+  end;
+
+fun list_mk_forall_bound (boundl,tm) = case boundl of    
+    [] => tm
+  | (x,xbound) :: m => 
+    mk_forall (x, mk_imp (xbound, list_mk_forall_bound (m,tm)))
+
+fun nocliqueb size (cliquen,b) = 
+  let
+    val vl = List.tabulate (cliquen,X)
+    val (boundl,diffl) = mk_domainl cliquen size
+    val pairvl = all_pairs vl
+    val litl = map (fn (a,b) => list_mk_comb (E,[a,b])) pairvl
+    val litl' = map (fn x => if b then x else mk_neg x) litl
+  in
+    list_mk_forall_bound (boundl, list_mk_imp (diffl @ litl', F)) 
+  end;
+  
+
+
+
 
 (* -------------------------------------------------------------------------
    Simple arithmetical theorems
@@ -73,32 +124,33 @@ val xdisjfin = list_mk_disj (List.tabulate (24, fn i => mk_eq (xvar,
 val disjthm = METIS_PROVE [intervalthm,disj6thm,disj12thm,disj18thm,disj24thm] (mk_forall (xvar, mk_eq (xlessfin, xdisjfin)));
 
 
+val px = ``P (x:num) : bool``;
+val P = mk_var ("P", ``:num -> bool``);
+val disjP = list_mk_conj (List.tabulate (24, fn i => mk_comb (P,numSyntax.term_of_int i)));
+val forallP = mk_forall (xvar, mk_imp (xdisjfin,px));
+
+val otherthm = PROVE [] (mk_eq (disjP,forallP));
+
+(* -------------------------------------------------------------------------
+   Plan of the proof
+   ------------------------------------------------------------------------- *)
+
+val tm = ``(?(E: num -> num -> bool) . P E /\ !(E: num -> num -> bool) . P E ==> Q) ==> Q``;
+val exists_elim = METIS_PROVE [] tm;
+
 (* -------------------------------------------------------------------------
    Proving the existence of the graph
    ------------------------------------------------------------------------- *)
 
-fun read_graph () =
-  let 
-    val sl = readl (selfdir ^ "/r4524");
-    fun f s = 
-      map (fn x => if x = "F" then 2 else 1) (String.tokens Char.isSpace s);
-    val ill = map f sl;
-    val vv = Vector.fromList (map Vector.fromList ill);
-    val m = mat_tabulate (Vector.length vv, (fn (i,j) => 
-       if i = j then 0 else Vector.sub (Vector.sub (vv,i),j)));  
-    val edgecl = mat_to_edgecl m
-  in
-    edgecl
-  end;
-
 val edgecl = read_graph ();
 val edgel = map fst (filter (fn x => snd x = 1) edgecl);
+val abstm = list_mk_abs ([ivar,jvar], list_mk_disj (map ijtm2 edgel));
 val conjtm = list_mk_conj (map Eijc edgecl);
 val existstm = mk_exists (E, conjtm);
 
-val subtm = subst [{redex = E, residue = abstm}] conjtm;
 fun create_exists () =
   let 
+    val subtm = subst [{redex = E, residue = abstm}] conjtm;
     val thm0 = REDEPTH_CONV BETA_CONV subtm;
     val thm1 = DECIDE ((rhs o concl) thm0);
     val thm2 = EQ_MP (SYM thm0) thm1;
@@ -106,36 +158,118 @@ fun create_exists () =
   in
     thm3
   end;
+  
+val existsthm = create_exists (); 
+val existslemmal = CONJUNCTS (ASSUME (snd (dest_exists (concl existsthm))));
 
-val tm = ``(?(E: num -> num -> bool) . P E /\ !(E: num -> num -> bool) . P E ==> Q) ==> Q``;
+(* -------------------------------------------------------------------------
+   Proving the forall part
+   ------------------------------------------------------------------------- *)
 
-val existsthm = create_exists ();
+fun test_diff vl = 
+  not (null vl) andalso mem (hd vl) (tl vl);
+ 
+fun test_red m vl = 
+  if null vl orelse null (tl vl) then NONE else
+  let val edgel = cartesian_product [hd vl] (tl vl) in
+    List.find (fn (i,j) => mat_sub (m,i,j) = 2) edgel
+  end;
 
-val thm2 = EQ_MP (SYM thm) thm1;
+fun prove_mat_blue m vl depth tm =
+  if test_diff vl
+    then (TAC_PROOF (([],tm), SIMP_TAC bool_ss []))
+  else case test_red m vl of
+      SOME (i,j) => 
+      let 
+        val Eijl = map (mk_neg o Eij) [(i,j),(j,i)]      
+        val imptm = list_mk_imp (Eijl,tm)
+        (* val _ = print_endline (term_to_string imptm) *)
+        val thm = TAC_PROOF (([],imptm), SIMP_TAC bool_ss [])
+      in 
+        UNDISCH (UNDISCH thm)
+      end
+    | NONE =>
+    let
+      val _ = if depth = 2 then print "." else ()
+      val lambdatm =  mk_abs (X depth, (snd o dest_imp o snd o dest_forall) tm);
+      val instthm = BETA_RULE (INST [{redex = P, residue = lambdatm}] otherthm);
+      val instthm' = (UNDISCH_SPLIT o fst o EQ_IMP_RULE) instthm;
+      val tml = (strip_conj o lhs o concl) instthm
+      fun f (x,vn) = prove_mat_blue m (vn :: vl) (depth + 1) x
+      val lemmal = map f (number_snd 0 tml)
+    in
+      PROVE_HYPL lemmal instthm'
+    end
+;
 
-fun rpt_fun_type_im n ty imty =
-  if n <= 0 then imty else mk_type ("fun",[ty,rpt_fun_type_im (n-1) ty imty]);
+fun test_blue m vl = 
+  if null vl orelse null (tl vl) then NONE else
+  let val edgel = cartesian_product [hd vl] (tl vl) in
+    List.find (fn (i,j) => mat_sub (m,i,j) = 1) edgel
+  end;
 
-val P4 = mk_var ("P4",rpt_fun_type_im 4 ``:num`` bool);
-val P5 = mk_var ("P5",rpt_fun_type_im 5 ``:num`` bool);
+fun prove_mat_red m vl depth tm =
+  if test_diff vl
+    then TAC_PROOF (([],tm), SIMP_TAC bool_ss [])
+  else case test_blue m vl of
+      SOME (i,j) => 
+      let 
+        val Eijl = map Eij [(i,j),(j,i)]      
+        val imptm = list_mk_imp (Eijl,tm)
+        val thm = TAC_PROOF (([],imptm), SIMP_TAC bool_ss [])
+      in 
+        UNDISCH (UNDISCH thm)
+      end
+    | NONE =>
+    let
+      val _ = if depth = 2 then print "." else ()
+      val lambdatm =  mk_abs (X depth, (snd o dest_imp o snd o dest_forall) tm);
+      val instthm = BETA_RULE (INST [{redex = P, residue = lambdatm}] otherthm);
+      val instthm' = (UNDISCH_SPLIT o fst o EQ_IMP_RULE) instthm;
+      val tml = (strip_conj o lhs o concl) instthm
+      fun f (x,vn) = prove_mat_red m (vn :: vl) (depth + 1) x
+      val lemmal = map f (number_snd 0 tml)
+    in
+      PROVE_HYPL lemmal instthm'
+    end
+;
 
-val instl = cartesian_productl (List.tabulate (4,fn _ => List.tabulate (24,I)));
-fun P4app l = list_mk_comb (P4, map numSyntax.term_of_int l);
-val tml = map P4app instl
-val x4 = List.tabulate (4,X);
-val x4less = map (fn x => numSyntax.mk_less (x, numSyntax.term_of_int 24))
- x4;
-val P4all = list_mk_forall (x4, list_mk_imp (x4less,list_mk_comb (P4,x4)));
-
-val P4dis = list_mk_imp (tml, P4all);
 
 
-val tm = ``(x = 0 \/ x = 1 \/ x = 2) <=> x < 3``; 
-val tm = ``(P 0 /\ P 1 /\ P 2) <=> (!x. x < 3 ==> P x)``; 
+val blueclique = noclique 24 (4,true);
+val bluecliqueb = nocliqueb 24 (4,true);
+val bluecliqueeq = PURE_REWRITE_RULE [disjthm]
+  (PROVE [] (mk_eq (blueclique,bluecliqueb)));
+val bluetm = (rhs o concl) bluecliqueeq;
+val thmblue1 = prove_mat_blue m4524 [] 0 bluetm;
+val thmblue2 = EQ_MP (SYM bluecliqueeq) thmblue1;
+val thmblue3 = PURE_REWRITE_RULE [GSYM disjthm] thmblue2;
 
-val thm = DECIDE ``0 < 1``;
-val tm = ``P 0 <=> (0 < 1 ==> P 0)``;
+val redclique = noclique 24 (5,false);
+val redcliqueb = nocliqueb 24 (5,false);
+val redcliqueeq = PURE_REWRITE_RULE [disjthm]
+  (PROVE [] (mk_eq (redclique,redcliqueb)));
+val redtm = (rhs o concl) redcliqueeq;
+val thmred1 = prove_mat_red m4524 [] 0 redtm;
+val thmred2 = EQ_MP (SYM redcliqueeq) thmred1;
+val thmred3 = PURE_REWRITE_RULE [GSYM disjthm] thmred2;
 
-val enum_thm = P (....)
+val thmblue4 = PROVE_HYPL existslemmal thmblue3;
+val thmred4 = PROVE_HYPL existslemmal thmred3;
+
+val abstm = rand (concl existsthm);
+show_types := true;
+val selectthm = 
+  INST_TYPE [{redex = alpha, residue = ``:num -> num -> bool``}] SELECT_THM;
+val selectconst = (rator o rand o lhs o snd o dest_forall o concl) selectthm;
+show_types := false;
+val selecttm = mk_comb (selectconst, abstm);
+val selectthm1 = SPEC abstm selectthm;
+val thmblue5 = 
+  let val lemma = (UNDISCH o snd o EQ_IMP_RULE o BETA_RULE) selectthm1 in
+    PROVE_HYP lemma (INST [{redex = E, residue = selecttm}] thmblue4)
+  end;
+  
+  
 
 
