@@ -346,7 +346,7 @@ fun IMPOSSIBLE k =
     val g44l = filter is_gtm (hyp R44p)
     val g44il = map_assoc (zip_mat o mat_of_gtm_shifted (24-k)) g44l
     val lemmal = map (IMPOSSIBLE_35 k arith g44il elimthm R44p) g35il
-    val thm1 = PROVE_HYPL lemmal R358p
+    val thm1 = PROVE_HYPL lemmal R35p
     val thm2 = UNDISCH_ALL (BETA_RULE (DISCH_ALL thm1))
     val lemma1 = ASSUME ``!(x:num) (y:num). E x y <=> E y x`` 
     val intk = numSyntax.term_of_int k
