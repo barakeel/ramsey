@@ -297,13 +297,13 @@ fun mk_R35p k =
   if k = 8 then prepare_rthm R358
   else if k = 10 then prepare_rthm R3510
   else if k = 12 then prepare_rthm R3512
-  else raise ERR "mk_R35p" "degree"
+  else raise ERR "mk_R35p" ("degree " ^ its k)
            
 fun mk_R44p k =
   if k = 16 then shift_rthm k (prepare_rthm R4416) 
   else if k = 14 then shift_rthm k (prepare_rthm R4414)
   else if k = 12 then shift_rthm k (prepare_rthm R4412)
-  else raise ERR "mk_R44p" "degree"
+  else raise ERR "mk_R44p" ("degree " ^ its k)
   
 fun mk_gluedir k = selfdir ^ "/work_glue35" ^ its k
 
@@ -340,7 +340,7 @@ fun IMPOSSIBLE k =
     val arith = (mk_Lk_IMP_L24 k, mk_Lmk_IMP_ADDk_L24 k, 
                  mk_Lk_DIFF_ADDk k, mk_DIFF_IMP_DIFF_ADDk k)
     val R35p = mk_R35p k
-    val R44p = mk_R44p k
+    val R44p = mk_R44p (24-k)
     val g35l = filter is_gtm (hyp R35p)
     val g35il = map_assoc (zip_mat o mat_of_gtm k) g35l
     val g44l = filter is_gtm (hyp R44p)
