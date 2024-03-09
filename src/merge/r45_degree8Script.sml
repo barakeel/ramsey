@@ -23,6 +23,8 @@ val C4524b_THM = (UNDISCH o fst o EQ_IMP_RULE o SPEC_ALL) C4524b_DEF;
 val C4524r_THM = (UNDISCH o fst o EQ_IMP_RULE o SPEC_ALL) C4524r_DEF;
 val IMP_FF = PROVE [] ``!x. (x ==> F) ==> F <=> x``;
 
+val gluedir = selfdir ^ "/work_glue358"
+
 fun IMPOSSIBLE_35 k g44il R44p g35i =
   let
     val elimthm = elim_exists k
@@ -34,8 +36,8 @@ fun IMPOSSIBLE_35 k g44il R44p g35i =
         val thmname = "r45_" ^ infts m35i ^ "_" ^ infts m44i;
         val thyname = thmname;
         val thyfile = gluedir ^ "/" ^ thyname ^ "Theory";
-        val _ = load thyfile;
-        val gluethm3 = DB.fetch thyname thmname;
+        val _ = load thyfile
+        val gluethm3 = DB.fetch thyname thmname
         val gluethm3' = PROVE_HYPL [C4524b_THM, C4524r_THM] gluethm3
         val gluethm = impossible_gluing k g35 g44 gluethm3'
         val conjthm = LIST_CONJ [assume35,assume44,gluethm]
@@ -47,9 +49,8 @@ fun IMPOSSIBLE_35 k g44il R44p g35i =
     val thm2 = PURE_ONCE_REWRITE_RULE [IMP_FF] (DISCH (mk_imp (g35,F)) thm1)
   in
     thm2
-  end;
+  end
 
-val gluedir = selfdir ^ "/work_glue358";
 val lemmal =map (IMPOSSIBLE_35 8 g4416il R4416p) g358il)
 val finalthm1 = PROVE_HYPL lemmal R358p
 val finalthm2 = UNDISCH_ALL (BETA_RULE (DISCH_ALL finalthm1))
