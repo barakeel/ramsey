@@ -3,7 +3,7 @@
 (* ===================================================================== *)
 
 open HolKernel Abbrev boolLib Parse simpLib boolSimps BasicProvers
-open aiLib kernel graph enum gen glue syntax sat
+open aiLib kernel graph enum gen glue syntax sat merge
 open ramseyDefTheory ramseyEnumTheory
 
 val _ = new_theory "r45_degree8";
