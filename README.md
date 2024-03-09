@@ -146,6 +146,10 @@ cd merge
 ../../HOL/bin/Holmake --no_prereqs
 ``
 
+``
+cd merge358
+../../HOL/bin/Holmake --no_prereqs
+``
 
 
 
