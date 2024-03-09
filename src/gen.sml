@@ -312,7 +312,7 @@ fun sgeneralize (bluen,redn) uset leafi =
           if length result >= (!maxhole) then rev result else
           case if !select_basic then vl else
                 map fst (dict_sort compare_rmax 
-                (map_assoc (scorev (bluen,redn) leaf result) vl))) 
+                (map_assoc (scorev (bluen,redn) leaf result) vl)) 
           of
             [] => rev result
           | v :: rem => 
