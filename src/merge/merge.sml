@@ -271,12 +271,14 @@ fun regroup_conjuncts k g35 g44 gluethm9 =
     val lemmal = CONJUNCTS (ASSUME conj35) @ CONJUNCTS (ASSUME conj44)
     val gluethm10 = PROVE_HYPL lemmal gluethm9;
     val _ = if length (hyp gluethm10) = 4 then () 
-            else raise ERR "regroup_conjuncts" "1"
+            else raise ERR "regroup_conjuncts" 
+                           ("1: " ^ (thm_to_string gluethm10))
     val lemma = ASSUME (mk_conj (conj35,conj44));
     val lemmal = [CONJUNCT1 lemma, CONJUNCT2 lemma];
     val gluethm11 = PROVE_HYPL lemmal gluethm10;
     val _ = if length (hyp gluethm11) = 3 then () 
-            else raise ERR "regroup_conjuncts" "2"
+            else raise ERR "regroup_conjuncts" 
+                           ("2: " ^ (thm_to_string gluethm11))
     fun test x = not (is_forall x) andalso not (is_cdeftm x)
     val gluethm12 = DISCHL (filter test (hyp gluethm11)) gluethm11
   in
