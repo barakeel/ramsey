@@ -88,18 +88,10 @@ Better covers are uses for k=8,10,12, to generate those covers, run
 
 
 ### Definition (10 min)
+
 ```
 cd def
 ../../HOL/bin/Holmake 
-cd ..
-```
-
-Look at definitions:
-```
-load "def/ramseyDefTheory";
-val sl = map fst (DB.definitions "ramseyDef");
-val thm1 = DB.fetch "ramseyDef" "C4416r_DEF";
-val thm2 = DB.fetch "ramseyDef" "G3512_DEF";
 ```
 
 ### Proving the enumeration (1 hour)
@@ -110,15 +102,11 @@ load "enump"; open kernel enump;
 val _ = range (8, 18, fn size => write_enumscripts 50 size (4,4));
 ```
 
-
-Run the scripts (requires 500GB of ram)
-preferably inside a screen `screen -S enump`:
-
+Run the scripts (requires 500GB of ram) 
+preferably inside a screen `screen -S enum`:
 ```
 cd enump
-echo "INCLUDES = .. ../def" > Holmakefile
 ../../HOL/bin/Holmake --no_prereqs -j 40 | tee ../aaa_log_enump
-cd ..
 ```
 
 This creates low-level lemmas for the difficult case that need to combined.
@@ -136,24 +124,13 @@ Then, run the script:
 ```
 cd enumf
 ../../HOL/bin/Holmake --no_prereqs
-cd ..
 ```
 
-Look at a theorem:
-```
-load "enumf/ramseyEnumTheory";
-val sl = map fst (DB.thms "ramseyEnum");
-show_assums := true;
-val thm = DB.fetch "ramseyEnum" "R4417";
-```
-
-### Glueing (20 days)
+### Gluing (20 days)
 Run from the `src` directory (preferably inside a screen `screen -S glue`):
 ```
 cd glue
 ```
-
-
 
 To be run at most one hour after starting the previous process,
 remove empty temporary files (preferably inside a screen `screen -S tmp`).
@@ -163,11 +140,11 @@ cd /tmp
 watch -n 600 "find . -maxdepth 1 -type f -name 'MLTEMP*' ! -exec lsof {} \; -exec rm {} \;"
 ```
 
-
-
-
-## Merging the glueing lemmas
-
+## Merging the gluing lemmas
+``
+cd merge
+../../HOL/bin/Holmake --no_prereqs
+``
 
 
 
