@@ -51,14 +51,14 @@ fun IMPOSSIBLE_35 k g44il R44p g35i =
     thm2
   end
 
-val lemmal =map (IMPOSSIBLE_35 8 g4416il R4416p) g358il)
+val lemmal =map (IMPOSSIBLE_35 8 g4416il R4416p) g358il
 val finalthm1 = PROVE_HYPL lemmal R358p
 val finalthm2 = UNDISCH_ALL (BETA_RULE (DISCH_ALL finalthm1))
-val lemma1 = ASSUME ``!(x:num) (y:num). E x y <=> E y x``; 
-val lemma2 = GENL [``x:num``,``y:num``] (SPECL [``x + 8``,``y + 8``] lemma1);
-val finalthm3 = PROVE_HYP lemma2 finalthm3;
+val lemma1 = ASSUME ``!(x:num) (y:num). E x y <=> E y x`` 
+val lemma2 = GENL [``x:num``,``y:num``] (SPECL [``x + 8``,``y + 8``] lemma1)
+val finalthm3 = PROVE_HYP lemma2 finalthm3
 
-val _ = save_thm ("r45_degree8", finalthm3);
+val _ = save_thm ("r45_degree8", finalthm3)
 val _ = export_theory ();
 
 
