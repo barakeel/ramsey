@@ -297,15 +297,15 @@ fun mk_R35p k =
   if k = 8 then prepare_rthm R358
   else if k = 10 then prepare_rthm R3510
   else if k = 12 then prepare_rthm R3512
-  else raise ERR "R35k" "degree"
+  else raise ERR "mk_R35p" "degree"
            
 fun mk_R44p k =
   if k = 16 then shift_rthm k (prepare_thm R4416) 
   else if k = 14 then shift_rthm k (prepare_thm R4414)
   else if k = 12 then shift_rthm k (prepare_thm R4412)
+  else raise ERR "mk_R44p" "degree"
   
 fun mk_gluedir k = selfdir ^ "/work_glue35" ^ its k
-
 
 val IMP_FF = PROVE [] ``!x. (x ==> F) ==> F <=> x``;
 
