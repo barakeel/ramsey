@@ -5,10 +5,9 @@
 structure merge :> merge =
 struct   
 
-open HolKernel Abbrev boolLib Parse simpLib boolSimps BasicProvers
+open HolKernel Abbrev boolLib bossLib
 open aiLib kernel graph sat syntax
 
-type mat = graph.mat 
 val ERR = mk_HOL_ERR "merge"
 
 (* -------------------------------------------------------------------------
