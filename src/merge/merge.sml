@@ -300,9 +300,9 @@ fun mk_R35p k =
   else raise ERR "mk_R35p" "degree"
            
 fun mk_R44p k =
-  if k = 16 then shift_rthm k (prepare_thm R4416) 
-  else if k = 14 then shift_rthm k (prepare_thm R4414)
-  else if k = 12 then shift_rthm k (prepare_thm R4412)
+  if k = 16 then shift_rthm k (prepare_rthm R4416) 
+  else if k = 14 then shift_rthm k (prepare_rthm R4414)
+  else if k = 12 then shift_rthm k (prepare_rthm R4412)
   else raise ERR "mk_R44p" "degree"
   
 fun mk_gluedir k = selfdir ^ "/work_glue35" ^ its k
