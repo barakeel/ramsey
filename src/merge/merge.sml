@@ -284,7 +284,7 @@ fun regroup_conjuncts k g35 g44 gluethm9 =
   end;
   
 fun impossible_gluing k arith g35 g44 gluethm3 =
-  regroup_conjuncts k arith g35 g44 (prove_shifting k arith gluethm3)
+  regroup_conjuncts k g35 g44 (prove_shifting k arith gluethm3)
   
 (* -------------------------------------------------------------------------
    Differentiating between k=8,k=10 and k=12
