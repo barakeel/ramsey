@@ -19,6 +19,8 @@ val exponent = ref 1.0
 val mincover = ref (1.0 / 8.0)
 val select_number1 = ref 240
 val select_number2 = ref 120
+val select_basic = ref false
+
 
 (* -------------------------------------------------------------------------
    Convert colored edges to int
@@ -231,7 +233,9 @@ fun score_leafv diffd br (leafi,vl) =
     val cover = List.concat (map (map fst o #3) vl)
     val covern = Real.fromInt (elength (enew IntInf.compare cover))
   in
-    dfind (leafi,map #1 vl) diffd * covern
+    if !select_basic 
+    then covern
+    else dfind (leafi,map #1 vl) diffd
   end
   
 (* -------------------------------------------------------------------------
@@ -306,7 +310,7 @@ fun sgeneralize (bluen,redn) uset leafi =
           end
         fun sgen_loop vl result = 
           if length result >= (!maxhole) then rev result else
-          case ((* if true then vl else *)
+          case if !select_basic then vl else
                 map fst (dict_sort compare_rmax 
                 (map_assoc (scorev (bluen,redn) leaf result) vl))) 
           of
@@ -546,8 +550,8 @@ fun gen (bluen,redn) (minsize,maxsize) =
 load "gen"; open sat aiLib kernel graph gen;
 
 clean_dir (selfdir ^ "/gen");
-exponent := 0.5;
-maxhole := 0;
+maxhole := 10;
+select_basic := true;
 select_number1 := 313;
 select_number2 := 1;
 val (_,t35) = add_time (gen (3,5)) (12,12);

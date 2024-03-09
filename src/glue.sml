@@ -284,10 +284,11 @@ fun benchmark_pbl expname pbl =
   end
 
 (* -------------------------------------------------------------------------
-   Glueing generalizations
+   Glueing scripts. Can be run with Holmake instead
+   of buildheap by changing the "_script.sml" extension to "Script.sml".
    ------------------------------------------------------------------------- *)
 
-fun glue_pair (m1,m2) = 
+fun glue_pair (m1,m2) =
   let 
     val diag = diag_mat (unzip_mat m1) (unzip_mat m2)
     val clausel = ramsey_clauses_mat (4,5) diag
@@ -312,7 +313,7 @@ fun write_script file (m1,m2) =
 fun run_script_one dir (m1,m2) = 
   let 
     val (m1s,m2s) = (infts m1, infts m2)
-    val file = dir ^ "/" ^ m1s ^ "_" ^ m2s ^ "_script.sml" 
+    val file = dir ^ "/r45_" ^ m1s ^ "_" ^ m2s ^ "_script.sml" 
   in
     write_script file (m1,m2);
     smlExecScripts.exec_script file  
@@ -328,15 +329,49 @@ fun run_script_pbl dir pbl =
     smlParallel.parapp_queue ncore (run_script_one dir) pbl
   end
 
+
 (* -------------------------------------------------------------------------
-   Glueing:
-   Using gen_bench6_4_4_0_5 for 3,5,10
+   3,5,8 glueing: using gen_bench16_8_4_0_0_5
    ------------------------------------------------------------------------- *)
 
 (*
 export TMPDIR="$PWD/tmp";
 mkdir tmp;
-find /tmp -maxdepth 1 -type f -name 'MLTEMP*' ! -exec rm {} \;
+
+load "glue"; open aiLib kernel graph enum gen glue;
+val ml1 = read_par 8 (3,5);
+val ml2 = read_par 16 (4,4);
+val pbl = shuffle (cartesian_product ml1 ml2);
+fun f (i1,i2) = infts i1 ^ " " ^ infts i2;
+writel "glue358_pbl_dai07" (map f pbl);
+
+
+load "glue"; open aiLib kernel graph enum gen glue;
+fun g s = 
+  let val (s1,s2) = pair_of_list (String.tokens Char.isSpace s) in
+    (stinf s1, stinf s2)
+  end;
+val glue358_pbl_dai07 = map g (readl (selfdir ^ "/glue358_pbl_dai07"));
+run_script_pbl (selfdir ^ "/glue358_dai07") glue358_pbl_dai07;
+
+load "glue"; open aiLib kernel graph enum gen glue;
+fun g s = 
+  let val (s1,s2) = pair_of_list (String.tokens Char.isSpace s) in
+    (stinf s1, stinf s2)
+  end;
+val pbl_dai06 = map g (readl (selfdir ^ "/glue3510_pbl_dai06"));
+
+run_script_pbl (selfdir ^ "/glue3510_dai06") pbl_dai06;
+*)
+
+
+(* -------------------------------------------------------------------------
+   3,5,10 glueing: using gen_bench6_4_4_0_5
+   ------------------------------------------------------------------------- *)
+
+(*
+export TMPDIR="$PWD/tmp";
+mkdir tmp;
 
 load "glue"; open aiLib kernel graph enum gen glue;
 val ml1 = read_par 10 (3,5);
@@ -366,13 +401,12 @@ run_script_pbl (selfdir ^ "/glue3510_dai06") pbl_dai06;
 *)
 
 (* -------------------------------------------------------------------------
-   Glueing: Using gen_bench12_12_0_8_0_5 for 3,5,10
+   3,5,12 Glueing: using gen_bench12_12_0_8_0_5
    ------------------------------------------------------------------------- *)
 
 (*
 export TMPDIR="$PWD/tmp";
 mkdir tmp;
-find /tmp -maxdepth 1 -type f -name 'MLTEMP*' ! -exec rm {} \;
 
 load "glue"; open aiLib kernel graph enum gen glue;
 val ml1 = read_par 12 (3,5);
@@ -424,7 +458,6 @@ val (_,t2) = add_time (glue (4,5) c1) c2;
 (*
 export TMPDIR="$PWD/tmp";
 mkdir tmp;
-find /tmp -maxdepth 1 -type f -name 'MLTEMP*' ! -exec rm {} \;
 
 load "glue"; open aiLib kernel graph enum gen glue;
 
@@ -456,8 +489,8 @@ val parameterl7 = [(8,8,0.5),(9,9,0.5),(10,10,0.5)];
 app (tune "bench7") parameterl7;
 
 val parameterl8 = [(10,5,5,0.5)]
-val parameterl9 = [(12,8,8,0.5,1000,100)];
-val parameterl11 = [(12,6,6,0.5,1000,100)];
+val parameterl9 = [(12,8,8,0.5)];
+val parameterl11 = [(12,6,6,0.5)];
 app (tune "bench11") parameterl11;
 
 val parameterl12 = 
@@ -469,6 +502,19 @@ app (tune "bench14" 100) parameterl14;
 
 val parameterl15 = [(4,0.5),(5,0.5),(6,0.5),(7,0.5),(8,0.5)];
 app (tune_3510 "bench15" 100) parameterl15;
+
+(* last 3 benchmarks *)
+
+load "glue"; open aiLib kernel graph enum gen glue;
+val enum358 = read_enum 8 (3,5);
+val enum4416 = read_enum 16 (4,4);
+benchmark "bench16_8_0_0" 200 enum358 enum4416;
+val enum3512 = read_enum 12 (3,5);
+val enum4412 = read_enum 12 (4,4);
+benchmark "bench16_12_0_0" 200 enum3512 enum4412;
+tune "bench16" 200 (8,4,0,0.5);
+tune "bench16" 200 (8,0,0,0.5);
+
 *)
 
 (* -------------------------------------------------------------------------
@@ -549,23 +595,52 @@ smlExecScripts.exec_script file;
 
 
 (* -------------------------------------------------------------------------
-   Need to add the name of the file preceding by the name of the
-   file without extension see examples in glue.ui/glue.uo.  
-   To do: take the template from test and write for every theories.
+   Generating the dependencies (not necessary if one uses Holmake)
    ------------------------------------------------------------------------- *)
 
 (*
-../../HOL/bin/genscriptdep r45_5906672232746139298160_52208130772457040261063496832654741770335254Theory.sig > r45_5906672232746139298160_52208130772457040261063496832654741770335254Theory.ui
+../../HOL/bin/genscriptdep r45_45753526901690_3583333758674368197732360914071565186738705964924502796773Theory.sig > ../template_ui.ui
 
-../../HOL/bin/genscriptdep r45_5906672232746139298160_52208130772457040261063496832654741770335254Theory.sml > r45_5906672232746139298160_52208130772457040261063496832654741770335254Theory.uo
-
-Globals.print_thy_loads := true;
-load "test/r45_5906672232746139298160_52208130772457040261063496832654741770335254Theory";
-
-open r45_5906672232746139298160_52208130772457040261063496832654741770335254Theory;
+../../HOL/bin/genscriptdep r45_45753526901690_3583333758674368197732360914071565186738705964924502796773Theory.sml > ../template_uo.uo
 *)
 
+(*
+load "glue"; open aiLib kernel graph enum gen glue;
 
+val template_ui = readl (selfdir ^ "/template_ui.ui");
+val template_uo = readl (selfdir ^ "/template_uo.uo");
+
+fun g s = 
+  let val (s1,s2) = pair_of_list (String.tokens Char.isSpace s) in
+    (stinf s1, stinf s2)
+  end;
+val glue358_pbl_dai07 = map g (readl (selfdir ^ "/glue358_pbl_dai07"));
+
+
+fun write_dep_one dir (a,b) = 
+  let 
+    val file = dir ^ "/r45_" ^ infts a ^ "_" ^ infts b ^ "Theory"
+  in
+    writel (file ^ ".ui") (template_ui @ [file,file ^ ".sig"]);
+    writel (file ^ ".uo") (template_uo @ [file,file ^ ".sml"])
+  end;
+
+val mydir = "/local" ^ selfdir ^ "/work_glue358";
+app (write_dep_one mydir) glue358_pbl_dai07;
+
+
+*)
+
+(* -------------------------------------------------------------------------
+   Regrouping generalizations
+   ------------------------------------------------------------------------- *)
+
+
+(*
+cp -r gen_bench16_8_4_0_0_5/* gen
+cp -r gen_bench6_4_4_0_5/* gen
+cp -r gen_bench12_12_0_8_0_5/* gen
+*)
 
 
 end (* struct *)

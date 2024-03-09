@@ -18,9 +18,9 @@ fun g s =
     (stinf s1, stinf s2)
   end;
 val pbl_dai04 = map g (readl (selfdir ^ "/glue3512_pbl_dai04"));
-val pbl_dai04_restart1 = filter (fn x => not (emem x pbldone)) pbl_dai04;
+val pbl_dai04_restart2 = filter (fn x => not (emem x pbldone)) pbl_dai04;
 fun fii (i1,i2) = infts i1 ^ " " ^ infts i2;
-writel "glue3512_pbl_dai04_restart1" (map fii pbl_dai04_restart1);
+writel "glue3512_pbl_dai04_restart2" (map fii pbl_dai04_restart2);
 
 
 (* restarting *)
@@ -32,8 +32,8 @@ fun g s =
   let val (s1,s2) = pair_of_list (String.tokens Char.isSpace s) in
     (stinf s1, stinf s2)
   end;
-val pbl_dai04_restart1 = map g (readl (selfdir ^ "/glue3512_pbl_dai04_restart1"));
-run_script_pbl (selfdir ^ "/glue3512_dai04") pbl_dai04_restart1;
+val pbl_dai04_restart2 = map g (readl (selfdir ^ "/glue3512_pbl_dai04_restart2"));
+run_script_pbl (selfdir ^ "/glue3512_dai04") pbl_dai04_restart2;
 
 (* -------------------------------------------------------------------------
    Dai-07 restart

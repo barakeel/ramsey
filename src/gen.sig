@@ -10,6 +10,7 @@ sig
   val select_number1 : int ref
   val select_number2 : int ref
   val mincover : real ref
+  val select_basic : bool ref
   
   (* scoring number of shapes *)
   val get_average35 : IntInf.int list -> ((int * int) * real) list
