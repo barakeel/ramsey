@@ -126,7 +126,7 @@ cd enumf
 ../../HOL/bin/Holmake --no_prereqs
 ```
 
-### Gluing (20 days)
+### Gluing (40 days)
 Run from the `src` directory (preferably inside a screen `screen -S glue`):
 ```
 cd glue

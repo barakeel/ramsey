@@ -2,6 +2,7 @@
 (* Merging lemmas to prove that degree 8 is impossible.                  *)
 (* ===================================================================== *)
 
+open HolKernel Abbrev boolLib Parse simpLib boolSimps BasicProvers
 open aiLib kernel graph enum gen glue syntax sat
 open ramseyDefTheory ramseyEnumTheory
 

@@ -598,17 +598,23 @@ smlExecScripts.exec_script file;
    Generating the dependencies (not necessary if one uses Holmake)
    ------------------------------------------------------------------------- *)
 
-(*
-../../HOL/bin/genscriptdep r45_45753526901690_3583333758674368197732360914071565186738705964924502796773Theory.sig > ../template_ui.ui
+(* 
+create a Holmafile in work_glue358 with INCLUDES=..
 
-../../HOL/bin/genscriptdep r45_45753526901690_3583333758674368197732360914071565186738705964924502796773Theory.sml > ../template_uo.uo
+cd work_glue358
+
+../../HOL/bin/genscriptdep r45_45753526901690_3583333758674368197732360914071565186738705964924502796773Theory.sig > ../template_ui
+
+../../HOL/bin/genscriptdep r45_45753526901690_3583333758674368197732360914071565186738705964924502796773Theory.sml > ../template_uo
+
+remove last line of template_uo
 *)
 
 (*
 load "glue"; open aiLib kernel graph enum gen glue;
 
-val template_ui = readl (selfdir ^ "/template_ui.ui");
-val template_uo = readl (selfdir ^ "/template_uo.uo");
+val template_ui = readl (selfdir ^ "/template_ui");
+val template_uo = readl (selfdir ^ "/template_uo");
 
 fun g s = 
   let val (s1,s2) = pair_of_list (String.tokens Char.isSpace s) in
@@ -625,10 +631,23 @@ fun write_dep_one dir (a,b) =
     writel (file ^ ".uo") (template_uo @ [file,file ^ ".sml"])
   end;
 
-val mydir = "/local" ^ selfdir ^ "/work_glue358";
-app (write_dep_one mydir) glue358_pbl_dai07;
+val dir358 = "/local" ^ selfdir ^ "/work_glue358";
+app (write_dep_one dir358) glue358_pbl_dai07;
 
+val glue3510_pbl = 
+  map g (readl (selfdir ^ "/glue3510_pbl_dai05")) @
+  map g (readl (selfdir ^ "/glue3510_pbl_dai06"))
+  ;
 
+val dir3510 = "/local" ^ selfdir ^ "/work_glue3510";
+app (write_dep_one dir3510) glue3510_pbl;
+
+val glue3512_pbl = 
+  map g (readl (selfdir ^ "/glue3512_pbl_dai04")) @
+  map g (readl (selfdir ^ "/glue3512_pbl_dai07"));
+
+val dir3512 = "/local" ^ selfdir ^ "/work_glue3512";
+app (write_dep_one dir3512) glue3512_pbl;
 *)
 
 (* -------------------------------------------------------------------------
