@@ -151,5 +151,14 @@ cd merge358
 ../../HOL/bin/Holmake --no_prereqs
 ``
 
+``
+cd merge3510
+../../HOL/bin/Holmake --no_prereqs -j 43 | tee ../aaa_log_merge3510
+``
+
+``
+cd merge3512
+../../HOL/bin/Holmake --no_prereqs -j 12 | tee ../aaa_log_merge3512
+``
 
 

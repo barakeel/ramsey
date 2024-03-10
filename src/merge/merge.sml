@@ -391,8 +391,6 @@ fun IMPOSSIBLE_NTH_35 k nth35 =
     IMPOSSIBLE_35 counter k arith g44il elimthm R44p (List.nth (g35il,nth35))
   end
 
-
-
 fun IMPOSSIBLE k =
   let
     val counter = ref 0
@@ -448,6 +446,37 @@ fun write_mergescripts k =
     ignore (List.tabulate (length g35l, f))
   end  
   
+fun IMPOSSIBLE_REG_35 k =
+  let
+    val R35p = mk_R35p k
+    val g35l = filter is_gtm (hyp R35p)
+    val dir = selfdir ^ "/merge35" ^ its k
+    fun f n =
+      let 
+        val thyname = "r45_degree" ^ its k ^ "_" ^ its n
+        val thmname = thyname
+        val thyfile = dir ^ "/" ^ thyname ^ "Theory"
+        val (_,t) = add_time load thyfile
+        val _ = print_endline 
+          ("loading " ^ thyname ^ "Theory in " ^ rts_round 2 t ^ " seconds") 
+      in
+        DB.fetch thyname thmname
+      end
+    val lemmal = List.tabulate (length g35l, f)
+    val thm1 = PROVE_HYPL lemmal R35p
+    val thm2 = UNDISCH_ALL (BETA_RULE (DISCH_ALL thm1))
+    val lemma1 = ASSUME ``!(x:num) (y:num). E x y <=> E y x`` 
+    val intk = numSyntax.term_of_int k
+    val x = mk_var ("x",``:num``)
+    val y = mk_var ("y",``:num``)
+    val xpk = numSyntax.mk_plus (x,intk)
+    val ypk = numSyntax.mk_plus (y,intk)
+    val lemma2 = GENL [x,y] (SPECL [xpk,ypk] lemma1)
+    val thm3 = PROVE_HYP lemma2 thm2
+  in
+    thm3
+  end
+
 (*
 load "merge"; open merge;
 write_mergescripts 10;
