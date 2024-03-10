@@ -293,8 +293,10 @@ fun impossible_gluing k arith g35 g44 gluethm3 =
    Differentiating between k=8,k=10 and k=12
    ------------------------------------------------------------------------- *)
  
-val C4524b_THM = (UNDISCH o fst o EQ_IMP_RULE o SPEC_ALL) C4524b_DEF;
-val C4524r_THM = (UNDISCH o fst o EQ_IMP_RULE o SPEC_ALL) C4524r_DEF;
+val C4524b_THM = (UNDISCH o fst o EQ_IMP_RULE o SPEC_ALL)    
+ ramseyDefTheory.C4524b_DEF
+val C4524r_THM = (UNDISCH o fst o EQ_IMP_RULE o SPEC_ALL) 
+ ramseyDefTheory.C4524r_DEF
   
 fun mk_R35p k = 
   if k = 8 then prepare_rthm ramseyEnumTheory.R358
