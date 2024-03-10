@@ -1,1 +1,1 @@
-INCLUDES = .. ../def ../enumf ../merge ../merge3510
+INCLUDES = .. ../def ../enumf ../merge ../work_glue3510 ../merge3510
