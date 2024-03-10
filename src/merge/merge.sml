@@ -318,7 +318,7 @@ fun IMPOSSIBLE_35 counter k arith g44il elimthm R44p (g35,m35i) =
   let
     val gluedir = mk_gluedir k
     val assume35 = ASSUME (mk_imp (g35,F))
-    fun loop g44il thm = case g44il of [] => thm | (g44,m44i) :: m =>
+    fun loop g44illoc thm = case g44illoc of [] => thm | (g44,m44i) :: m =>
       let
         val assume44 = DISCH g44 thm
         val thmname = "r45_" ^ infts m35i ^ "_" ^ infts m44i
@@ -343,6 +343,36 @@ fun IMPOSSIBLE_35 counter k arith g44il elimthm R44p (g35,m35i) =
   in
     thm2
   end
+  
+fun IMPOSSIBLE_44 counter k arith g35il elimthm R35p (g44,m44i) =
+  let
+    val gluedir = mk_gluedir k
+    val assume44 = ASSUME (mk_imp (g44,F))
+    fun loop g35illoc thm = case g35illoc of [] => thm | (g35,m35i) :: m =>
+      let
+        val assume35 = DISCH g35 thm
+        val thmname = "r45_" ^ infts m35i ^ "_" ^ infts m44i
+        val thyname = thmname
+        val thyfile = gluedir ^ "/" ^ thyname ^ "Theory"
+        val _ = load thyfile
+        val _ = incr counter
+        val _ = 
+          if (!counter) mod 1000 = 0 
+          then print_endline ("loaded theories " ^ its (!counter))
+          else ()
+        val gluethm3 = DB.fetch thyname thmname
+        val gluethm3' = PROVE_HYPL [C4524b_THM, C4524r_THM] gluethm3
+        val gluethm = impossible_gluing k arith g35 g44 gluethm3'
+        val conjthm = LIST_CONJ [assume35,assume44,gluethm]
+        val newthm = Ho_Rewrite.PURE_ONCE_REWRITE_RULE [elimthm] conjthm
+      in
+        loop m newthm
+      end
+    val thm1 = loop g35il R35p
+    val thm2 = PURE_ONCE_REWRITE_RULE [IMP_FF] (DISCH (mk_imp (g44,F)) thm1)
+  in
+    thm2
+  end  
 
 fun IMPOSSIBLE k =
   let
@@ -356,8 +386,12 @@ fun IMPOSSIBLE k =
     val g35il = map_assoc (zip_mat o mat_of_gtm k) g35l
     val g44l = filter is_gtm (hyp R44p)
     val g44il = map_assoc (zip_mat o mat_of_gtm_shifted (24-k)) g44l
+    (*
     val lemmal = map (IMPOSSIBLE_35 counter k arith g44il elimthm R44p) g35il
     val thm1 = PROVE_HYPL lemmal R35p
+    *)
+    val lemmal = map (IMPOSSIBLE_44 counter k arith g35il elimthm R35p) g44il
+    val thm1 = PROVE_HYPL lemmal R44p
     val thm2 = UNDISCH_ALL (BETA_RULE (DISCH_ALL thm1))
     val lemma1 = ASSUME ``!(x:num) (y:num). E x y <=> E y x`` 
     val intk = numSyntax.term_of_int k
