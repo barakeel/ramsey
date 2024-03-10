@@ -4,8 +4,10 @@
  
 structure merge :> merge =
 struct   
+(* load "sat"; load "def/ramseyDefTheory"; load "enumf/ramseyEnumTheory"; *)
 
-open HolKernel Abbrev boolLib bossLib ramseyDefTheory ramseyEnumTheory
+local open ramseyDefTheory ramseyEnumTheory in end
+open HolKernel Abbrev boolLib bossLib
 open aiLib kernel graph sat syntax
 
 val ERR = mk_HOL_ERR "merge"
@@ -17,9 +19,9 @@ val ERR = mk_HOL_ERR "merge"
 fun Y i = mk_var ("y" ^ its i, ``:num``)
 
 fun rpt_fun_type_im n ty imty =
-  if n <= 0 then imty else mk_type ("fun",[ty,rpt_fun_type_im (n-1) ty imty]);
+  if n <= 0 then imty else mk_type ("fun",[ty,rpt_fun_type_im (n-1) ty imty])
 
-fun pred_type n = rpt_fun_type_im n ``:num`` bool;
+fun pred_type n = rpt_fun_type_im n ``:num`` bool
 
 fun lit_of_edgec ((i,j),c) = 
   if c = 1 then list_mk_comb (E,[X i,X j])
@@ -31,10 +33,10 @@ fun is_deftm s x =
   is_const (rator x) andalso 
   String.isPrefix s (fst (dest_const (rator x)))
 
-fun is_gdeftm x = is_deftm "G" x;  
+fun is_gdeftm x = is_deftm "G" x
 fun get_gdeftm thm = singleton_of_list (filter is_gdeftm (hyp thm))
 
-fun is_cdeftm x = is_deftm "C" x;  
+fun is_cdeftm x = is_deftm "C" x
 
 (* -------------------------------------------------------------------------
    Convert graph terms to matrices
@@ -102,7 +104,7 @@ fun mk_Lk_IMP_L24 k =
   let 
     val x = mk_var ("x",``:num``)
     val intk = term_of_int k
-    val int24 = term_of_int 24;
+    val int24 = term_of_int 24
     val tm = mk_forall (x, mk_imp (mk_less (x,intk),mk_less (x,int24)))
   in
     TAC_PROOF (([],tm), SIMP_TAC arith_ss [])
@@ -295,15 +297,15 @@ val C4524b_THM = (UNDISCH o fst o EQ_IMP_RULE o SPEC_ALL) C4524b_DEF;
 val C4524r_THM = (UNDISCH o fst o EQ_IMP_RULE o SPEC_ALL) C4524r_DEF;
   
 fun mk_R35p k = 
-  if k = 8 then prepare_rthm R358
-  else if k = 10 then prepare_rthm R3510
-  else if k = 12 then prepare_rthm R3512
+  if k = 8 then prepare_rthm ramseyEnumTheory.R358
+  else if k = 10 then prepare_rthm ramseyEnumTheory.R3510
+  else if k = 12 then prepare_rthm ramseyEnumTheory.R3512
   else raise ERR "mk_R35p" ("degree " ^ its k)
            
 fun mk_R44p k =
-  if k = 16 then shift_rthm k (prepare_rthm R4416) 
-  else if k = 14 then shift_rthm k (prepare_rthm R4414)
-  else if k = 12 then shift_rthm k (prepare_rthm R4412)
+  if k = 8 then shift_rthm k (prepare_rthm ramseyEnumTheory.R4416) 
+  else if k = 10 then shift_rthm k (prepare_rthm ramseyEnumTheory.R4414)
+  else if k = 12 then shift_rthm k (prepare_rthm ramseyEnumTheory.R4412)
   else raise ERR "mk_R44p" ("degree " ^ its k)
   
 fun mk_gluedir k = selfdir ^ "/work_glue35" ^ its k
@@ -317,9 +319,9 @@ fun IMPOSSIBLE_35 k arith g44il elimthm R44p (g35,m35i) =
     fun loop g44il thm = case g44il of [] => thm | (g44,m44i) :: m =>
       let
         val assume44 = DISCH g44 thm
-        val thmname = "r45_" ^ infts m35i ^ "_" ^ infts m44i;
-        val thyname = thmname;
-        val thyfile = gluedir ^ "/" ^ thyname ^ "Theory";
+        val thmname = "r45_" ^ infts m35i ^ "_" ^ infts m44i
+        val thyname = thmname
+        val thyfile = gluedir ^ "/" ^ thyname ^ "Theory"
         val _ = load thyfile
         val gluethm3 = DB.fetch thyname thmname
         val gluethm3' = PROVE_HYPL [C4524b_THM, C4524r_THM] gluethm3
@@ -341,7 +343,7 @@ fun IMPOSSIBLE k =
     val arith = (mk_Lk_IMP_L24 k, mk_Lmk_IMP_ADDk_L24 k, 
                  mk_Lk_DIFF_ADDk k, mk_DIFF_IMP_DIFF_ADDk k)
     val R35p = mk_R35p k
-    val R44p = mk_R44p (24-k)
+    val R44p = mk_R44p k
     val g35l = filter is_gtm (hyp R35p)
     val g35il = map_assoc (zip_mat o mat_of_gtm k) g35l
     val g44l = filter is_gtm (hyp R44p)
