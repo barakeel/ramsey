@@ -375,6 +375,24 @@ fun IMPOSSIBLE_44 counter k arith g35il elimthm R35p (g44,m44i) =
     thm2
   end  
 
+fun IMPOSSIBLE_NTH_35 k nth35 =
+  let
+    val counter = ref 0
+    val elimthm = elim_exists k
+    val arith = (mk_Lk_IMP_L24 k, mk_Lmk_IMP_ADDk_L24 k, 
+                 mk_Lk_DIFF_ADDk k, mk_DIFF_IMP_DIFF_ADDk k)
+    val R35p = mk_R35p k
+    val R44p = mk_R44p k
+    val g35l = filter is_gtm (hyp R35p)
+    val g35il = map_assoc (zip_mat o mat_of_gtm k) g35l
+    val g44l = filter is_gtm (hyp R44p)
+    val g44il = map_assoc (zip_mat o mat_of_gtm_shifted (24-k)) g44l
+  in
+    IMPOSSIBLE_35 counter k arith g44il elimthm R44p (List.nth (g35il,nth35))
+  end
+
+
+
 fun IMPOSSIBLE k =
   let
     val counter = ref 0
@@ -404,8 +422,31 @@ fun IMPOSSIBLE k =
     val thm3 = PROVE_HYP lemma2 thm2
   in
     thm3
-  end    
-
+  end
+  
+  
+fun write_mergescripts k =
+  let 
+    val R35p = mk_R35p k
+    val g35l = filter is_gtm (hyp R35p)
+    val dir = selfdir ^ "/merge35" ^ its k
+    fun f n =
+      let 
+        val thyname = "r45_degree" ^ its k ^ "_" ^ n
+        val thmname = thyname
+        val filename = dir ^ "/" ^ thyname ^ "Script.sml"
+        val sl =
+          ["open HolKernel Abbrev boolLib merge",
+           "val _ = new_theory " ^ mlquote thyname,
+           "val _ = save_thm (" ^ mlquote thmname ^ ", IMPOSSIBLE_NTH_35 " 
+            ^ its k ^ " " ^ its n ^ ")",
+           "val _ = export_theory ()"]
+      in
+        writel filename sl
+      end
+  in
+    ignore (List.tabulate (length g35l, f))
+  end  
   
 end (* struct *)
 
