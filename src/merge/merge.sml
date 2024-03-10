@@ -432,7 +432,7 @@ fun write_mergescripts k =
     val dir = selfdir ^ "/merge35" ^ its k
     fun f n =
       let 
-        val thyname = "r45_degree" ^ its k ^ "_" ^ n
+        val thyname = "r45_degree" ^ its k ^ "_" ^ its n
         val thmname = thyname
         val filename = dir ^ "/" ^ thyname ^ "Script.sml"
         val sl =
@@ -447,6 +447,12 @@ fun write_mergescripts k =
   in
     ignore (List.tabulate (length g35l, f))
   end  
+  
+(*
+load "merge"; open merge;
+write_mergescripts 10;
+write_mergescripts 12;
+*)  
   
 end (* struct *)
 
