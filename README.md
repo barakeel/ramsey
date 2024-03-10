@@ -102,7 +102,7 @@ load "enump"; open kernel enump;
 val _ = range (8, 18, fn size => write_enumscripts 50 size (4,4));
 ```
 
-Run the scripts (requires 500GB of ram) 
+Run the scripts (requires 500GB of ram for 40 cores) 
 preferably inside a screen `screen -S enum`:
 ```
 cd enump
