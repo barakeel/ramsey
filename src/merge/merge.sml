@@ -314,7 +314,7 @@ fun mk_gluedir k = selfdir ^ "/work_glue35" ^ its k
 
 val IMP_FF = PROVE [] ``!x. (x ==> F) ==> F <=> x``;
 
-fun IMPOSSIBLE_35 k arith g44il elimthm R44p (g35,m35i) =
+fun IMPOSSIBLE_35 counter k arith g44il elimthm R44p (g35,m35i) =
   let
     val gluedir = mk_gluedir k
     val assume35 = ASSUME (mk_imp (g35,F))
@@ -325,6 +325,11 @@ fun IMPOSSIBLE_35 k arith g44il elimthm R44p (g35,m35i) =
         val thyname = thmname
         val thyfile = gluedir ^ "/" ^ thyname ^ "Theory"
         val _ = load thyfile
+        val _ = incr counter
+        val _ = 
+          if (!counter) mod 1000 = 0 
+          then print_endline ("loaded theories " ^ its (!counter))
+          else ()
         val gluethm3 = DB.fetch thyname thmname
         val gluethm3' = PROVE_HYPL [C4524b_THM, C4524r_THM] gluethm3
         val gluethm = impossible_gluing k arith g35 g44 gluethm3'
@@ -341,6 +346,7 @@ fun IMPOSSIBLE_35 k arith g44il elimthm R44p (g35,m35i) =
 
 fun IMPOSSIBLE k =
   let
+    val counter = ref 0
     val elimthm = elim_exists k
     val arith = (mk_Lk_IMP_L24 k, mk_Lmk_IMP_ADDk_L24 k, 
                  mk_Lk_DIFF_ADDk k, mk_DIFF_IMP_DIFF_ADDk k)
@@ -350,7 +356,7 @@ fun IMPOSSIBLE k =
     val g35il = map_assoc (zip_mat o mat_of_gtm k) g35l
     val g44l = filter is_gtm (hyp R44p)
     val g44il = map_assoc (zip_mat o mat_of_gtm_shifted (24-k)) g44l
-    val lemmal = map (IMPOSSIBLE_35 k arith g44il elimthm R44p) g35il
+    val lemmal = map (IMPOSSIBLE_35 counter k arith g44il elimthm R44p) g35il
     val thm1 = PROVE_HYPL lemmal R35p
     val thm2 = UNDISCH_ALL (BETA_RULE (DISCH_ALL thm1))
     val lemma1 = ASSUME ``!(x:num) (y:num). E x y <=> E y x`` 
