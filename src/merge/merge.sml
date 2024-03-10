@@ -343,7 +343,8 @@ fun IMPOSSIBLE_35 counter k arith g44il elimthm R44p (g35,m35i) =
   in
     thm2
   end
-  
+
+(* starting by merging 35 for comparison *)
 fun IMPOSSIBLE_44 counter k arith g35il elimthm R35p (g44,m44i) =
   let
     val gluedir = mk_gluedir k
@@ -386,12 +387,12 @@ fun IMPOSSIBLE k =
     val g35il = map_assoc (zip_mat o mat_of_gtm k) g35l
     val g44l = filter is_gtm (hyp R44p)
     val g44il = map_assoc (zip_mat o mat_of_gtm_shifted (24-k)) g44l
-    (*
     val lemmal = map (IMPOSSIBLE_35 counter k arith g44il elimthm R44p) g35il
     val thm1 = PROVE_HYPL lemmal R35p
-    *)
+    (*
     val lemmal = map (IMPOSSIBLE_44 counter k arith g35il elimthm R35p) g44il
     val thm1 = PROVE_HYPL lemmal R44p
+    *) 
     val thm2 = UNDISCH_ALL (BETA_RULE (DISCH_ALL thm1))
     val lemma1 = ASSUME ``!(x:num) (y:num). E x y <=> E y x`` 
     val intk = numSyntax.term_of_int k
