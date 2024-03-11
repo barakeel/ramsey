@@ -431,7 +431,7 @@ fun write_mergescripts k =
     val dir = selfdir ^ "/merge35" ^ its k
     fun f n =
       let 
-        val prethyl = cartesian_product ([List.nth (g35ml,n)],g44ml)
+        val prethyl = cartesian_product [List.nth (g35ml,n)] g44ml
         val thyl = map get_r45_thyname prethyl
         val thyname = "r45_degree" ^ its k ^ "_" ^ its n
         val thmname = thyname
@@ -479,6 +479,7 @@ fun IMPOSSIBLE_REG_35 k =
   end
 
 (*
+rlwrap ../../HOL/bin/hol
 load "merge"; open merge;
 write_mergescripts 10;
 write_mergescripts 12;
