@@ -485,7 +485,7 @@ fun write_regscript k =
     val dir = selfdir ^ "/merge35" ^ its k ^ "f"
     val thyname = "r45_degree" ^ its k
     val thmname = thyname
-    val filename = dir ^ "/" ^ thyname ^ "Theory"
+    val filename = dir ^ "/" ^ thyname ^ "Script.sml"
     fun get_openname i = "r45_degree" ^ its k ^ "_" ^ its i ^ "Theory"
     val thyl = List.tabulate (length g35l, get_openname)
     val sl =
@@ -511,6 +511,8 @@ write_regscript 10;
 write_regscript 12;
 
 ../../HOL/bin/Holmake --no_prereqs -j 22 | tee ../aaa_log_merge3510
+../../HOL/bin/Holmake --no_prereqs -j 12 | tee ../aaa_log_merge3512
+../../HOL/bin/Holmake --no_prereqs
 *)  
   
 end (* struct *)
