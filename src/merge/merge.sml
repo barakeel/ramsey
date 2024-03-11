@@ -370,21 +370,6 @@ fun IMPOSSIBLE_44 counter k arith g35il elimthm R35p (g44,m44i) =
     thm2
   end  
 
-fun IMPOSSIBLE_NTH_35 k nth35 =
-  let
-    val counter = ref 0
-    val elimthm = elim_exists k
-    val arith = (mk_Lk_IMP_L24 k, mk_Lmk_IMP_ADDk_L24 k, 
-                 mk_Lk_DIFF_ADDk k, mk_DIFF_IMP_DIFF_ADDk k)
-    val R35p = mk_R35p k
-    val R44p = mk_R44p k
-    val g35l = filter is_gtm (hyp R35p)
-    val g35il = map_assoc (zip_mat o mat_of_gtm k) g35l
-    val g44l = filter is_gtm (hyp R44p)
-    val g44il = map_assoc (zip_mat o mat_of_gtm_shifted (24-k)) g44l
-  in
-    IMPOSSIBLE_35 counter k arith g44il elimthm R44p (List.nth (g35il,nth35))
-  end
 
 fun IMPOSSIBLE k =
   let
@@ -414,11 +399,56 @@ fun IMPOSSIBLE k =
   in
     thm3
   end
-  
+
+fun write_mergescript8 () =
+  let 
+    val k = 8
+    fun get_r45_openname (m35i,m44i) = 
+      "r45_" ^ infts m35i ^ "_" ^ infts m44i ^ "Theory" 
+    val R35p = mk_R35p k
+    val g35l = filter is_gtm (hyp R35p)
+    val g35il = map_assoc (zip_mat o mat_of_gtm k) g35l
+    val g35ml = map snd g35il
+    val R44p = mk_R44p k
+    val g44l = filter is_gtm (hyp R44p)
+    val g44il = map_assoc (zip_mat o mat_of_gtm_shifted (24-k)) g44l
+    val g44ml = map snd g44il
+    val dir = selfdir ^ "/merge35" ^ its k
+    val thyl = map get_r45_openname (cartesian_product g35ml g44ml)
+    val thyname = "r45_degree" ^ its k
+    val thmname = thyname
+    val filename = dir ^ "/" ^ thyname ^ "Script.sml"
+    val sl =
+      ["open HolKernel Abbrev boolLib merge",
+       "local open " ^ String.concatWith " " thyl  ^ " in end",
+       "val _ = new_theory " ^ mlquote thyname,
+       "val thm = save_thm (" ^ mlquote thmname ^ ", IMPOSSIBLE " 
+        ^ its k ")",
+       "val _ = save_thm (" ^ mlquote thmname ^ ", thm )",
+       "val _ = export_theory ()"]
+  in
+    writel filename sl
+  end
+
+fun IMPOSSIBLE_NTH_35 k nth35 =
+  let
+    val counter = ref 0
+    val elimthm = elim_exists k
+    val arith = (mk_Lk_IMP_L24 k, mk_Lmk_IMP_ADDk_L24 k, 
+                 mk_Lk_DIFF_ADDk k, mk_DIFF_IMP_DIFF_ADDk k)
+    val R35p = mk_R35p k
+    val R44p = mk_R44p k
+    val g35l = filter is_gtm (hyp R35p)
+    val g35il = map_assoc (zip_mat o mat_of_gtm k) g35l
+    val g44l = filter is_gtm (hyp R44p)
+    val g44il = map_assoc (zip_mat o mat_of_gtm_shifted (24-k)) g44l
+  in
+    IMPOSSIBLE_35 counter k arith g44il elimthm R44p (List.nth (g35il,nth35))
+  end
 
 fun write_mergescripts k =
   let 
-    fun get_r45_thyname (m35i,m44i) = 
+    fun get_r45_openname (m35i,m44i) = 
       "r45_" ^ infts m35i ^ "_" ^ infts m44i ^ "Theory" 
     val R35p = mk_R35p k
     val g35l = filter is_gtm (hyp R35p)
@@ -432,7 +462,7 @@ fun write_mergescripts k =
     fun f n =
       let 
         val prethyl = cartesian_product [List.nth (g35ml,n)] g44ml
-        val thyl = map get_r45_thyname prethyl
+        val thyl = map get_r45_openname prethyl
         val thyname = "r45_degree" ^ its k ^ "_" ^ its n
         val thmname = thyname
         val filename = dir ^ "/" ^ thyname ^ "Script.sml"
@@ -449,7 +479,8 @@ fun write_mergescripts k =
       end
   in
     ignore (List.tabulate (length g35l, f))
-  end  
+  end 
+  
 
 fun IMPOSSIBLE_REG_35 k =
   let
@@ -478,11 +509,36 @@ fun IMPOSSIBLE_REG_35 k =
     thm3
   end
 
+fun write_regscript k =
+  let
+    val R35p = mk_R35p k
+    val g35l = filter is_gtm (hyp R35p)
+    val dir = selfdir ^ "/merge35" ^ its k ^ "f"
+    val thyname = "r45_degree" ^ its k
+    val thmname = thyname
+    val filename = dir ^ "/" ^ thyname ^ "Theory"
+    fun get_openname i = "r45_degree" ^ its k ^ "_" ^ its i ^ "Theory"
+    val thyl = List.tabulate (length g35l, get_openname)
+    val sl =
+      ["open HolKernel Abbrev boolLib merge",
+       "local open " ^ String.concatWith " " thyl  ^ " in end",
+       "val _ = new_theory " ^ mlquote thyname,
+       "val thm = save_thm (" ^ mlquote thmname ^ ", IMPOSSIBLE_REG_35 " 
+        ^ its n ^ ")",
+       "val _ = save_thm (" ^ mlquote thmname ^ ", thm )",
+       "val _ = export_theory ()"]
+    in
+      writel filename sl
+    end
+
 (*
 rlwrap ../../HOL/bin/hol
 load "merge"; open merge;
 write_mergescripts 10;
 write_mergescripts 12;
+
+
+../../HOL/bin/Holmake --no_prereqs -j 22 | tee ../aaa_log_merge3510
 *)  
   
 end (* struct *)
