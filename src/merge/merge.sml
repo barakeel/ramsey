@@ -342,35 +342,6 @@ fun IMPOSSIBLE_35 counter k arith g44il elimthm R44p (g35,m35i) =
     thm2
   end
 
-(* starting by merging 35 for comparison *)
-fun IMPOSSIBLE_44 counter k arith g35il elimthm R35p (g44,m44i) =
-  let
-    val gluedir = mk_gluedir k
-    val assume44 = ASSUME (mk_imp (g44,F))
-    fun loop g35illoc thm = case g35illoc of [] => thm | (g35,m35i) :: m =>
-      let
-        val assume35 = DISCH g35 thm
-        val thmname = "r45_" ^ infts m35i ^ "_" ^ infts m44i
-        val thyname = thmname
-        val _ = 
-          if (!counter) mod 1000 = 0 
-          then print_endline ("loaded theories " ^ its (!counter))
-          else ()
-        val gluethm3 = DB.fetch thyname thmname
-        val gluethm3' = PROVE_HYPL [C4524b_THM, C4524r_THM] gluethm3
-        val gluethm = impossible_gluing k arith g35 g44 gluethm3'
-        val conjthm = LIST_CONJ [assume35,assume44,gluethm]
-        val newthm = Ho_Rewrite.PURE_ONCE_REWRITE_RULE [elimthm] conjthm
-      in
-        loop m newthm
-      end
-    val thm1 = loop g35il R35p
-    val thm2 = PURE_ONCE_REWRITE_RULE [IMP_FF] (DISCH (mk_imp (g44,F)) thm1)
-  in
-    thm2
-  end  
-
-
 fun IMPOSSIBLE k =
   let
     val counter = ref 0
@@ -385,8 +356,7 @@ fun IMPOSSIBLE k =
     val g44il = map_assoc (zip_mat o mat_of_gtm_shifted (24-k)) g44l
     val lemmal = map (IMPOSSIBLE_35 counter k arith g44il elimthm R44p) g35il
     val thm1 = PROVE_HYPL lemmal R35p
-    (* val lemmal = map (IMPOSSIBLE_44 counter k arith g35il elimthm R35p) g44il
-    val thm1 = PROVE_HYPL lemmal R44p *) 
+
     val thm2 = UNDISCH_ALL (BETA_RULE (DISCH_ALL thm1))
     val lemma1 = ASSUME ``!(x:num) (y:num). E x y <=> E y x`` 
     val intk = numSyntax.term_of_int k
@@ -422,8 +392,7 @@ fun write_mergescript8 () =
       ["open HolKernel Abbrev boolLib merge",
        "local open " ^ String.concatWith " " thyl  ^ " in end",
        "val _ = new_theory " ^ mlquote thyname,
-       "val thm = save_thm (" ^ mlquote thmname ^ ", IMPOSSIBLE " 
-        ^ its k ")",
+       "val thm = save_thm (" ^ mlquote thmname ^ ", IMPOSSIBLE " ^ its k ^ ")",
        "val _ = save_thm (" ^ mlquote thmname ^ ", thm )",
        "val _ = export_theory ()"]
   in
@@ -524,7 +493,7 @@ fun write_regscript k =
        "local open " ^ String.concatWith " " thyl  ^ " in end",
        "val _ = new_theory " ^ mlquote thyname,
        "val thm = save_thm (" ^ mlquote thmname ^ ", IMPOSSIBLE_REG_35 " 
-        ^ its n ^ ")",
+        ^ its k ^ ")",
        "val _ = save_thm (" ^ mlquote thmname ^ ", thm )",
        "val _ = export_theory ()"]
     in
@@ -534,9 +503,12 @@ fun write_regscript k =
 (*
 rlwrap ../../HOL/bin/hol
 load "merge"; open merge;
+
+write_mergescript8 ();
 write_mergescripts 10;
 write_mergescripts 12;
-
+write_regscript 10;
+write_regscript 12;
 
 ../../HOL/bin/Holmake --no_prereqs -j 22 | tee ../aaa_log_merge3510
 *)  
