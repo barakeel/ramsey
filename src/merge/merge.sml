@@ -441,7 +441,7 @@ fun write_mergescripts k =
            "local open " ^ String.concatWith " " thyl  ^ " in end",
            "val _ = new_theory " ^ mlquote thyname,
            "val thm = save_thm (" ^ mlquote thmname ^ ", IMPOSSIBLE_NTH_35 " 
-            ^ its k ^ " " ^ its n ^ ")"
+            ^ its k ^ " " ^ its n ^ ")",
            "val _ = save_thm (" ^ mlquote thmname ^ ", thm )",
            "val _ = export_theory ()"]
       in
