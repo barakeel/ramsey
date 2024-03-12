@@ -104,7 +104,7 @@ fun class_decode c =
     Option.map (List.map (fn i => (i,c))) o
     HOLsexp.list_decode HOLsexp.int_decode
 
-fun load_thydata_notr45 thyname path =
+fun load_thydata_nolink thyname path =
   let
     open HOLsexp
     val raw_data = fromFile path
@@ -123,8 +123,7 @@ fun load_thydata_notr45 thyname path =
           | _ => raise TheoryReader "thyparentage not a pair"
     val (fullthy as (thyname, _, _)) = force "thyname" dec_thy thy_data
     val parents = force "parents" (list_decode dec_thy) parents_data
-    val parents' = filter (fn (x,_,_) => not (String.isPrefix "r45_" x)) parents
-    val _ = Theory.link_parents fullthy parents'
+    (* val _ = Theory.link_parents fullthy parents *)
     val (core_data, incorporate_data, classinfo, thydata_data) =
         force "toplevel_decode" (
           pair4_decode (
