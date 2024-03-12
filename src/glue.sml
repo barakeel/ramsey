@@ -429,12 +429,6 @@ val pbl = shuffle (cartesian_product ml1 ml2);
 write_pbl "glue358_pbl_dai07" pbl;
 *)
 
-(* batch 
-load "glue"; open aiLib kernel graph enum gen glue;
-val pbl = read_pbl (selfdir ^ "/glue358_pbl_dai07");
-val batchl = number_fst 0 (mk_batch_full 10 pbl);
-write_pbbatchl "glue358_batchl_dai07" batchl;
-*)
 
 (* using custom builder
 export TMPDIR="$PWD/tmp";
