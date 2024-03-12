@@ -329,7 +329,7 @@ fun run_script_pbl dir pbl =
   end
   
 (* -------------------------------------------------------------------------
-   Gluing scripts with Holmake
+   Gluing scripts
    ------------------------------------------------------------------------- *)
    
 fun write_gluescript_batch dir (batchn,mml) =
@@ -342,16 +342,13 @@ fun write_gluescript_batch dir (batchn,mml) =
         val (m1s,m2s) = (infts m1, infts m2) 
         val thmname = "r45_" ^ m1s ^ "_" ^ m2s
       in
-        [
         "val _ = save_thm (" ^ mlquote thmname ^ 
-        ", glue_pair (stinf " ^ mlquote m1s ^ ", stinf " ^ mlquote m2s ^ "));",
-        "PolyML.fullGC ();"
-        ]
+        ", glue_pair (stinf " ^ mlquote m1s ^ ", stinf " ^ mlquote m2s ^ "))"
       end
     val sl = 
      ["open HolKernel kernel glue",
       "val _ = new_theory " ^ mlquote thyname] @
-     List.concat (map f mml) @
+      map f mml @
      ["val _ = export_theory ()"]
   in 
     writel file sl
@@ -364,6 +361,20 @@ fun write_gluescript_batchl dir batchpbl =
   in
     app (write_gluescript_batch dir) batchpbl
   end   
+ 
+fun find_scriptl dir =
+  map (fn x => dir ^ "/" ^ x) 
+    (filter (String.isSuffix "Script.sml") (listDir dir))
+
+fun run_scriptl dir scriptl =
+  let 
+    val _ = smlExecScripts.buildheap_dir := dir ^ "/buildheap"
+    val _ = smlExecScripts.buildheap_options :=  "--maxheap " ^ its memory
+    val _ = app mkDir_err [dir,!smlExecScripts.buildheap_dir]
+    val ncore' = Int.min (ncore, length scriptl)
+  in
+    smlParallel.parapp_queue ncore' smlExecScripts.exec_script (shuffle scriptl)
+  end
 
 (* -------------------------------------------------------------------------
    Writing problems and batches
@@ -422,13 +433,10 @@ write_pbl "glue358_pbl_dai07" pbl;
 load "glue"; open aiLib kernel graph enum gen glue;
 val pbl = read_pbl (selfdir ^ "/glue358_pbl_dai07");
 val batchl = number_fst 0 (mk_batch_full 10 pbl);
-length batchl;
 write_pbbatchl "glue358_batchl_dai07" batchl;
-val batchl' = read_batchl "glue358_batchl_dai07";
-batchl = batchl';
 *)
 
-(* custom
+(* using custom builder
 export TMPDIR="$PWD/tmp";
 mkdir tmp;
 load "glue"; open aiLib kernel graph enum gen glue;
@@ -436,7 +444,16 @@ val glue358_pbl_dai07 = map g (readl (selfdir ^ "/glue358_pbl_dai07"));
 run_script_pbl (selfdir ^ "/glue358_dai07") glue358_pbl_dai07;
 *)
 
+(* using Holmake
+load "glue"; open aiLib kernel graph enum gen glue;
+val batchl = read_pbbatchl "glue358_batchl_dai07";
+write_gluescript_batchl (selfdir ^ "/glue358_dai07_holmake") batchl;
 
+export TMPDIR="$PWD/tmp";
+mkdir tmp;
+cd glue358_dai07_holmake
+../../HOL/bin/Holmake --no_prereqs -j 6 | tee ../aaa_log_glue358
+*)
 
 (* -------------------------------------------------------------------------
    3,5,10 glueing: using gen_bench6_4_4_0_5

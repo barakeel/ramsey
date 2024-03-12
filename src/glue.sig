@@ -21,6 +21,8 @@ sig
   (* like Holmake but can limit the memory of each process *)
   val write_script : string -> (IntInf.int * IntInf.int) -> unit
   val run_script_pbl : string -> (IntInf.int * IntInf.int) list -> unit
+  val find_scriptl : string -> string list
+  val run_scriptl : string -> string list -> unit
   
   (* proper Holmake scripts *)
   val write_gluescript_batchl : string -> 
@@ -33,5 +35,6 @@ sig
     string -> (int * (IntInf.int * IntInf.int) list) list -> unit
   val read_pbbatchl : 
     string -> (int * (IntInf.int * IntInf.int) list) list
+    
     
 end
