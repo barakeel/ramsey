@@ -342,10 +342,11 @@ fun write_gluescript_batch dir (batchn,mml) =
         val (m1s,m2s) = (infts m1, infts m2) 
         val thmname = "r45_" ^ m1s ^ "_" ^ m2s
       in
-        ["val _ = save_thm (" ^ mlquote thmname ^ 
-         ", glue_pair (stinf " ^ mlquote m1s ^ ", stinf " ^ mlquote m2s ^ "));",
-         "PolyML.fullGC ();
-      
+        [
+        "val _ = save_thm (" ^ mlquote thmname ^ 
+        ", glue_pair (stinf " ^ mlquote m1s ^ ", stinf " ^ mlquote m2s ^ "));",
+        "PolyML.fullGC ();"
+        ]
       end
     val sl = 
      ["open HolKernel kernel glue",
