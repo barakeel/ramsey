@@ -2,12 +2,12 @@
    Proves the existence of a graph satisfying r4524
    ========================================================================= *)
 
-load "syntax"; open aiLib kernel syntax;
-load "graph"; open graph;
-load "sat"; open sat;
-show_assums := true;
+open aiLib kernel syntax graph sat
+local open ramseyDefTheory basicRamseyTheory in end
 
 val ERR = mk_HOL_ERR "test";
+
+val _ = new_theory "r4524_exist" 
 
 (* -------------------------------------------------------------------------
    Importing graph
@@ -15,7 +15,7 @@ val ERR = mk_HOL_ERR "test";
 
 fun read_mat () =
   let 
-    val sl = readl (selfdir ^ "/r4524");
+    val sl = readl (selfdir ^ "/r4524exist/r4524");
     fun f s = 
       map (fn x => if x = "F" then 2 else 1) (String.tokens Char.isSpace s);
     val ill = map f sl;
@@ -78,8 +78,6 @@ fun nocliqueb size (cliquen,b) =
     list_mk_forall_bound (boundl, list_mk_imp (diffl @ litl', F)) 
   end;
   
-
-
 (* -------------------------------------------------------------------------
    Simple arithmetical theorems
    ------------------------------------------------------------------------- *)
@@ -271,6 +269,12 @@ fun prove_mat_red m vl depth tm =
     end
 ;
 
+(* -------------------------------------------------------------------------
+   Final step
+   ------------------------------------------------------------------------- *)
+
+val _ = print_endline "blue step"
+
 val blueclique = noclique 24 (4,true);
 val bluecliqueb = nocliqueb 24 (4,true);
 val bluecliqueeq = PURE_REWRITE_RULE [disjthm]
@@ -279,6 +283,8 @@ val bluetm = (rhs o concl) bluecliqueeq;
 val thmblue1 = prove_mat_blue m4524 [] 0 bluetm;
 val thmblue2 = EQ_MP (SYM bluecliqueeq) thmblue1;
 val thmblue3 = PURE_REWRITE_RULE [GSYM disjthm] thmblue2;
+
+val _ = print_endline "red step"
 
 val redclique = noclique 24 (5,false);
 val redcliqueb = nocliqueb 24 (5,false);
@@ -305,7 +311,6 @@ val qabs = mk_abs (E, snd (dest_imp (concl thm5)));
 val thm6 = BETA_RULE (SPECL [pabs,qabs] EXISTS_MP_THM);
 val finalthm = MP thm6 (CONJ existsthm forallthm);
 
-
 val abstm = rand (concl existsthm);
 show_types := true;
 val selectthm = 
@@ -319,92 +324,15 @@ val thmblue5 =
     PROVE_HYP lemma (INST [{redex = E, residue = selecttm}] thmblue4)
   end;
 
-load "syntax"; open aiLib kernel syntax;
-load "graph"; open graph;
-load "sat"; open sat;
-
-fun mk_cdef size (bluen,redn) b tm = 
-  let
-    val s = "C" ^ its bluen ^ its redn ^ its size ^ 
-      (if b then "b" else "r")
-    val v = mk_var (s,``:(num -> num -> bool) -> bool``)
-    val eqtm = mk_eq (mk_comb (v,E), tm)
-  in
-    new_definition (s ^ "_DEF", eqtm)
-  end
-
-fun mk_both_cdef size (bluen,redn) =
-  let
-    val postm = noclique size (bluen,true)
-    val negtm = noclique size (redn,false)
-    val posdef = mk_cdef size (bluen,redn) true postm
-    val negdef = mk_cdef size (bluen,redn) false negtm
-  in
-    ()
-  end;
-  
-val _ = mk_both_cdef 24 (4,5);
 val C4524b_DEF = DB.fetch "scratch" "C4524b_DEF";
 val C4524r_DEF = DB.fetch "scratch" "C4524r_DEF";
 
-val SYM_DEF = new_definition ("SYM_DEF", ``SYM (E: num -> num -> bool) = (!x y. (E: num -> num -> bool) x y ==> (E: num -> num -> bool) y x)``);
+val SYM_DEF = DB.fetch "
 
-val r45thm = mk_thm ([],``∃(E :num -> num -> bool).
-       (∀(x :num) (y :num). E x y ⇔ E y x) ∧
-       (∀(x0 :num) (x1 :num) (x2 :num) (x3 :num).
-          E x0 x1 ⇒
-          E x0 x2 ⇒
-          E x0 x3 ⇒
-          E x1 x2 ⇒
-          E x1 x3 ⇒
-          E x2 x3 ⇒
-          x0 < (24 :num) ⇒
-          x1 < (24 :num) ⇒
-          x2 < (24 :num) ⇒
-          x3 < (24 :num) ⇒
-          x0 ≠ x1 ⇒
-          x0 ≠ x2 ⇒
-          x0 ≠ x3 ⇒
-          x1 ≠ x2 ⇒
-          x1 ≠ x3 ⇒
-          x2 ≠ x3 ⇒
-          F) ∧
-       ∀(x0 :num) (x1 :num) (x2 :num) (x3 :num) (x4 :num).
-         ¬E x0 x1 ⇒
-         ¬E x0 x2 ⇒
-         ¬E x0 x3 ⇒
-         ¬E x0 x4 ⇒
-         ¬E x1 x2 ⇒
-         ¬E x1 x3 ⇒
-         ¬E x1 x4 ⇒
-         ¬E x2 x3 ⇒
-         ¬E x2 x4 ⇒
-         ¬E x3 x4 ⇒
-         x0 < (24 :num) ⇒
-         x1 < (24 :num) ⇒
-         x2 < (24 :num) ⇒
-         x3 < (24 :num) ⇒
-         x4 < (24 :num) ⇒
-         x0 ≠ x1 ⇒
-         x0 ≠ x2 ⇒
-         x0 ≠ x3 ⇒
-         x0 ≠ x4 ⇒
-         x1 ≠ x2 ⇒
-         x1 ≠ x3 ⇒
-         x1 ≠ x4 ⇒
-         x2 ≠ x3 ⇒
-         x2 ≠ x4 ⇒
-         x3 ≠ x4 ⇒
-         F``);
+val SYM_EQUIV = METIS_PROVE [] 
+ ``(!(x:num) (y:num). E x y <=> E y x) = (!(x:num) (y:num). E x y ==> E y x)``;
 
-val SYM_EQUIV = METIS_PROVE [] ``(∀(x:num) (y:num). E x y <=> E y x) = (∀(x:num) (y:num). E x y ==> E y x)``;
+val r4524exist = 
+  save_thm ("r4524exist", PURE_REWRITE_RULE [SYM_EQUIV,GSYM SYM_DEF,GSYM C4524b_DEF, GSYM C4524r_DEF] r4524);
 
-
-val r45thm1 = PURE_REWRITE_RULE [sym_equiv,GSYM SYM_DEF,GSYM C4524b_DEF, GSYM C4524r_DEF] r45thm;
-
-
-
-
-
-
-       
+val _ = export_theory ();       

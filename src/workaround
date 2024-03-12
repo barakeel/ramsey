@@ -65,7 +65,26 @@ val filedat = selfdir ^ "/mergef" ^ thyname ^ "Theory.dat";
 TheoryReaderDrop.load_thydata_notr45 thyname filedat;
 Theory.load_complete thyname;
 
+load "basicRamsey/basicRamseyTheory";
+open basicRamseyTheory;
+
+
+open syntax;
+val hypl = hyp ramsey_4_5_25_hyp;
+fun prec x = (fst o strip_imp o snd o strip_forall) x;
+val (a,b,c,d) = quadruple_of_list hypl;
+val l8 = prec c;
+val l10 = prec a; 
+val l12 = prec b;
+
+load "sat"; open sat;
+val r45_degree8' = GEN E (DISCHL l8 r45_degree8);
+val r45_degree10' = GEN E (DISCHL l10 r45_degree10);
+val r45_degree12' = GEN E (DISCHL l12 r45_degree12);
+
+
 val r45_equals_25 = 
+  PROVE_HYPL [r45_degree8',r45_degree10',r45_degree12'] ramsey_4_5_25_hyp;
 
 
 

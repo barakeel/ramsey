@@ -936,7 +936,6 @@ e (ASM_CASES_TAC ``RAMSEYGRAPH 4 (SUC 4) (SUC 24) V E``);
 e (ASM_CASES_TAC ``24 < CARD (NBRS V E x) + 18``);
 e decide_tac;
 e (METIS_TAC [ramseygraph_deg_card_lower_bd,ramsey_4_4_18]);
-(* e decide_tac; *)
 e (ASM_CASES_TAC ``SUC 24 = 25``);
 e (METIS_TAC [suc_4_5]);
 e decide_tac;
