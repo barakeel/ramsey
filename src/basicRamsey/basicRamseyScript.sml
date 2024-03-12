@@ -1,10 +1,13 @@
-(* load "graph"; load "../def/ramseyDefTheory"; *)
+(* 
+load "graph"; load "../def/ramseyDefTheory"; PolyML.print_depth 0;
+*)
 
-open HolKernel boolLib Parse simpLib boolSimps BasicProvers proofManagerLib bossLib;
-local open numTheory prim_recTheory SatisfySimps DefnBase in end;
 open aiLib kernel graph;
 local open ramseyDefTheory in end 
 open arithmeticTheory pred_setTheory;
+open HolKernel boolLib Parse simpLib boolSimps BasicProvers proofManagerLib bossLib;
+local open numTheory prim_recTheory SatisfySimps DefnBase in end;
+
 
 chatting := false;
 
@@ -917,7 +920,7 @@ val ramsey_4_4_18 = top_thm ();
    ------------------------------------------------------------------------- *)
 
 val _ = print_endline "Existence of a vertex of degree 8, 10 or 12";
-
+(* PolyML.print_depth 20; chatting := true; *)
 g `RAMSEYGRAPH 4 5 25 V E ==> !x. x IN V ==> DEGR V E x < 14`;
 e (rw [degr_def]);
 e (ASM_CASES_TAC ``RAMSEYGRAPH (SUC 3) 5 25 V E``);
@@ -933,7 +936,7 @@ e (ASM_CASES_TAC ``RAMSEYGRAPH 4 (SUC 4) (SUC 24) V E``);
 e (ASM_CASES_TAC ``24 < CARD (NBRS V E x) + 18``);
 e decide_tac;
 e (METIS_TAC [ramseygraph_deg_card_lower_bd,ramsey_4_4_18]);
-e decide_tac;
+(* e decide_tac; *)
 e (ASM_CASES_TAC ``SUC 24 = 25``);
 e (METIS_TAC [suc_4_5]);
 e decide_tac;
