@@ -9,6 +9,8 @@ open arithmeticTheory pred_setTheory;
 chatting := false;
 
 val _ = new_theory "basicRamsey";
+fun METIS_TAC thml goal = metisTools.METIS_TAC thml goal 
+  handle HOL_ERR _ => (print_endline (term_to_string (snd goal)); ALL_TAC goal);
 
 (* -------------------------------------------------------------------------
    Definitions
@@ -521,8 +523,6 @@ e (METIS_TAC []);
 e (METIS_TAC [ramsey_ex_least]);
 val rams_prop = top_thm ();
 
-val _ = print_endline "R(3,3)<=6 6";
-
 g `~RAMSEY r s n ==> RAMSEY r s (SUC n) ==> RAMS r s = SUC n`;
 e (rw []);
 e CCONTR_TAC;
@@ -532,8 +532,6 @@ e (ASM_CASES_TAC ``RAMS r s <= n``);
 e (METIS_TAC [ramsey_mon,rams_prop]);
 e decide_tac;
 val rams_eq_S = top_thm ();
-
-val _ = print_endline "R(3,3)<=6 7";
 
 g `SUC 2 = 3`;
 e decide_tac;
@@ -548,10 +546,10 @@ val ramsey_S2_S2_SS22 = METIS_PROVE [ramsey_sum,ramsey_2_m_m,ramsey_m_2_m] ``RAM
 val ramsey_3_3_6 = METIS_PROVE [ramsey_S2_S2_SS22,suc_2_3,suc_suc_2_2_6] ``RAMSEY 3 3 6``;
 
 (* -------------------------------------------------------------------------
-   R(3,4) <= 9 (first part)
+   R(3,4,9) implies all vertices have degree 3
    ------------------------------------------------------------------------- *)
 
-val _ = print_endline "R(3,4)<=9 (first part)";
+val _ = print_endline "R(3,4,9) implies all vertices have degree 3";
 
 g `m + n < d + SUC m ==> d < SUC n ==> d = n`;
 e decide_tac;
@@ -588,7 +586,7 @@ val ramseygraph_3_4_9_3regular = METIS_PROVE [ramseygraph_3_4_9_3regular_lem1,su
    if there is odd number of vertex with odd degrees.
    ------------------------------------------------------------------------- *)
 
-val _ = print_endline "Sum of degrees is odd";
+val _ = print_endline "Sum of degrees must be odd";
 
 g `3 = SUC (2 * 1)`;
 e decide_tac;
@@ -630,7 +628,7 @@ val ramseygraph_3_4_9_odd_degr_sum = METIS_PROVE [ramseygraph_3_4_9_odddegr,rams
    Infrastructure to prove the sum of degrees must be even
    ------------------------------------------------------------------------- *)
 
-val _ = print_endline "Sum of degrees is even";
+val _ = print_endline "Sum of degrees must be even";
 
 g `SYM E ==> ~(e IN V) ==> FINITE V ==> NBRS V E e = EMPTY ==> !x. x IN V ==> NBRS (e INSERT V) E x = NBRS V E x`;
 e (rw [nbrs_def,EXTENSION,SPECIFICATION]);
