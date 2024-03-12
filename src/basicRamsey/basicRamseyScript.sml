@@ -9,6 +9,8 @@ val _ = new_theory "basicRamsey";
    Definitions
    ------------------------------------------------------------------------- *)
 
+val _ = print_endline "Definitions";
+
 val sym = ``SYM (E:num -> num -> bool) = (!x:num. !y:num. E x y ==> E y x)``;
 val sym_def = new_definition ("SYM_DEF",sym);
 
@@ -20,6 +22,16 @@ val hasanticlique_def = new_definition ("HASANTICLIQUE_DEF",hasanticlique);
 
 val ramseygraph = ``RAMSEYGRAPH (r:num) (s:num) (m:num) (V:num -> bool) (E:num -> num -> bool) = (V HAS_SIZE m /\ SYM E /\ ~HASCLIQUE r V E /\ ~HASANTICLIQUE s V E)``;
 val ramseygraph_def = new_definition ("RAMSEYGRAPH_DEF",ramseygraph);
+
+val ramseygraph_e1 = 
+  METIS_PROVE [ramseygraph_def] ``RAMSEYGRAPH r s m V E ==> V HAS_SIZE m``;
+val ramseygraph_e2 = 
+  METIS_PROVE [ramseygraph_def] ``RAMSEYGRAPH r s m V E ==> SYM E``;
+val ramseygraph_e3 = 
+  METIS_PROVE [ramseygraph_def] ``RAMSEYGRAPH r s m V E ==> ~HASCLIQUE r V E``;
+val ramseygraph_e4 = 
+  METIS_PROVE [ramseygraph_def] 
+    ``RAMSEYGRAPH r s m V E ==> ~HASANTICLIQUE s V E``;
 
 val ramsey = ``RAMSEY (r:num) (s:num) (m:num) = (!V:num -> bool. !E:num -> num -> bool. !V:num->bool.!E:num->num->bool. ~RAMSEYGRAPH r s m V E)``;
 val ramsey_def = new_definition ("RAMSEY_DEF",ramsey);
@@ -64,18 +76,10 @@ val c4412b_def = DB.fetch "ramseyDef" "C4412b_DEF";
 val c4412r_def = DB.fetch "ramseyDef" "C4412r_DEF";
 
 (* -------------------------------------------------------------------------
-   End definitions
+   R(2,m)
    ------------------------------------------------------------------------- *)
 
-val ramseygraph_e1 = 
-  METIS_PROVE [ramseygraph_def] ``RAMSEYGRAPH r s m V E ==> V HAS_SIZE m``;
-val ramseygraph_e2 = 
-  METIS_PROVE [ramseygraph_def] ``RAMSEYGRAPH r s m V E ==> SYM E``;
-val ramseygraph_e3 = 
-  METIS_PROVE [ramseygraph_def] ``RAMSEYGRAPH r s m V E ==> ~HASCLIQUE r V E``;
-val ramseygraph_e4 = 
-  METIS_PROVE [ramseygraph_def] 
-    ``RAMSEYGRAPH r s m V E ==> ~HASANTICLIQUE s V E``;
+val _ = print_endline "R(2,m)";
 
 g `SYM E ==> y IN V ==> x IN NBRS V E y ==> y IN NBRS V E x`;
 e (METIS_TAC [sym_def,nbrs_def,SPECIFICATION]);
@@ -84,10 +88,6 @@ val nbrs_swap = top_thm ();
 g `x < n <=> x IN count n`;
 e (simp []);
 val in_count = top_thm ();
-
-val bij_im_in = METIS_PROVE [in_count,BIJ_DEF,INJ_DEF] ``BIJ f (count n) (U:num -> bool) ==> x < n ==> f x IN U``;
-val bij_im_inj = METIS_PROVE [in_count,BIJ_DEF,INJ_DEF] ``BIJ f (count n) (U:num -> bool) ==> x < n ==> y < n ==> f x = f y ==> x = y``;
-val bij_im_surj = METIS_PROVE [in_count,BIJ_DEF,SURJ_DEF] ``BIJ f (count n) (U:num -> bool) ==> u IN U ==> ?x. x < n /\ f x = u``;
 
 val sing_subset = METIS_PROVE [SUBSET_DEF,IN_SING] ``(x:num) IN V ==> {x} SUBSET V``;
 val has_size_1 = METIS_PROVE [HAS_SIZE,SING,SING_IFF_CARD1] ``{(x:num)} HAS_SIZE 1``;
@@ -132,6 +132,12 @@ val ramgraph2rmlem2 = top_thm ();
 
 val ramsey_2_m_m = METIS_PROVE [ramsey_def,ramseygraph_e4,ramgraph2rmlem2] ``RAMSEY 2 m m``;
 
+(* -------------------------------------------------------------------------
+   Symmetry of the roles between cliques and anti-cliques
+   ------------------------------------------------------------------------- *)
+
+val _ = print_endline "Symmetry";
+
 g `SYM E <=> SYM (\x y.~E x y)`;
 e (rw [sym_def]);
 e (METIS_TAC []);
@@ -151,7 +157,15 @@ val ramsey_sym = METIS_PROVE [ramsey_def,ramseygraph_compl] ``RAMSEY r s n ==> R
 
 val ramsey_m_2_m = METIS_PROVE [ramsey_2_m_m,ramsey_sym] ``RAMSEY m 2 m``;
 
-(* Theorem to connect HAS_SIZE n to BIJ f (count n): *)
+(* -------------------------------------------------------------------------
+   Theorem to connect HAS_SIZE n to BIJ f (count n)
+   ------------------------------------------------------------------------- *)
+
+val _ = print_endline "Bijections";
+
+val bij_im_in = METIS_PROVE [in_count,BIJ_DEF,INJ_DEF] ``BIJ f (count n) (U:num -> bool) ==> x < n ==> f x IN U``;
+val bij_im_inj = METIS_PROVE [in_count,BIJ_DEF,INJ_DEF] ``BIJ f (count n) (U:num -> bool) ==> x < n ==> y < n ==> f x = f y ==> x = y``;
+val bij_im_surj = METIS_PROVE [in_count,BIJ_DEF,SURJ_DEF] ``BIJ f (count n) (U:num -> bool) ==> u IN U ==> ?x. x < n /\ f x = u``;
 
 val has_size_bij = METIS_PROVE [FINITE_BIJ_COUNT,FINITE_BIJ_CARD,FINITE_COUNT,HAS_SIZE,CARD_COUNT] ``(U:num -> bool) HAS_SIZE n ==> ?f:num -> num. BIJ f (count n) U``;
 
@@ -223,6 +237,12 @@ e (ASM_CASES_TAC ``j - m < n``);
 e (METIS_TAC [bij_im_in]);
 e decide_tac;
 val combine_count_bijs = top_thm ();
+
+(* -------------------------------------------------------------------------
+   Anti-neighbors
+   ------------------------------------------------------------------------- *)
+
+val _ = print_endline "Anti-neighbors";
 
 g `0 < SUC n`;
 e decide_tac;
@@ -337,6 +357,12 @@ e (METIS_TAC [INJ_CARD_IMAGE]);
 e (METIS_TAC [INJ_SUBSET,SUBSET_REFL]);
 val inj_image_sub_has_size = top_thm ();
 
+(* -------------------------------------------------------------------------
+   R(a,b) <= R(a-1,b) + R(a,b-1)
+   ------------------------------------------------------------------------- *)
+
+val _ = print_endline "upper bound";
+
 val ramseygraph_mon_lem1 = METIS_PROVE [inj_image_count_sub,inj_image_count_has_size,inj_count_leq,ramseygraph_sub] ``RAMSEYGRAPH r s n V E ==> INJ f (count n) V ==> m <= n ==> RAMSEYGRAPH r s m (IMAGE f (count m)) E``;
 val ramseygraph_mon_lem2 = METIS_PROVE [ramseygraph_mon_lem1] ``RAMSEYGRAPH r s n V E ==> INJ f (count n) V ==> m <= n ==> ?U.RAMSEYGRAPH r s m U E``;
 
@@ -383,6 +409,12 @@ val ramsey_sum_lem4 = METIS_PROVE [ramsey_sum_lem1,ramsey_sum_lem2,ramsey_sum_le
 val ramsey_sum_lem5 = METIS_PROVE [ramsey_sum_lem4,has_size_S_ne,ramseygraph_e1] ``RAMSEY (SUC r) s (SUC m) ==> RAMSEY r (SUC s) (SUC n) ==> RAMSEYGRAPH (SUC r) (SUC s) (SUC (SUC (m + n))) V E ==> F``;
 
 val ramsey_sum = METIS_PROVE [ramsey_sum_lem5,ramsey_def] ``RAMSEY (SUC r) s (SUC m) ==> RAMSEY r (SUC s) (SUC n) ==> RAMSEY (SUC r) (SUC s) (SUC (SUC (m + n)))``;
+
+(* -------------------------------------------------------------------------
+   R(3,3) <= 6
+   ------------------------------------------------------------------------- *)
+
+val _ = print_endline "R(3,3)<=6"
 
 g `RAMSEY 0 s 0`;
 e (rw [ramsey_def,ramseygraph_def]);
@@ -506,6 +538,12 @@ val ramsey_S2_S2_SS22 = METIS_PROVE [ramsey_sum,ramsey_2_m_m,ramsey_m_2_m] ``RAM
 
 val ramsey_3_3_6 = METIS_PROVE [ramsey_S2_S2_SS22,suc_2_3,suc_suc_2_2_6] ``RAMSEY 3 3 6``;
 
+(* -------------------------------------------------------------------------
+   R(3,4) <= 9 (first part)
+   ------------------------------------------------------------------------- *)
+
+val _ = print_endline "R(3,4)<=9 (first part)"
+
 g `m + n < d + SUC m ==> d < SUC n ==> d = n`;
 e decide_tac;
 val ramsey_sum_regular_lem1 = top_thm ();
@@ -535,6 +573,13 @@ e decide_tac;
 val suc_5_3_9 = top_thm ();
 
 val ramseygraph_3_4_9_3regular = METIS_PROVE [ramseygraph_3_4_9_3regular_lem1,suc_2_3,suc_3_4,suc_5_6,suc_5_3_9,ramsey_2_m_m,ramsey_3_3_6] ``RAMSEYGRAPH 3 4 9 V E ==> x IN V ==> CARD (NBRS V E x) = 3``;
+
+(* -------------------------------------------------------------------------
+   Infrastructure to prove the sum of degrees must be odd 
+   if there is odd number of vertex with odd degrees.
+   ------------------------------------------------------------------------- *)
+
+val _ = print_endline "Sum of degrees is odd"
 
 g `3 = SUC (2 * 1)`;
 e decide_tac;
@@ -572,7 +617,11 @@ val ramseygraph_3_4_9_odddegr = METIS_PROVE [ramseygraph_3_4_9_3regular,odd_3,de
 
 val ramseygraph_3_4_9_odd_degr_sum = METIS_PROVE [ramseygraph_3_4_9_odddegr,ramseygraph_e1,HAS_SIZE,degr_def,odd_degr_sum_V,odd_9] ``RAMSEYGRAPH 3 4 9 V E ==> ODD (SUM_IMAGE (DEGR V E) V)``;
 
-(** Infrastructure to prove the sum of degrees must be even **)
+(* -------------------------------------------------------------------------
+   Infrastructure to prove the sum of degrees must be even
+   ------------------------------------------------------------------------- *)
+
+val _ = print_endline "Sum of degrees is even"
 
 g `SYM E ==> ~(e IN V) ==> FINITE V ==> NBRS V E e = EMPTY ==> !x. x IN V ==> NBRS (e INSERT V) E x = NBRS V E x`;
 e (rw [nbrs_def,EXTENSION,SPECIFICATION]);
@@ -796,6 +845,12 @@ e (rw [sum_degr_even_lem13]);
 e (METIS_TAC [EVEN_ADD,EVEN_DOUBLE]);
 val sum_degr_even = top_thm ();
 
+(* -------------------------------------------------------------------------
+   R(3,4) <= 9 (second part)
+   ------------------------------------------------------------------------- *)
+
+val _ = print_endline "R(3,4) <= 9 (second part)"
+
 g `RAMSEY 3 4 9`;
 e (rw [ramsey_def]);
 e DISCH_TAC;
@@ -818,11 +873,23 @@ g `RAMSEY (SUC 2) (SUC 4) (SUC (SUC (8 + 4)))`;
 e (METIS_TAC [ramsey_sum,ramsey_2_m_m,ramsey_S2_4_S8,suc_3_4]);
 val ramsey_S2_S4_SS84 = top_thm ();
 
+(* -------------------------------------------------------------------------
+   R(3,5) <= 14
+   ------------------------------------------------------------------------- *)
+
+val _ = print_endline "R(3,5) <= 14"
+
 g `RAMSEY 3 5 14`;
 e (ASM_CASES_TAC ``SUC (SUC (8 + 4)) = 14``);
 e (METIS_TAC [ramsey_S2_S4_SS84,suc_2_3,suc_4_5]);
 e decide_tac;
 val ramsey_3_5_14 = top_thm ();
+
+(* -------------------------------------------------------------------------
+   R(4,4) <= 18
+   ------------------------------------------------------------------------- *)
+
+val _ = print_endline "R(4,4) <= 18"
 
 g `RAMSEY 3 (SUC 3) (SUC 8)`;
 e (METIS_TAC [ramsey_3_4_9,suc_3_4,suc_8_9]);
@@ -833,6 +900,12 @@ e (ASM_CASES_TAC ``SUC (SUC (8 + 8)) = 18``);
 e (METIS_TAC [ramsey_sum,ramsey_3_S3_S8,suc_3_4,ramsey_sym]);
 e decide_tac;
 val ramsey_4_4_18 = top_thm ();
+
+(* -------------------------------------------------------------------------
+   Proving that in a R(4,5,25) there must be a vertex of degree 8,10 or 12
+   ------------------------------------------------------------------------- *)
+
+val _ = print_endline "a vertex of degree 8,10 or 12"
 
 g `RAMSEYGRAPH 4 5 25 V E ==> !x. x IN V ==> DEGR V E x < 14`;
 e (rw [degr_def]);
@@ -886,6 +959,13 @@ e (METIS_TAC []);
 e (METIS_TAC [evens_between_6_14_are_8_10_12]);
 val ramseygraph_4_5_25_ex_8_10_12 = top_thm ();
 
+(* -------------------------------------------------------------------------
+   Degree 8: connection with the first-order formulation used in
+   the computational parts of the proof.
+   ------------------------------------------------------------------------- *)
+
+val _ = print_endline "Degree 8"
+
 g `8 + 16 = 24`;
 e decide_tac;
 val add_8_16 = top_thm ();
@@ -897,10 +977,6 @@ val add_8_16_alt = top_thm ();
 g `SUC 24 = 25`;
 e decide_tac;
 val suc_24_25 = top_thm ();
-
-(* -------------------------------------------------------------------------
-   Degree 8
-   ------------------------------------------------------------------------- *)
 
 g `RAMSEYGRAPH 4 5 25 V E ==> !x. x IN V ==> DEGR V E x = 8 ==> RAMSEYGRAPH 3 5 8 (NBRS V E x) E`;
 e (rw [degr_def]);
@@ -1460,8 +1536,11 @@ e (METIS_TAC []);
 val r4525_no_deg8 = top_thm ();
 
 (* -------------------------------------------------------------------------
-   Degree 10
+   Degree 10: connection with the first-order formulation used in
+   the computational parts of the proof.
    ------------------------------------------------------------------------- *)
+
+val _ = print_endline "Degree 10"
 
 g `10 + 14 = 24`;
 e decide_tac;
@@ -1814,8 +1893,11 @@ e (METIS_TAC []);
 val r4525_no_deg10 = top_thm ();
 
 (* -------------------------------------------------------------------------
-   Degree 12
+   Degree 12: connection with the first-order formulation used in
+   the computational parts of the proof.
    ------------------------------------------------------------------------- *)
+
+val _ = print_endline "Degree 12"
 
 g `12 + 12 = 24`;
 e decide_tac;
@@ -2170,7 +2252,8 @@ e (METIS_TAC []);
 val r4525_no_deg12 = top_thm ();
 
 (* -------------------------------------------------------------------------
-   End degree 12
+   Final theorem, if there is no vertex of degree 8,10 or 12
+   and R(4,5) > 24, then we have R(4,5) = 25
    ------------------------------------------------------------------------- *)
 
 g `(!E:num -> num -> bool. (!(x:num) (y:num). E x y <=> E y x) ==> C358b E ==> C358r E ==> C4416b (\x y. E (x + 8) (y + 8)) ==> C4416r (\x y. E (x + 8) (y + 8)) ==> C4524b E ==> C4524r E ==> F) ==> RAMSEYGRAPH 4 5 25 V E ==> ?x. x IN V /\ (DEGR V E x = 10 \/ DEGR V E x = 12)`;
@@ -2190,15 +2273,14 @@ val no_ramseygraph_4_5_25_hyp = top_thm ();
 g `(!E:num -> num -> bool. (!(x:num) (y:num). E x y <=> E y x) ==> C358b E ==> C358r E ==> C4416b (\x y. E (x + 8) (y + 8)) ==> C4416r (\x y. E (x + 8) (y + 8)) ==> C4524b E ==> C4524r E ==> F) ==> (!E:num -> num -> bool. (!(x:num) (y:num). E x y <=> E y x) ==> C3510b E ==> C3510r E ==> C4414b (\x y. E (x + 10) (y + 10)) ==> C4414r (\x y. E (x + 10) (y + 10)) ==> C4524b E ==> C4524r E ==> F) ==> (!E:num -> num -> bool. (!(x:num) (y:num). E x y <=> E y x) ==> C3512b E ==> C3512r E ==> C4412b (\x y. E (x + 12) (y + 12)) ==> C4412r (\x y. E (x + 12) (y + 12)) ==> C4524b E ==> C4524r E ==> F) ==> RAMSEY 4 5 25`;
 e (rw [ramsey_def]);
 e (METIS_TAC [no_ramseygraph_4_5_25_hyp]);
-val ramsey_4_5_25_hyp = top_thm ();
+val ramsey_4_5_25_hyp1 = top_thm ();
 
-val ramsey_4_5_25_hyp2 = UNDISCH_ALL ramsey_4_5_25_hyp;
 
 g `(!E:num -> num -> bool. (!(x:num) (y:num). E x y <=> E y x) ==> C358b E ==> C358r E ==> C4416b (\x y. E (x + 8) (y + 8)) ==> C4416r (\x y. E (x + 8) (y + 8)) ==> C4524b E ==> C4524r E ==> F) ==> (!E:num -> num -> bool. (!(x:num) (y:num). E x y <=> E y x) ==> C3510b E ==> C3510r E ==> C4414b (\x y. E (x + 10) (y + 10)) ==> C4414r (\x y. E (x + 10) (y + 10)) ==> C4524b E ==> C4524r E ==> F) ==> (!E:num -> num -> bool. (!(x:num) (y:num). E x y <=> E y x) ==> C3512b E ==> C3512r E ==> C4412b (\x y. E (x + 12) (y + 12)) ==> C4412r (\x y. E (x + 12) (y + 12)) ==> C4524b E ==> C4524r E ==> F) ==> (?E:num -> num -> bool . SYM E /\ C4524b E /\ C4524r E) ==> RAMS 4 5 = 25`;
 e DISCH_TAC;
 e DISCH_TAC;
 e DISCH_TAC;
-e (IMP_RES_TAC ramsey_4_5_25_hyp);
+e (IMP_RES_TAC ramsey_4_5_25_hyp1);
 e (rw []);
 e (ASM_CASES_TAC ``RAMSEY 4 5 24``);
 e (ASM_CASES_TAC ``RAMSEYGRAPH 4 5 24 (count 24) E``);
@@ -2219,7 +2301,8 @@ e CCONTR_TAC;
 e (UNDISCH_TAC ``~RAMSEY 4 5 (SUC 24)``);
 e (simp []);
 
-val rams_4_5_25_hyp = save_thm ("rams_4_5_25_hyp", UNDISCH_ALL (top_thm ()));
+val ramsey_4_5_25_hyp = 
+  save_thm ("ramsey_4_5_25_hyp", UNDISCH_ALL (top_thm ()));
 
 val _ = export_theory ();
 
