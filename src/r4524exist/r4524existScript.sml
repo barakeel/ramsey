@@ -270,11 +270,10 @@ fun prove_mat_red m vl depth tm =
 ;
 
 (* -------------------------------------------------------------------------
-   Final step
+   Actual script
    ------------------------------------------------------------------------- *)
 
 val _ = print_endline "blue step"
-
 val blueclique = noclique 24 (4,true);
 val bluecliqueb = nocliqueb 24 (4,true);
 val bluecliqueeq = PURE_REWRITE_RULE [disjthm]
@@ -285,7 +284,6 @@ val thmblue2 = EQ_MP (SYM bluecliqueeq) thmblue1;
 val thmblue3 = PURE_REWRITE_RULE [GSYM disjthm] thmblue2;
 
 val _ = print_endline "red step"
-
 val redclique = noclique 24 (5,false);
 val redcliqueb = nocliqueb 24 (5,false);
 val redcliqueeq = PURE_REWRITE_RULE [disjthm]
@@ -295,44 +293,29 @@ val thmred1 = prove_mat_red m4524 [] 0 redtm;
 val thmred2 = EQ_MP (SYM redcliqueeq) thmred1;
 val thmred3 = PURE_REWRITE_RULE [GSYM disjthm] thmred2;
 
+val _ = print_endline "existsthm"
 val existsthm = create_exists (); 
-val existslemmal = CONJUNCTS (ASSUME (snd (dest_exists (concl existsthm))));
 
-val thm1 = PROVE_HYPL existslemmal thmblue3;
-val thm2 = PROVE_HYPL existslemmal thmred3;
-val thm3 = hd existslemmal;
+val _ = print_endline "forallthm"
+val lemmal = CONJUNCTS (ASSUME (snd (dest_exists (concl existsthm))));
+val thm1 = PROVE_HYPL lemmal thmblue3;
+val thm2 = PROVE_HYPL lemmal thmred3;
+val thm3 = hd lemmal;
 val thm4 = LIST_CONJ [thm3,thm1,thm2];
 val thm5 = DISCH_ALL thm4;
 val forallthm = GEN E thm5;
 
+val _ = print_endline "combined"
 val pabs = mk_abs (E, fst (dest_imp (concl thm5)));
 val qabs = mk_abs (E, snd (dest_imp (concl thm5)));
-
 val thm6 = BETA_RULE (SPECL [pabs,qabs] EXISTS_MP_THM);
-val finalthm = MP thm6 (CONJ existsthm forallthm);
-
-val abstm = rand (concl existsthm);
-show_types := true;
-val selectthm = 
-  INST_TYPE [{redex = alpha, residue = ``:num -> num -> bool``}] SELECT_THM;
-val selectconst = (rator o rand o lhs o snd o dest_forall o concl) selectthm;
-show_types := false;
-val selecttm = mk_comb (selectconst, abstm);
-val selectthm1 = SPEC abstm selectthm;
-val thmblue5 = 
-  let val lemma = (UNDISCH o snd o EQ_IMP_RULE o BETA_RULE) selectthm1 in
-    PROVE_HYP lemma (INST [{redex = E, residue = selecttm}] thmblue4)
-  end;
-
-val C4524b_DEF = DB.fetch "scratch" "C4524b_DEF";
-val C4524r_DEF = DB.fetch "scratch" "C4524r_DEF";
-
-val SYM_DEF = DB.fetch "
-
+val thm7 = MP thm6 (CONJ existsthm forallthm);
+val C4524b_DEF = DB.fetch "ramseyDef" "C4524b_DEF";
+val C4524r_DEF = DB.fetch "ramseyDef" "C4524r_DEF";
+val SYM_DEF = DB.fetch "basicRamsey" "SYM_DEF";
 val SYM_EQUIV = METIS_PROVE [] 
  ``(!(x:num) (y:num). E x y <=> E y x) = (!(x:num) (y:num). E x y ==> E y x)``;
-
 val r4524exist = 
-  save_thm ("r4524exist", PURE_REWRITE_RULE [SYM_EQUIV,GSYM SYM_DEF,GSYM C4524b_DEF, GSYM C4524r_DEF] r4524);
+  save_thm ("r4524exist", PURE_REWRITE_RULE [SYM_EQUIV,GSYM SYM_DEF,GSYM C4524b_DEF, GSYM C4524r_DEF] thm7);
 
 val _ = export_theory ();       
