@@ -9,8 +9,12 @@ open arithmeticTheory pred_setTheory;
 chatting := false;
 
 val _ = new_theory "basicRamsey";
-fun METIS_TAC thml goal = metisTools.METIS_TAC thml goal 
-  handle HOL_ERR e => (print_endline (term_to_string (snd goal));
+
+val metis_ref = ref 0;
+fun METIS_TAC thml goal = (incr metis_ref; 
+                           metisTools.METIS_TAC thml goal 
+  handle HOL_ERR e => (
+    print_endline (its (!metis_ref); term_to_string (snd goal));
   raise HOL_ERR e)
 
 (* -------------------------------------------------------------------------
@@ -658,7 +662,7 @@ e (rw [nbrs_def,EXTENSION,SPECIFICATION,SUBSET_DEF]);
 val sum_degr_even_lem5 = top_thm ();
 
 val _ = print_endline "Sum of degrees must be even 1";
-
+val _ = metis_ref := 0
 g `~(e IN V) ==> FINITE V ==> ~(e' IN U) ==> SYM E ==> NBRS V E e = e' INSERT U ==> ?E'. SYM E' /\ NBRS V E' e = U /\ (!x. x IN V ==> NBRS V E' x = NBRS V E x) /\ e' INSERT NBRS (e INSERT V) E' e = NBRS (e INSERT V) E e /\ (!x. x IN V DELETE e' ==> NBRS (e INSERT V) E' x = NBRS (e INSERT V) E x) /\ NBRS (e INSERT V) E e' = e INSERT NBRS (e INSERT V) E' e' /\ ~(e' IN NBRS (e INSERT V) E' e)`;
 e (rw []);
 e (ASM_CASES_TAC ``e' IN NBRS V E e``);
@@ -718,6 +722,7 @@ e (rw []);
 val sum_degr_even_lem6 = top_thm ();
 
 val _ = print_endline "Sum of degrees must be even 2";
+val _ = metis_ref := 0
 
 g `~(e IN V) ==> FINITE V ==> ~(e' IN U) ==> SYM E ==> NBRS V E e = e' INSERT U ==> ?E'. SYM E' /\ NBRS V E' e = U /\ (!x. x IN V ==> NBRS V E' x = NBRS V E x) /\ NBRS (e INSERT V) E e = e' INSERT NBRS (e INSERT V) E' e /\ (!x. x IN V DELETE e' ==> NBRS (e INSERT V) E' x = NBRS (e INSERT V) E x) /\ NBRS (e INSERT V) E e' = e INSERT NBRS (e INSERT V) E' e' /\ ~(e' IN NBRS (e INSERT V) E' e) /\ e' IN NBRS V E e`;
 e DISCH_TAC;
