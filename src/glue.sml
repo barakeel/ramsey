@@ -511,22 +511,24 @@ length batchl; (* 806 *)
 write_pbbatchl "glue3512_batchl_dai04" batchl;
 *)
 
-(* write script dai04
+(* script dai04
 load "glue"; open aiLib kernel graph enum gen glue;
 val batchl = read_pbbatchl "glue3512_batchl_dai04";
-write_gluescript_batchl (selfdir ^ "/glue358_dai04_holmake") batchl;
+write_gluescript_batchl (selfdir ^ "/glue3512_dai04_holmake") batchl;
 *)
-
-(* run script dai04
-load "glue"; open aiLib kernel graph enum gen glue;
-val scriptl = selfdir ^ "/glue358_dai04_holmake"
-
-*)
-
 
 (*
+screen -S glue
 export TMPDIR="$PWD/tmp";
 mkdir tmp;
+load "glue"; open aiLib kernel graph enum gen glue;
+val dir = selfdir ^ "/glue3512_dai04_holmake";
+val scriptl = find_scriptl dir;
+run_scriptl dir scriptl;
+*)
+
+(*
+
 
 load "glue"; open aiLib kernel graph enum gen glue;
 fun g s = 
