@@ -1,4 +1,4 @@
-open HolKernel boolLib Parse simpLib boolSimps BasicProvers bossLib;
+open HolKernel boolLib Parse simpLib boolSimps BasicProvers proofManagerLib bossLib;
 local open numTheory prim_recTheory SatisfySimps DefnBase in end;
 open aiLib kernel syntax graph;
 open ramseyDefTheory arithmeticTheory pred_setTheory;
