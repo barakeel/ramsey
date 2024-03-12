@@ -40,14 +40,14 @@ fun load_r45_degree12_theory n =
     val thyname = "r45_degree12_" ^ its n
     val filedat = selfdir ^ "/merge3512/" ^ thyname ^ "Theory.dat"
   in
-    TheoryReaderDrop.load_thydata_notr45 thyname filedat;
+    TheoryReaderDrop.load_thydata_nolink thyname filedat;
     Theory.load_complete thyname
   end;
 
 val _ = ignore (List.tabulate (43,load_r45_degree10_theory));
-val r45_degree10 = save_thm ("r45_degree10", IMPOSSIBLE_REG_35 10);
+val r45_degree10 = IMPOSSIBLE_REG_35 10;
 val _ = ignore (List.tabulate (12,load_r45_degree12_theory));
-val r45_degree12 = save_thm ("r45_degree12", IMPOSSIBLE_REG_35 12);
+val r45_degree12 = IMPOSSIBLE_REG_35 12;
 
 val hypl = hyp basicRamseyTheory.ramsey_4_5_25_hyp;
 fun prec x = (fst o strip_imp o snd o strip_forall) x;
@@ -55,8 +55,7 @@ val (a,b,c,d) = quadruple_of_list hypl;
 
 val r45_degree8' = GEN E (DISCHL (prec c) r45_degree8);
 val r45_degree10' = GEN E (DISCHL (prec a) r45_degree10);
-val r45_degree12' = GEN E (DISCHL (prec b) r45_degree12);
-val r4524existTheory.r4524exist;
+val r45_degree12' = GEN E (DISCHL (prec b) r45_degree12); r4524existTheory.r4524exist;
 
 val r45_equals_25 =
   PROVE_HYPL [r45_degree8',r45_degree10',r45_degree12',r4524existTheory.r4524exist]    
@@ -67,7 +66,5 @@ val _ = save_thm ("r45_equals_25", r45_equals_25);
 val _ = export_theory ();
 
 
-
-
-
+load "r45_equals_25Theory";
 
