@@ -693,7 +693,6 @@ e (METIS_TAC []);
 e (METIS_TAC []);
 e (METIS_TAC []);
 e (METIS_TAC []);
-e (METIS_TAC []);
 e CONJ_TAC;
 e GEN_TAC;
 e DISCH_TAC;
