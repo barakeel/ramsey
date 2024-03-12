@@ -2,7 +2,7 @@
    Final step of the proof of R(4,5) = 25
    ========================================================================= *)
 
-open  aiLib kernel gen sat syntax merge;
+open HolKernel boolLib aiLib kernel gen sat syntax merge;
 local open TheoryReaderDrop
   ramseyDefTheory basicRamseyTheory r45_degree8Theory r4524existTheory
 in end;
