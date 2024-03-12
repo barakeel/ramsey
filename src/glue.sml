@@ -358,34 +358,18 @@ val pbl = shuffle (cartesian_product ml1 ml2);
 write_pbl "glue358_pbl_dai07" pbl;
 *)
 
-
-(* using custom builder
-export TMPDIR="$PWD/tmp";
-mkdir tmp;
+(*
+export TMPDIR="$PWD/tmp"; mkdir tmp;
 load "glue"; open aiLib kernel graph enum gen glue;
-val glue358_pbl_dai07 = map g (readl (selfdir ^ "/glue358_pbl_dai07"));
+val glue358_pbl_dai07 = read_pbl (selfdir ^ "/glue358_pbl_dai07");
 run_script_pbl (selfdir ^ "/glue358_dai07") glue358_pbl_dai07;
 *)
 
-(* using Holmake
-load "glue"; open aiLib kernel graph enum gen glue;
-val batchl = read_pbbatchl "glue358_batchl_dai07";
-write_gluescript_batchl (selfdir ^ "/glue358_dai07_holmake") batchl;
-
-export TMPDIR="$PWD/tmp";
-mkdir tmp;
-cd glue358_dai07_holmake
-../../HOL/bin/Holmake --no_prereqs -j 6 | tee ../aaa_log_glue358
-*)
-
 (* -------------------------------------------------------------------------
-   3,5,10 glueing: using gen_bench6_4_4_0_5
+   3,5,10 gluing: using gen_bench6_4_4_0_5
    ------------------------------------------------------------------------- *)
 
 (*
-export TMPDIR="$PWD/tmp";
-mkdir tmp;
-
 load "glue"; open aiLib kernel graph enum gen glue;
 val ml1 = read_par 10 (3,5);
 val ml2 = read_par 14 (4,4);
@@ -393,27 +377,24 @@ val pbl = shuffle (cartesian_product ml1 ml2);
 val (pbl1,pbl2) = part_n (length pbl div 2) pbl;
 write_pbl "glue3510_pbl_dai05" pbl1;
 write_pbl "glue3510_pbl_dai06" pbl2;
+*)
 
+(*
+export TMPDIR="$PWD/tmp"; mkdir tmp;
 load "glue"; open aiLib kernel graph enum gen glue;
-fun g s = 
-  let val (s1,s2) = pair_of_list (String.tokens Char.isSpace s) in
-    (stinf s1, stinf s2)
-  end;
-val pbl_dai05 = map g (readl (selfdir ^ "/glue3510_pbl_dai05"));
+val pbl_dai05 = read_pbl (selfdir ^ "/glue3510_pbl_dai05");
 run_script_pbl (selfdir ^ "/glue3510_dai05") pbl_dai05;
+*)
 
+(*
+export TMPDIR="$PWD/tmp"; mkdir tmp;
 load "glue"; open aiLib kernel graph enum gen glue;
-fun g s = 
-  let val (s1,s2) = pair_of_list (String.tokens Char.isSpace s) in
-    (stinf s1, stinf s2)
-  end;
-val pbl_dai06 = map g (readl (selfdir ^ "/glue3510_pbl_dai06"));
+val pbl_dai06 = read_pbl (selfdir ^ "/glue3510_pbl_dai06");
 run_script_pbl (selfdir ^ "/glue3510_dai06") pbl_dai06;
-
 *)
 
 (* -------------------------------------------------------------------------
-   3,5,12 Glueing: using gen_bench12_12_0_8_0_5
+   3,5,12 gluing: using gen_bench12_12_0_8_0_5
    ------------------------------------------------------------------------- *)
 
 (*
@@ -426,56 +407,19 @@ write_pbl "glue3512_pbl_dai04" pbl1;
 write_pbl "glue3512_pbl_dai07" pbl2;
 *)
 
-(* batch dai04
-load "glue"; open aiLib kernel graph enum gen glue;
-val pbl = read_pbl (selfdir ^ "/glue3512_pbl_dai04");
-val batchl = number_fst 0 (mk_batch_full 200 pbl);
-length batchl; (* 806 *)
-write_pbbatchl "glue3512_batchl_dai04" batchl;
-*)
-
-(* script dai04
-load "glue"; open aiLib kernel graph enum gen glue;
-val batchl = read_pbbatchl "glue3512_batchl_dai04";
-write_gluescript_batchl (selfdir ^ "/glue3512_dai04_holmake") batchl;
-*)
-
 (*
-screen -S glue
-export TMPDIR="$PWD/tmp";
-mkdir tmp;
+export TMPDIR="$PWD/tmp"; mkdir tmp;
 load "glue"; open aiLib kernel graph enum gen glue;
-val dir = selfdir ^ "/glue3512_dai04_holmake";
-val scriptl = find_scriptl dir;
-run_scriptl dir scriptl;
-*)
-
-(*
-
-
-load "glue"; open aiLib kernel graph enum gen glue;
-fun g s = 
-  let val (s1,s2) = pair_of_list (String.tokens Char.isSpace s) in
-    (stinf s1, stinf s2)
-  end;
-val pbl_dai07 = map g (readl (selfdir ^ "/glue3512_pbl_dai07"));
-val pbl_dai07_batch = mk_batch_full 
-
-
+val pbl_dai07 = read_pbl (selfdir ^ "/glue3512_pbl_dai07"));
 run_script_pbl (selfdir ^ "/glue3512_dai07") pbl_dai07;
-
-
-load "glue"; open aiLib kernel graph enum gen glue;
-fun g s = 
-  let val (s1,s2) = pair_of_list (String.tokens Char.isSpace s) in
-    (stinf s1, stinf s2)
-  end;
-val pbl_dai04 = map g (readl (selfdir ^ "/glue3512_pbl_dai04"));
-run_script_pbl (selfdir ^ "/glue3512_dai04") pbl_dai04;
-
 *)
 
-
+(*
+export TMPDIR="$PWD/tmp"; mkdir tmp;
+load "glue"; open aiLib kernel graph enum gen glue;
+val pbl_dai04 = read_pbl (selfdir ^ "/glue3512_pbl_dai04"));
+run_script_pbl (selfdir ^ "/glue3512_dai04") pbl_dai04;
+*)
 
 (* -------------------------------------------------------------------------
    Running on one example
