@@ -1,0 +1,72 @@
+(* 
+This is files contains a temporary workaround that allows us
+to avoiding loading some theories in the theory graph.
+We have created 1 million theories each of them containing one
+gluing theorem. 
+In HOL4, it is very slow to load one million theories 
+in the theory graph, because the graph is represented as a list of pairs
+(thy,parents) end not a dictionary.
+When a new theory is loaded, it checks that its dependencies
+are already in the graph leading to a worse than quadratic time complexity.
+In the future, we will avoid this issue by creating about 5000 theories
+each of them containing 200 gluing theorems instead.
+*)
+
+cd mergef
+rlwrap ../../HOL/bin/hol
+
+load "merge"; open merge;
+load "gen"; open aiLib kernel gen;
+load "TheoryReaderDrop";
+
+(* load theories containing the definitions in the theory graph *)
+load "def/ramseyDefTheory";
+load "enumf/ramseyEnumTheory";
+load "merge358/r45_degree8Theory";
+
+val r45_degree8 = DB.fetch "r45_degree8" "r45_degree8";
+ 
+fun load_r45_degree10_theory n =   
+  let 
+    val thyname = "r45_degree10_" ^ its n
+    val filedat = selfdir ^ "/merge3510/" ^ thyname ^ "Theory.dat"
+  in
+    TheoryReaderDrop.load_thydata_notr45 thyname filedat;
+    Theory.load_complete thyname
+  end;
+
+fun load_r45_degree12_theory n =   
+  let 
+    val thyname = "r45_degree12_" ^ its n
+    val filedat = selfdir ^ "/merge3512/" ^ thyname ^ "Theory.dat"
+  in
+    TheoryReaderDrop.load_thydata_notr45 thyname filedat;
+    Theory.load_complete thyname
+  end;
+
+val _ = ignore (List.tabulate (43,load_r45_degree10_theory));
+val r45_degree10 = save_thm ("r45_degree10", IMPOSSIBLE_REG_35 10);
+val _ = ignore (List.tabulate (12,load_r45_degree12_theory));
+val r45_degree12 = save_thm ("r45_degree12", IMPOSSIBLE_REG_35 12);
+
+show_assums := true;
+r45_degree8; r45_degree10; r45_degree12;
+
+val _ = new_theory "r45_equals_25";
+val _ = save_thm ("r45_equals_25", r45_equals_25);
+val _ = export_theory ();
+
+(* to load the final theorem again *)
+cd mergef
+rlwrap ../../HOL/bin/hol
+
+val thyname = "r45_equals_25";
+val filedat = selfdir ^ "/mergef" ^ thyname ^ "Theory.dat"; 
+TheoryReaderDrop.load_thydata_notr45 thyname filedat;
+Theory.load_complete thyname;
+
+val r45_equals_25 = 
+
+
+
+
