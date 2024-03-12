@@ -1,7 +1,10 @@
+(* load "graph"; load "../def/ramseyDefTheory"; *)
+
 open HolKernel boolLib Parse simpLib boolSimps BasicProvers proofManagerLib bossLib;
 local open numTheory prim_recTheory SatisfySimps DefnBase in end;
-open aiLib kernel syntax graph;
-open ramseyDefTheory arithmeticTheory pred_setTheory;
+open aiLib kernel graph;
+local open ramseyDefTheory in end 
+open arithmeticTheory pred_setTheory;
 
 val _ = new_theory "basicRamsey";
 
@@ -81,9 +84,9 @@ val c4412r_def = DB.fetch "ramseyDef" "C4412r_DEF";
 
 val _ = print_endline "R(2,m)";
 
-g `SYM E ==> y IN V ==> x IN NBRS V E y ==> y IN NBRS V E x`;
-e (METIS_TAC [sym_def,nbrs_def,SPECIFICATION]);
-val nbrs_swap = top_thm ();
+val nbrs_swap = TAC_PROOF (([], 
+  ``SYM E ==> y IN V ==> x IN NBRS V E y ==> y IN NBRS V E x``),
+  METIS_TAC [sym_def,nbrs_def,SPECIFICATION]);
 
 g `x < n <=> x IN count n`;
 e (simp []);
