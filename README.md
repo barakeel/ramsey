@@ -137,7 +137,7 @@ remove empty temporary files (preferably inside a screen `screen -S tmp`).
 This is unsafe if you have another process using files named `/tmp/MLTEMP*`.
 ```
 cd /tmp
-watch -n 600 "find . -maxdepth 1 -type f -name 'MLTEMP*' ! -exec lsof {} \; -exec rm {} \;"
+watch -n 600 "find . -maxdepth 1 -type f -name 'MLTEMP*' ! -exec rm {} \;"
 ```
 
 ## Merging the gluing lemmas
@@ -153,7 +153,7 @@ cd merge358
 
 ``
 cd merge3510
-../../HOL/bin/Holmake --no_prereqs -j 43 | tee ../aaa_log_merge3510
+../../HOL/bin/Holmake --no_prereqs -j 22 | tee ../aaa_log_merge3510
 ``
 
 ``
@@ -161,4 +161,8 @@ cd merge3512
 ../../HOL/bin/Holmake --no_prereqs -j 12 | tee ../aaa_log_merge3512
 ``
 
+``
+rlwrap ../HOL/bin/hol
+
+``
 
