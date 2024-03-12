@@ -83,7 +83,7 @@ val r45_degree10' = GEN E (DISCHL l10 r45_degree10);
 val r45_degree12' = GEN E (DISCHL l12 r45_degree12);
 
 
-val r45_equals_25 = 
+val r45_equals_25 =
   PROVE_HYPL [r45_degree8',r45_degree10',r45_degree12'] ramsey_4_5_25_hyp;
 
 
