@@ -414,7 +414,7 @@ val ramsey_sum = METIS_PROVE [ramsey_sum_lem5,ramsey_def] ``RAMSEY (SUC r) s (SU
    R(3,3) <= 6
    ------------------------------------------------------------------------- *)
 
-val _ = print_endline "R(3,3)<=6"
+val _ = print_endline "R(3,3)<=6";
 
 g `RAMSEY 0 s 0`;
 e (rw [ramsey_def,ramseygraph_def]);
@@ -542,7 +542,7 @@ val ramsey_3_3_6 = METIS_PROVE [ramsey_S2_S2_SS22,suc_2_3,suc_suc_2_2_6] ``RAMSE
    R(3,4) <= 9 (first part)
    ------------------------------------------------------------------------- *)
 
-val _ = print_endline "R(3,4)<=9 (first part)"
+val _ = print_endline "R(3,4)<=9 (first part)";
 
 g `m + n < d + SUC m ==> d < SUC n ==> d = n`;
 e decide_tac;
@@ -579,7 +579,7 @@ val ramseygraph_3_4_9_3regular = METIS_PROVE [ramseygraph_3_4_9_3regular_lem1,su
    if there is odd number of vertex with odd degrees.
    ------------------------------------------------------------------------- *)
 
-val _ = print_endline "Sum of degrees is odd"
+val _ = print_endline "Sum of degrees is odd";
 
 g `3 = SUC (2 * 1)`;
 e decide_tac;
@@ -621,7 +621,7 @@ val ramseygraph_3_4_9_odd_degr_sum = METIS_PROVE [ramseygraph_3_4_9_odddegr,rams
    Infrastructure to prove the sum of degrees must be even
    ------------------------------------------------------------------------- *)
 
-val _ = print_endline "Sum of degrees is even"
+val _ = print_endline "Sum of degrees is even";
 
 g `SYM E ==> ~(e IN V) ==> FINITE V ==> NBRS V E e = EMPTY ==> !x. x IN V ==> NBRS (e INSERT V) E x = NBRS V E x`;
 e (rw [nbrs_def,EXTENSION,SPECIFICATION]);
@@ -849,7 +849,7 @@ val sum_degr_even = top_thm ();
    R(3,4) <= 9 (second part)
    ------------------------------------------------------------------------- *)
 
-val _ = print_endline "R(3,4) <= 9 (second part)"
+val _ = print_endline "R(3,4) <= 9 (second part)";
 
 g `RAMSEY 3 4 9`;
 e (rw [ramsey_def]);
@@ -877,7 +877,7 @@ val ramsey_S2_S4_SS84 = top_thm ();
    R(3,5) <= 14
    ------------------------------------------------------------------------- *)
 
-val _ = print_endline "R(3,5) <= 14"
+val _ = print_endline "R(3,5) <= 14";
 
 g `RAMSEY 3 5 14`;
 e (ASM_CASES_TAC ``SUC (SUC (8 + 4)) = 14``);
@@ -889,7 +889,7 @@ val ramsey_3_5_14 = top_thm ();
    R(4,4) <= 18
    ------------------------------------------------------------------------- *)
 
-val _ = print_endline "R(4,4) <= 18"
+val _ = print_endline "R(4,4) <= 18";
 
 g `RAMSEY 3 (SUC 3) (SUC 8)`;
 e (METIS_TAC [ramsey_3_4_9,suc_3_4,suc_8_9]);
@@ -905,7 +905,7 @@ val ramsey_4_4_18 = top_thm ();
    Proving that in a R(4,5,25) there must be a vertex of degree 8,10 or 12
    ------------------------------------------------------------------------- *)
 
-val _ = print_endline "a vertex of degree 8,10 or 12"
+val _ = print_endline "a vertex of degree 8,10 or 12";
 
 g `RAMSEYGRAPH 4 5 25 V E ==> !x. x IN V ==> DEGR V E x < 14`;
 e (rw [degr_def]);
@@ -964,7 +964,7 @@ val ramseygraph_4_5_25_ex_8_10_12 = top_thm ();
    the computational parts of the proof.
    ------------------------------------------------------------------------- *)
 
-val _ = print_endline "Degree 8"
+val _ = print_endline "Degree 8";
 
 g `8 + 16 = 24`;
 e decide_tac;
@@ -1540,7 +1540,7 @@ val r4525_no_deg8 = top_thm ();
    the computational parts of the proof.
    ------------------------------------------------------------------------- *)
 
-val _ = print_endline "Degree 10"
+val _ = print_endline "Degree 10";
 
 g `10 + 14 = 24`;
 e decide_tac;
@@ -1897,7 +1897,7 @@ val r4525_no_deg10 = top_thm ();
    the computational parts of the proof.
    ------------------------------------------------------------------------- *)
 
-val _ = print_endline "Degree 12"
+val _ = print_endline "Degree 12";
 
 g `12 + 12 = 24`;
 e decide_tac;
