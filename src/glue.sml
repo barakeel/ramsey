@@ -373,7 +373,7 @@ fun run_scriptl dir scriptl =
     val _ = app mkDir_err [dir,!smlExecScripts.buildheap_dir]
     val ncore' = Int.min (ncore, length scriptl)
   in
-    smlParallel.parapp_queue ncore' smlExecScripts.exec_script (shuffle scriptl)
+    smlParallel.parapp_queue ncore' smlExecScripts.exec_script scriptl
   end
 
 (* -------------------------------------------------------------------------
@@ -494,17 +494,39 @@ run_script_pbl (selfdir ^ "/glue3510_dai06") pbl_dai06;
    ------------------------------------------------------------------------- *)
 
 (*
-export TMPDIR="$PWD/tmp";
-mkdir tmp;
-
 load "glue"; open aiLib kernel graph enum gen glue;
 val ml1 = read_par 12 (3,5);
 val ml2 = read_par 12 (4,4);
 val pbl = shuffle (cartesian_product ml1 ml2);
 val (pbl1,pbl2) = part_n (length pbl div 2) pbl;
-fun f (i1,i2) = infts i1 ^ " " ^ infts i2;
-writel "glue3512_pbl_dai07" (map f pbl1);
-writel "glue3512_pbl_dai04" (map f pbl2);
+write_pbl "glue3512_pbl_dai04" pbl1;
+write_pbl "glue3512_pbl_dai07" pbl2;
+*)
+
+(* batch dai04
+load "glue"; open aiLib kernel graph enum gen glue;
+val pbl = read_pbl (selfdir ^ "/glue3512_pbl_dai04");
+val batchl = number_fst 0 (mk_batch_full 200 pbl);
+length batchl; (* 806 *)
+write_pbbatchl "glue3512_batchl_dai04" batchl;
+*)
+
+(* write script dai04
+load "glue"; open aiLib kernel graph enum gen glue;
+val batchl = read_pbbatchl "glue3512_batchl_dai04";
+write_gluescript_batchl (selfdir ^ "/glue358_dai04_holmake") batchl;
+*)
+
+(* run script dai04
+load "glue"; open aiLib kernel graph enum gen glue;
+val scriptl = selfdir ^ "/glue358_dai04_holmake"
+
+*)
+
+
+(*
+export TMPDIR="$PWD/tmp";
+mkdir tmp;
 
 load "glue"; open aiLib kernel graph enum gen glue;
 fun g s = 
