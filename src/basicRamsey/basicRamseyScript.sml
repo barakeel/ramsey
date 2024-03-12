@@ -370,7 +370,7 @@ val inj_image_sub_has_size = top_thm ();
    R(a,b) <= R(a-1,b) + R(a,b-1)
    ------------------------------------------------------------------------- *)
 
-val _ = print_endline "upper bound";
+val _ = print_endline "Upper bound";
 
 val ramseygraph_mon_lem1 = METIS_PROVE [inj_image_count_sub,inj_image_count_has_size,inj_count_leq,ramseygraph_sub] ``RAMSEYGRAPH r s n V E ==> INJ f (count n) V ==> m <= n ==> RAMSEYGRAPH r s m (IMAGE f (count m)) E``;
 val ramseygraph_mon_lem2 = METIS_PROVE [ramseygraph_mon_lem1] ``RAMSEYGRAPH r s n V E ==> INJ f (count n) V ==> m <= n ==> ?U.RAMSEYGRAPH r s m U E``;
@@ -423,7 +423,7 @@ val ramsey_sum = METIS_PROVE [ramsey_sum_lem5,ramsey_def] ``RAMSEY (SUC r) s (SU
    R(3,3) <= 6
    ------------------------------------------------------------------------- *)
 
-val _ = print_endline "R(3,3)<=6";
+val _ = print_endline "R(3,3) <= 6";
 
 g `RAMSEY 0 s 0`;
 e (rw [ramsey_def,ramseygraph_def]);
@@ -657,6 +657,8 @@ g `~(e IN V) ==> FINITE V ==> ~(e' IN U) ==> SYM E ==> NBRS V E e = e' INSERT U 
 e (rw [nbrs_def,EXTENSION,SPECIFICATION,SUBSET_DEF]);
 val sum_degr_even_lem5 = top_thm ();
 
+val _ = print_endline "Sum of degrees must be even 1";
+
 g `~(e IN V) ==> FINITE V ==> ~(e' IN U) ==> SYM E ==> NBRS V E e = e' INSERT U ==> ?E'. SYM E' /\ NBRS V E' e = U /\ (!x. x IN V ==> NBRS V E' x = NBRS V E x) /\ e' INSERT NBRS (e INSERT V) E' e = NBRS (e INSERT V) E e /\ (!x. x IN V DELETE e' ==> NBRS (e INSERT V) E' x = NBRS (e INSERT V) E x) /\ NBRS (e INSERT V) E e' = e INSERT NBRS (e INSERT V) E' e' /\ ~(e' IN NBRS (e INSERT V) E' e)`;
 e (rw []);
 e (ASM_CASES_TAC ``e' IN NBRS V E e``);
@@ -715,6 +717,8 @@ e (UNDISCH_TAC ``~(e' IN NBRS V E e)``);
 e (rw []);
 val sum_degr_even_lem6 = top_thm ();
 
+val _ = print_endline "Sum of degrees must be even 2";
+
 g `~(e IN V) ==> FINITE V ==> ~(e' IN U) ==> SYM E ==> NBRS V E e = e' INSERT U ==> ?E'. SYM E' /\ NBRS V E' e = U /\ (!x. x IN V ==> NBRS V E' x = NBRS V E x) /\ NBRS (e INSERT V) E e = e' INSERT NBRS (e INSERT V) E' e /\ (!x. x IN V DELETE e' ==> NBRS (e INSERT V) E' x = NBRS (e INSERT V) E x) /\ NBRS (e INSERT V) E e' = e INSERT NBRS (e INSERT V) E' e' /\ ~(e' IN NBRS (e INSERT V) E' e) /\ e' IN NBRS V E e`;
 e DISCH_TAC;
 e DISCH_TAC;
@@ -740,6 +744,8 @@ e (METIS_TAC []);
 e (simp []);
 val sum_degr_even_lem7 = top_thm ();
 
+val _ = print_endline "Sum of degrees must be even 3";
+
 g `(!x. x IN V DELETE e' ==> NBRS (e INSERT V) E' x = NBRS (e INSERT V) E x) ==> !x. x IN V DELETE e' ==> DEGR (e INSERT V) E x = DEGR (e INSERT V) E' x`;
 e DISCH_TAC;
 e GEN_TAC;
@@ -748,12 +754,16 @@ e (rw [degr_def]);
 e (METIS_TAC []);
 val sum_degr_even_lem8 = top_thm ();
 
+val _ = print_endline "Sum of degrees must be even 4";
+
 g `FINITE V ==> NBRS (e INSERT V) E e' = e INSERT NBRS (e INSERT V) E' e' ==> ~(e IN NBRS (e INSERT V) E' e') ==> DEGR (e INSERT V) E e' = SUC (DEGR (e INSERT V) E' e')`;
 e DISCH_TAC;
 e DISCH_TAC;
 e (rw [degr_def]);
 e (rw [CARD_INSERT,FINITE_INSERT,nbrs_finite]);
 val sum_degr_even_lem9 = top_thm ();
+
+val _ = print_endline "Sum of degrees must be even 5";
 
 g `~(e IN V) ==> FINITE V ==> ~(e' IN U) ==> SYM E ==> NBRS V E e = e' INSERT U ==> ?E'. SYM E' /\ NBRS V E' e = U /\ (!x. x IN V ==> DEGR V E' x = DEGR V E x) /\ SUC (DEGR (e INSERT V) E' e) = DEGR (e INSERT V) E e /\ SUC (∑ (DEGR (e INSERT V) E') V) = ∑ (DEGR (e INSERT V) E) V /\ (!x. x IN V DELETE e' ==> DEGR (e INSERT V) E x = DEGR (e INSERT V) E' x)`;
 e (rw []);
@@ -806,6 +816,8 @@ e (rw []);
 e (METIS_TAC [sum_degr_even_lem8]);
 val sum_degr_even_lem10 = top_thm ();
 
+val _ = print_endline "Sum of degrees must be even 6";
+
 g `~(e IN V) ==> FINITE V ==> (!x. x IN C ==> DEGR V E' x = DEGR V E x) ==> SUC (DEGR (e INSERT V) E' e) = DEGR (e INSERT V) E e ==> SUC (SUM_IMAGE (DEGR (e INSERT V) E') V) = ∑ (DEGR (e INSERT V) E) V ==> SUM_IMAGE (DEGR (e INSERT V) E) (e INSERT V) = 2 + SUM_IMAGE (DEGR (e INSERT V) E') (e INSERT V)`;
 e (rw [SUM_IMAGE_THM,DELETE_NON_ELEMENT]);
 val sum_degr_even_lem11 = top_thm ();
@@ -839,9 +851,13 @@ e (METIS_TAC []);
 e (METIS_TAC []);
 val sum_degr_even_lem12 = top_thm ();
 
+val _ = print_endline "Sum of degrees must be even 7";
+
 g `~(e IN V) ==> FINITE V ==> SYM E ==> SUM_IMAGE (DEGR (e INSERT V) E) (e INSERT V) = SUM_IMAGE (DEGR V E) V + 2 * CARD (NBRS V E e)`;
 e (PROVE_TAC [sum_degr_even_lem12,nbrs_finite]);
 val sum_degr_even_lem13 = top_thm ();
+
+val _ = print_endline "Sum of degrees must be even 8";
 
 g `SYM E ==> !V:num -> bool. FINITE V ==> EVEN (SUM_IMAGE (DEGR V E) V)`;
 e DISCH_TAC;
