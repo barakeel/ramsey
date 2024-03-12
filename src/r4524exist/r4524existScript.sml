@@ -8,7 +8,7 @@ local open ramseyDefTheory basicRamseyTheory in end
 
 val ERR = mk_HOL_ERR "test";
 
-val _ = new_theory "r4524_exist" 
+val _ = new_theory "r4524exist" 
 
 (* -------------------------------------------------------------------------
    Importing graph
@@ -225,7 +225,6 @@ fun prove_mat_blue m vl depth tm =
       end
     | NONE =>
     let
-      val _ = if depth = 2 then print "." else ()
       val lambdatm =  mk_abs (X depth, (snd o dest_imp o snd o dest_forall) tm);
       val instthm = BETA_RULE 
         (INST [{redex = P, residue = lambdatm}] disjforallthm);
@@ -257,7 +256,6 @@ fun prove_mat_red m vl depth tm =
       end
     | NONE =>
     let
-      val _ = if depth = 2 then print "." else ()
       val lambdatm =  mk_abs (X depth, (snd o dest_imp o snd o dest_forall) tm);
       val instthm = BETA_RULE 
         (INST [{redex = P, residue = lambdatm}] disjforallthm);
@@ -274,7 +272,7 @@ fun prove_mat_red m vl depth tm =
    Actual script
    ------------------------------------------------------------------------- *)
 
-val _ = print_endline "blue step"
+val _ = print_endline "blue cliques"
 val blueclique = noclique 24 (4,true);
 val bluecliqueb = nocliqueb 24 (4,true);
 val bluecliqueeq = PURE_REWRITE_RULE [disjthm]
@@ -284,7 +282,7 @@ val thmblue1 = prove_mat_blue m4524 [] 0 bluetm;
 val thmblue2 = EQ_MP (SYM bluecliqueeq) thmblue1;
 val thmblue3 = PURE_REWRITE_RULE [GSYM disjthm] thmblue2;
 
-val _ = print_endline "red step"
+val _ = print_endline "red cliques"
 val redclique = noclique 24 (5,false);
 val redcliqueb = nocliqueb 24 (5,false);
 val redcliqueeq = PURE_REWRITE_RULE [disjthm]
@@ -294,10 +292,10 @@ val thmred1 = prove_mat_red m4524 [] 0 redtm;
 val thmred2 = EQ_MP (SYM redcliqueeq) thmred1;
 val thmred3 = PURE_REWRITE_RULE [GSYM disjthm] thmred2;
 
-val _ = print_endline "existsthm"
+val _ = print_endline "exists thm"
 val existsthm = create_exists (); 
 
-val _ = print_endline "forallthm"
+val _ = print_endline "forall thm"
 val lemmal = CONJUNCTS (ASSUME (snd (dest_exists (concl existsthm))));
 val thm1 = PROVE_HYPL lemmal thmblue3;
 val thm2 = PROVE_HYPL lemmal thmred3;
