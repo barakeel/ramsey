@@ -5,6 +5,10 @@ open arithmeticTheory pred_setTheory;
 
 val _ = new_theory "basicRamsey";
 
+(* -------------------------------------------------------------------------
+   Definitions
+   ------------------------------------------------------------------------- *)
+
 val sym = ``SYM (E:num -> num -> bool) = (!x:num. !y:num. E x y ==> E y x)``;
 val sym_def = new_definition ("SYM_DEF",sym);
 
@@ -41,10 +45,37 @@ val degr_def = new_definition("DEGR_DEF",degr);
 val antidegr = ``ANTIDEGR (V:num -> bool) (E:num -> num -> bool) (x:num) = (CARD (ANTINBRS V E x))``;
 val antidegr_def = new_definition("ANTIDEGR_DEF",antidegr);
 
-val ramseygraph_e1 = METIS_PROVE [ramseygraph_def] ``RAMSEYGRAPH r s m V E ==> V HAS_SIZE m``;
-val ramseygraph_e2 = METIS_PROVE [ramseygraph_def] ``RAMSEYGRAPH r s m V E ==> SYM E``;
-val ramseygraph_e3 = METIS_PROVE [ramseygraph_def] ``RAMSEYGRAPH r s m V E ==> ~HASCLIQUE r V E``;
-val ramseygraph_e4 = METIS_PROVE [ramseygraph_def] ``RAMSEYGRAPH r s m V E ==> ~HASANTICLIQUE s V E``;
+val c4524b_def = DB.fetch "ramseyDef" "C4524b_DEF";
+val c4524r_def = DB.fetch "ramseyDef" "C4524r_DEF";
+
+val c3510b_def = DB.fetch "ramseyDef" "C3510b_DEF";
+val c3510r_def = DB.fetch "ramseyDef" "C3510r_DEF";
+val c4414b_def = DB.fetch "ramseyDef" "C4414b_DEF";
+val c4414r_def = DB.fetch "ramseyDef" "C4414r_DEF";
+
+val c358b_def = DB.fetch "ramseyDef" "C358b_DEF";
+val c358r_def = DB.fetch "ramseyDef" "C358r_DEF";
+val c4416b_def = DB.fetch "ramseyDef" "C4416b_DEF";
+val c4416r_def = DB.fetch "ramseyDef" "C4416r_DEF";
+
+val c3512b_def = DB.fetch "ramseyDef" "C3512b_DEF";
+val c3512r_def = DB.fetch "ramseyDef" "C3512r_DEF";
+val c4412b_def = DB.fetch "ramseyDef" "C4412b_DEF";
+val c4412r_def = DB.fetch "ramseyDef" "C4412r_DEF";
+
+(* -------------------------------------------------------------------------
+   End definitions
+   ------------------------------------------------------------------------- *)
+
+val ramseygraph_e1 = 
+  METIS_PROVE [ramseygraph_def] ``RAMSEYGRAPH r s m V E ==> V HAS_SIZE m``;
+val ramseygraph_e2 = 
+  METIS_PROVE [ramseygraph_def] ``RAMSEYGRAPH r s m V E ==> SYM E``;
+val ramseygraph_e3 = 
+  METIS_PROVE [ramseygraph_def] ``RAMSEYGRAPH r s m V E ==> ~HASCLIQUE r V E``;
+val ramseygraph_e4 = 
+  METIS_PROVE [ramseygraph_def] 
+    ``RAMSEYGRAPH r s m V E ==> ~HASANTICLIQUE s V E``;
 
 g `SYM E ==> y IN V ==> x IN NBRS V E y ==> y IN NBRS V E x`;
 e (METIS_TAC [sym_def,nbrs_def,SPECIFICATION]);
@@ -867,6 +898,10 @@ g `SUC 24 = 25`;
 e decide_tac;
 val suc_24_25 = top_thm ();
 
+(* -------------------------------------------------------------------------
+   Degree 8
+   ------------------------------------------------------------------------- *)
+
 g `RAMSEYGRAPH 4 5 25 V E ==> !x. x IN V ==> DEGR V E x = 8 ==> RAMSEYGRAPH 3 5 8 (NBRS V E x) E`;
 e (rw [degr_def]);
 e (ASM_CASES_TAC ``RAMSEYGRAPH (SUC 3) 5 25 V E``);
@@ -1102,38 +1137,6 @@ e (METIS_TAC []);
 e (METIS_TAC []);
 e (METIS_TAC []);
 val r4525_no8_lem5 = top_thm ();
-
-fun mk_cdef size (bluen,redn) b tm = 
-  let
-    val s = "C" ^ its bluen ^ its redn ^ its size ^ 
-      (if b then "b" else "r")
-    val v = mk_var (s,``:(num -> num -> bool) -> bool``)
-    val eqtm = mk_eq (mk_comb (v,E), tm)
-  in
-    new_definition (s ^ "_DEF", eqtm)
-  end
-
-fun mk_both_cdef size (bluen,redn) =
-  let
-    val postm = noclique size (bluen,true)
-    val negtm = noclique size (redn,false)
-    val posdef = mk_cdef size (bluen,redn) true postm
-    val negdef = mk_cdef size (bluen,redn) false negtm
-  in
-    ()
-  end;
-
-mk_both_cdef 24 (4,5);
-mk_both_cdef 8 (3,5);
-mk_both_cdef 16 (4,4);
-
-(* Thibault's definitions *)
-val c358b_def = DB.fetch "basicRamsey" "C358b_DEF";
-val c358r_def = DB.fetch "basicRamsey" "C358r_DEF";
-val c4416b_def = DB.fetch "basicRamsey" "C4416b_DEF";
-val c4416r_def = DB.fetch "basicRamsey" "C4416r_DEF";
-val c4524b_def = DB.fetch "basicRamsey" "C4524b_DEF";
-val c4524r_def = DB.fetch "basicRamsey" "C4524r_DEF";
 
 g `RAMSEYGRAPH 4 4 16 (count 16) E ==> C4416b E /\ C4416r E`;
 e (rw [ramseygraph_def,sym_def,c4416b_def,c4416r_def]);
@@ -1456,6 +1459,10 @@ e (IMP_RES_TAC r4524_c4524_thm);
 e (METIS_TAC []);
 val r4525_no_deg8 = top_thm ();
 
+(* -------------------------------------------------------------------------
+   Degree 10
+   ------------------------------------------------------------------------- *)
+
 g `10 + 14 = 24`;
 e decide_tac;
 val add_10_14 = top_thm ();
@@ -1463,14 +1470,6 @@ val add_10_14 = top_thm ();
 g `x = 10 ==> y <> 14 ==> x + y = 24 ==> F`;
 e decide_tac;
 val add_10_14_alt = top_thm ();
-
-g `12 + 12 = 24`;
-e decide_tac;
-val add_12_12 = top_thm ();
-
-g `x = 12 ==> y <> 12 ==> x + y = 24 ==> F`;
-e decide_tac;
-val add_12_12_alt = top_thm ();
 
 g `RAMSEYGRAPH 4 5 25 V E ==> !x. x IN V ==> DEGR V E x = 10 ==> RAMSEYGRAPH 3 5 10 (NBRS V E x) E`;
 e (rw [degr_def]);
@@ -1708,14 +1707,7 @@ e (METIS_TAC []);
 e (METIS_TAC []);
 val r4525_no10_lem5 = top_thm ();
 
-mk_both_cdef 10 (3,5);
-mk_both_cdef 14 (4,4);
 
-(* Thibault's definitions *)
-val c3510b_def = DB.fetch "basicRamsey" "C3510b_DEF";
-val c3510r_def = DB.fetch "basicRamsey" "C3510r_DEF";
-val c4414b_def = DB.fetch "basicRamsey" "C4414b_DEF";
-val c4414r_def = DB.fetch "basicRamsey" "C4414r_DEF";
 
 g `RAMSEYGRAPH 4 4 14 (count 14) E ==> C4414b E /\ C4414r E`;
 e (rw [ramseygraph_def,sym_def,c4414b_def,c4414r_def]);
@@ -1820,6 +1812,18 @@ e (IMP_RES_TAC r4414_c4414_thm);
 e (IMP_RES_TAC r4524_c4524_thm);
 e (METIS_TAC []);
 val r4525_no_deg10 = top_thm ();
+
+(* -------------------------------------------------------------------------
+   Degree 12
+   ------------------------------------------------------------------------- *)
+
+g `12 + 12 = 24`;
+e decide_tac;
+val add_12_12 = top_thm ();
+
+g `x = 12 ==> y <> 12 ==> x + y = 24 ==> F`;
+e decide_tac;
+val add_12_12_alt = top_thm ();
 
 g `RAMSEYGRAPH 4 5 25 V E ==> !x. x IN V ==> DEGR V E x = 12 ==> RAMSEYGRAPH 3 5 12 (NBRS V E x) E`;
 e (rw [degr_def]);
@@ -2057,14 +2061,9 @@ e (METIS_TAC []);
 e (METIS_TAC []);
 val r4525_no12_lem5 = top_thm ();
 
-mk_both_cdef 12 (3,5);
-mk_both_cdef 12 (4,4);
-
-(* Thibault's definitions *)
-val c3512b_def = DB.fetch "basicRamsey" "C3512b_DEF";
-val c3512r_def = DB.fetch "basicRamsey" "C3512r_DEF";
-val c4412b_def = DB.fetch "basicRamsey" "C4412b_DEF";
-val c4412r_def = DB.fetch "basicRamsey" "C4412r_DEF";
+(* -------------------------------------------------------------------------
+   Connecting with the representations use in the other part of the proof.
+   ------------------------------------------------------------------------- *)
 
 g `RAMSEYGRAPH 4 4 12 (count 12) E ==> C4412b E /\ C4412r E`;
 e (rw [ramseygraph_def,sym_def,c4412b_def,c4412r_def]);
@@ -2170,6 +2169,10 @@ e (IMP_RES_TAC r4524_c4524_thm);
 e (METIS_TAC []);
 val r4525_no_deg12 = top_thm ();
 
+(* -------------------------------------------------------------------------
+   End degree 12
+   ------------------------------------------------------------------------- *)
+
 g `(!E:num -> num -> bool. (!(x:num) (y:num). E x y <=> E y x) ==> C358b E ==> C358r E ==> C4416b (\x y. E (x + 8) (y + 8)) ==> C4416r (\x y. E (x + 8) (y + 8)) ==> C4524b E ==> C4524r E ==> F) ==> RAMSEYGRAPH 4 5 25 V E ==> ?x. x IN V /\ (DEGR V E x = 10 \/ DEGR V E x = 12)`;
 e (METIS_TAC [ramseygraph_4_5_25_ex_8_10_12,r4525_no_deg8]);
 val ramseygraph_4_5_25_ex_10_12_hyp = top_thm ();
@@ -2215,9 +2218,8 @@ e decide_tac;
 e CCONTR_TAC;
 e (UNDISCH_TAC ``~RAMSEY 4 5 (SUC 24)``);
 e (simp []);
-val rams_4_5_25_hyp = top_thm ();
 
-val rams_4_5_25_hyp2 = UNDISCH_ALL rams_4_5_25_hyp;
+val rams_4_5_25_hyp = save_thm ("rams_4_5_25_hyp", UNDISCH_ALL (top_thm ()));
 
 val _ = export_theory ();
 
