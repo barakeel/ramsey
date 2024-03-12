@@ -2,6 +2,7 @@
    Proves the existence of a graph satisfying r4524
    ========================================================================= *)
 
+open HolKernel boolLib Parse simpLib boolSimps BasicProvers bossLib
 open aiLib kernel syntax graph sat
 local open ramseyDefTheory basicRamseyTheory in end
 
