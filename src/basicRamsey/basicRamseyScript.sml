@@ -12,10 +12,10 @@ val _ = new_theory "basicRamsey";
 
 val metis_ref = ref 0;
 fun METIS_TAC thml goal = (incr metis_ref; 
-                           metisTools.METIS_TAC thml goal 
-  handle HOL_ERR e => (
-    print_endline (its (!metis_ref); term_to_string (snd goal));
-  raise HOL_ERR e)
+                           metisTools.METIS_TAC thml goal)
+  handle HOL_ERR e => 
+    (print_endline (its (!metis_ref) ^ ": " ^ term_to_string (snd goal));
+     raise HOL_ERR e)
 
 (* -------------------------------------------------------------------------
    Definitions
