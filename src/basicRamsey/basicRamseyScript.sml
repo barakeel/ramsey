@@ -1,7 +1,7 @@
 open HolKernel boolLib Parse simpLib boolSimps BasicProvers bossLib;
 local open numTheory prim_recTheory SatisfySimps DefnBase in end;
 open aiLib kernel syntax graph;
-open arithmeticTheory pred_setTheory;
+open ramseyDefTheory arithmeticTheory pred_setTheory;
 
 val _ = new_theory "basicRamsey";
 
