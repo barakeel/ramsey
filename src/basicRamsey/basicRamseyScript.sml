@@ -2,7 +2,7 @@
 
 open HolKernel boolLib Parse simpLib boolSimps BasicProvers proofManagerLib bossLib;
 local open numTheory prim_recTheory SatisfySimps DefnBase in end;
-open aiLib kernel sgraph;
+open aiLib kernel graph;
 local open ramseyDefTheory in end 
 open arithmeticTheory pred_setTheory;
 
@@ -140,7 +140,6 @@ val ramsey_2_m_m = METIS_PROVE [ramsey_def,ramseygraph_e4,ramgraph2rmlem2] ``RAM
 (* -------------------------------------------------------------------------
    Symmetry of the roles between cliques and anti-cliques
    ------------------------------------------------------------------------- *)
-
 
 val _ = print_endline "Symmetry";
 
