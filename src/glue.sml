@@ -312,7 +312,7 @@ fun write_script file (m1,m2) =
 fun run_script_one dir (m1,m2) = 
   let 
     val (m1s,m2s) = (infts m1, infts m2)
-    val file = dir ^ "/r45_" ^ m1s ^ "_" ^ m2s ^ "_script.sml" 
+    val file = dir ^ "/r45_" ^ m1s ^ "_" ^ m2s ^ "Script.sml" 
   in
     write_script file (m1,m2);
     smlExecScripts.exec_script file  
@@ -328,54 +328,6 @@ fun run_script_pbl dir pbl =
     smlParallel.parapp_queue ncore (run_script_one dir) pbl
   end
   
-(* -------------------------------------------------------------------------
-   Gluing scripts
-   ------------------------------------------------------------------------- *)
-   
-fun write_gluescript_batch dir (batchn,mml) =
-  let
-    val degree = mat_size (unzip_mat (fst (hd mml)))
-    val thyname = "r45_degree" ^ its degree ^ "_batch" ^ its batchn
-    val file = dir ^ "/" ^ thyname ^ "Script.sml"
-    fun f (m1,m2) = 
-      let 
-        val (m1s,m2s) = (infts m1, infts m2) 
-        val thmname = "r45_" ^ m1s ^ "_" ^ m2s
-      in
-        "val _ = save_thm (" ^ mlquote thmname ^ 
-        ", glue_pair (stinf " ^ mlquote m1s ^ ", stinf " ^ mlquote m2s ^ "))"
-      end
-    val sl = 
-     ["open HolKernel kernel glue",
-      "val _ = new_theory " ^ mlquote thyname] @
-      map f mml @
-     ["val _ = export_theory ()"]
-  in 
-    writel file sl
-  end
-   
-fun write_gluescript_batchl dir batchpbl = 
-  let 
-    val _ = mkDir_err dir
-    val _ = writel (dir ^ "/Holmakefile") ["INCLUDES = .."]
-  in
-    app (write_gluescript_batch dir) batchpbl
-  end   
- 
-fun find_scriptl dir =
-  map (fn x => dir ^ "/" ^ x) 
-    (filter (String.isSuffix "Script.sml") (listDir dir))
-
-fun run_scriptl dir scriptl =
-  let 
-    val _ = smlExecScripts.buildheap_dir := dir ^ "/buildheap"
-    val _ = smlExecScripts.buildheap_options :=  "--maxheap " ^ its memory
-    val _ = app mkDir_err [dir,!smlExecScripts.buildheap_dir]
-    val ncore' = Int.min (ncore, length scriptl)
-  in
-    smlParallel.parapp_queue ncore' smlExecScripts.exec_script scriptl
-  end
-
 (* -------------------------------------------------------------------------
    Writing problems and batches
    ------------------------------------------------------------------------- *)
@@ -393,29 +345,6 @@ fun read_pbl file =
   in
     map f (readl file)
   end
-
-fun write_pbbatchl file pbbatchl = 
-  let 
-    fun f1 (i1,i2) = infts i1 ^ "," ^ infts i2
-    fun f2 (batchn,pbl) = 
-      its batchn ^ " " ^ (String.concatWith " " (map f1 pbl))
-  in
-    writel file (map f2 pbbatchl)
-  end
-
-fun read_pbbatchl file = 
-  let 
-    fun f1 s = 
-      let val (a,b) = pair_of_list (String.tokens (fn x => x = #",") s) in
-        (stinf a, stinf b)
-      end
-    fun f2 line = 
-      let val l = String.tokens Char.isSpace line in
-        (string_to_int (hd l), map f1 (tl l))
-      end
-  in
-    map f2 (readl file)
-  end  
 
 (* -------------------------------------------------------------------------
    3,5,8 glueing: using gen_bench16_8_4_0_0_5

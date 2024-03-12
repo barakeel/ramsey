@@ -28,13 +28,9 @@ sig
   val write_gluescript_batchl : string -> 
     (int * (IntInf.int * IntInf.int) list) list -> unit
   
-  (* I/O for lists and batches of problems *)
+  (* I/O for problems *)
   val write_pbl : string -> (IntInf.int * IntInf.int) list-> unit
   val read_pbl : string -> (IntInf.int * IntInf.int) list
-  val write_pbbatchl :
-    string -> (int * (IntInf.int * IntInf.int) list) list -> unit
-  val read_pbbatchl : 
-    string -> (int * (IntInf.int * IntInf.int) list) list
-    
+
     
 end
