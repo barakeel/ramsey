@@ -284,8 +284,7 @@ fun benchmark_pbl expname pbl =
   end
 
 (* -------------------------------------------------------------------------
-   Glueing scripts. Can be run with Holmake instead
-   of buildheap by changing the "_script.sml" extension to "Script.sml".
+   Gluing scripts with custom loader allowing us to limit the memory
    ------------------------------------------------------------------------- *)
 
 fun glue_pair (m1,m2) =
@@ -328,41 +327,114 @@ fun run_script_pbl dir pbl =
   in
     smlParallel.parapp_queue ncore (run_script_one dir) pbl
   end
+  
+(* -------------------------------------------------------------------------
+   Gluing scripts with Holmake
+   ------------------------------------------------------------------------- *)
+   
+fun write_gluescript_batch dir (batchn,mml) =
+  let
+    val degree = mat_size (unzip_mat (fst (hd mml)))
+    val thyname = "r45_degree" ^ its degree ^ "_batch" ^ its batchn
+    val file = dir ^ "/" ^ thyname ^ "Script.sml"
+    fun f (m1,m2) = 
+      let 
+        val (m1s,m2s) = (infts m1, infts m2) 
+        val thmname = "r45_" ^ m1s ^ "_" ^ m2s
+      in
+        ["val _ = save_thm (" ^ mlquote thmname ^ 
+         ", glue_pair (stinf " ^ mlquote m1s ^ ", stinf " ^ mlquote m2s ^ "));",
+         "PolyML.fullGC ();
+      
+      end
+    val sl = 
+     ["open HolKernel kernel glue",
+      "val _ = new_theory " ^ mlquote thyname] @
+     List.concat (map f mml) @
+     ["val _ = export_theory ()"]
+  in 
+    writel file sl
+  end
+   
+fun write_gluescript_batchl dir batchpbl = 
+  let 
+    val _ = mkDir_err dir
+    val _ = writel (dir ^ "/Holmakefile") ["INCLUDES = .."]
+  in
+    app (write_gluescript_batch dir) batchpbl
+  end   
 
+(* -------------------------------------------------------------------------
+   Writing problems and batches
+   ------------------------------------------------------------------------- *)
+
+fun write_pbl file pbl =
+  let fun f (i1,i2) = infts i1 ^ " " ^ infts i2 in
+    writel file (map f pbl)
+  end
+  
+fun read_pbl file = 
+  let fun f s = 
+    let val (s1,s2) = pair_of_list (String.tokens Char.isSpace s) in
+      (stinf s1, stinf s2)
+    end
+  in
+    map f (readl file)
+  end
+
+fun write_pbbatchl file pbbatchl = 
+  let 
+    fun f1 (i1,i2) = infts i1 ^ "," ^ infts i2
+    fun f2 (batchn,pbl) = 
+      its batchn ^ " " ^ (String.concatWith " " (map f1 pbl))
+  in
+    writel file (map f2 pbbatchl)
+  end
+
+fun read_pbbatchl file = 
+  let 
+    fun f1 s = 
+      let val (a,b) = pair_of_list (String.tokens (fn x => x = #",") s) in
+        (stinf a, stinf b)
+      end
+    fun f2 line = 
+      let val l = String.tokens Char.isSpace line in
+        (string_to_int (hd l), map f1 (tl l))
+      end
+  in
+    map f2 (readl file)
+  end  
 
 (* -------------------------------------------------------------------------
    3,5,8 glueing: using gen_bench16_8_4_0_0_5
    ------------------------------------------------------------------------- *)
 
 (*
-export TMPDIR="$PWD/tmp";
-mkdir tmp;
-
 load "glue"; open aiLib kernel graph enum gen glue;
 val ml1 = read_par 8 (3,5);
 val ml2 = read_par 16 (4,4);
 val pbl = shuffle (cartesian_product ml1 ml2);
-fun f (i1,i2) = infts i1 ^ " " ^ infts i2;
-writel "glue358_pbl_dai07" (map f pbl);
+write_pbl "glue358_pbl_dai07" pbl;
+*)
 
-
+(* batch 
 load "glue"; open aiLib kernel graph enum gen glue;
-fun g s = 
-  let val (s1,s2) = pair_of_list (String.tokens Char.isSpace s) in
-    (stinf s1, stinf s2)
-  end;
+val pbl = read_pbl (selfdir ^ "/glue358_pbl_dai07");
+val batchl = number_fst 0 (mk_batch_full 10 pbl);
+length batchl;
+write_pbbatchl "glue358_batchl_dai07" batchl;
+val batchl' = read_batchl "glue358_batchl_dai07";
+batchl = batchl';
+*)
+
+(* custom
+export TMPDIR="$PWD/tmp";
+mkdir tmp;
+load "glue"; open aiLib kernel graph enum gen glue;
 val glue358_pbl_dai07 = map g (readl (selfdir ^ "/glue358_pbl_dai07"));
 run_script_pbl (selfdir ^ "/glue358_dai07") glue358_pbl_dai07;
-
-load "glue"; open aiLib kernel graph enum gen glue;
-fun g s = 
-  let val (s1,s2) = pair_of_list (String.tokens Char.isSpace s) in
-    (stinf s1, stinf s2)
-  end;
-val pbl_dai06 = map g (readl (selfdir ^ "/glue3510_pbl_dai06"));
-
-run_script_pbl (selfdir ^ "/glue3510_dai06") pbl_dai06;
 *)
+
 
 
 (* -------------------------------------------------------------------------
@@ -378,9 +450,8 @@ val ml1 = read_par 10 (3,5);
 val ml2 = read_par 14 (4,4);
 val pbl = shuffle (cartesian_product ml1 ml2);
 val (pbl1,pbl2) = part_n (length pbl div 2) pbl;
-fun f (i1,i2) = infts i1 ^ " " ^ infts i2;
-writel "glue3510_pbl_dai05" (map f pbl1);
-writel "glue3510_pbl_dai06" (map f pbl2);
+write_pbl "glue3510_pbl_dai05" pbl1;
+write_pbl "glue3510_pbl_dai06" pbl2;
 
 load "glue"; open aiLib kernel graph enum gen glue;
 fun g s = 
@@ -396,8 +467,8 @@ fun g s =
     (stinf s1, stinf s2)
   end;
 val pbl_dai06 = map g (readl (selfdir ^ "/glue3510_pbl_dai06"));
-
 run_script_pbl (selfdir ^ "/glue3510_dai06") pbl_dai06;
+
 *)
 
 (* -------------------------------------------------------------------------
@@ -423,6 +494,9 @@ fun g s =
     (stinf s1, stinf s2)
   end;
 val pbl_dai07 = map g (readl (selfdir ^ "/glue3512_pbl_dai07"));
+val pbl_dai07_batch = mk_batch_full 
+
+
 run_script_pbl (selfdir ^ "/glue3512_dai07") pbl_dai07;
 
 
