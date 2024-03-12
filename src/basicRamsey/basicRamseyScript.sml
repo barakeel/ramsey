@@ -434,13 +434,9 @@ e (rw []);
 e (METIS_TAC [HAS_SIZE_0]);
 val ramsey_0_s_0 = top_thm ();
 
-val _ = print_endline "R(3,3)<=6 1";
-
 g `BIJ f (count m) (U:num -> bool) ==> i < m ==> f i IN U`;
 e (rw [BIJ_DEF,INJ_DEF]);
 val bij_count_in = top_thm ();
-
-val _ = print_endline "R(3,3)<=6 2";
 
 g `BIJ f (count m) (U:num -> bool) ==> i < m ==> j < m ==> i <> j ==> f i <> f j`;
 e (rw [BIJ_DEF,INJ_DEF]);
@@ -464,8 +460,6 @@ e decide_tac;
 e (rw [HAS_SIZE]);
 e (METIS_TAC []);
 val ramsey_1_s_1 = top_thm ();
-
-val _ = print_endline "R(3,3)<=6 3";
 
 g `!r s. ?m. RAMSEY r s (SUC m)`;
 e Induct;
@@ -494,8 +488,6 @@ e (METIS_TAC [ramsey_sum]);
 e (METIS_TAC []);
 val ramsey_ex = top_thm ();
 
-val _ = print_endline "R(3,3)<=6 4";
-
 g `!n:num. (?i:num. i < n /\ p i) ==> ?m:num. p m /\ !k:num. k < m ==> ~p k`;
 e Induct;
 e (rw []);
@@ -507,12 +499,9 @@ e (rw []);
 e DISCH_TAC;
 e (UNDISCH_TAC ``~?i. i < n /\ p i``);
 e (simp []);
-e (METIS_TAC []);
 e (qexists_tac `(k:num)`);
 e (rw []);
 val least_num_thm = top_thm ();
-
-val _ = print_endline "R(3,3)<=6 5";
 
 g `!r s. ?m. RAMSEY r s m /\ !n. n < m ==> ~RAMSEY r s n`;
 e (METIS_TAC [least_num_thm,ramsey_ex]);
