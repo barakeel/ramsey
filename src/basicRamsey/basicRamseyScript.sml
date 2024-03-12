@@ -697,7 +697,7 @@ e GEN_TAC;
 e DISCH_TAC;
 e (rw [nbrs_def,EXTENSION,SPECIFICATION]);
 e EQ_TAC;
-e (METIS_TAC []);
+e (METIS_TAC []); (* 12 *)
 e DISCH_TAC;
 e CONJ_TAC;
 e (METIS_TAC []);
@@ -755,7 +755,6 @@ e DISCH_TAC;
 e GEN_TAC;
 e DISCH_TAC;
 e (rw [degr_def]);
-e (METIS_TAC []);
 val sum_degr_even_lem8 = top_thm ();
 
 val _ = print_endline "Sum of degrees must be even 4";
