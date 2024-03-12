@@ -661,9 +661,6 @@ g `~(e IN V) ==> FINITE V ==> ~(e' IN U) ==> SYM E ==> NBRS V E e = e' INSERT U 
 e (rw [nbrs_def,EXTENSION,SPECIFICATION,SUBSET_DEF]);
 val sum_degr_even_lem5 = top_thm ();
 
-val _ = print_endline "Sum of degrees must be even 1";
-val _ = metis_ref := 0;
-
 g `~(e IN V) ==> FINITE V ==> ~(e' IN U) ==> SYM E ==> NBRS V E e = e' INSERT U ==> ?E'. SYM E' /\ NBRS V E' e = U /\ (!x. x IN V ==> NBRS V E' x = NBRS V E x) /\ e' INSERT NBRS (e INSERT V) E' e = NBRS (e INSERT V) E e /\ (!x. x IN V DELETE e' ==> NBRS (e INSERT V) E' x = NBRS (e INSERT V) E x) /\ NBRS (e INSERT V) E e' = e INSERT NBRS (e INSERT V) E' e' /\ ~(e' IN NBRS (e INSERT V) E' e)`;
 e (rw []);
 e (ASM_CASES_TAC ``e' IN NBRS V E e``);
@@ -720,9 +717,6 @@ e (UNDISCH_TAC ``~(e' IN NBRS V E e)``);
 e (rw []);
 val sum_degr_even_lem6 = top_thm ();
 
-val _ = print_endline "Sum of degrees must be even 2";
-val _ = metis_ref := 0;
-
 g `~(e IN V) ==> FINITE V ==> ~(e' IN U) ==> SYM E ==> NBRS V E e = e' INSERT U ==> ?E'. SYM E' /\ NBRS V E' e = U /\ (!x. x IN V ==> NBRS V E' x = NBRS V E x) /\ NBRS (e INSERT V) E e = e' INSERT NBRS (e INSERT V) E' e /\ (!x. x IN V DELETE e' ==> NBRS (e INSERT V) E' x = NBRS (e INSERT V) E x) /\ NBRS (e INSERT V) E e' = e INSERT NBRS (e INSERT V) E' e' /\ ~(e' IN NBRS (e INSERT V) E' e) /\ e' IN NBRS V E e`;
 e DISCH_TAC;
 e DISCH_TAC;
@@ -748,16 +742,12 @@ e (METIS_TAC []);
 e (simp []);
 val sum_degr_even_lem7 = top_thm ();
 
-val _ = print_endline "Sum of degrees must be even 3";
-
 g `(!x. x IN V DELETE e' ==> NBRS (e INSERT V) E' x = NBRS (e INSERT V) E x) ==> !x. x IN V DELETE e' ==> DEGR (e INSERT V) E x = DEGR (e INSERT V) E' x`;
 e DISCH_TAC;
 e GEN_TAC;
 e DISCH_TAC;
 e (rw [degr_def]);
 val sum_degr_even_lem8 = top_thm ();
-
-val _ = print_endline "Sum of degrees must be even 4";
 
 g `FINITE V ==> NBRS (e INSERT V) E e' = e INSERT NBRS (e INSERT V) E' e' ==> ~(e IN NBRS (e INSERT V) E' e') ==> DEGR (e INSERT V) E e' = SUC (DEGR (e INSERT V) E' e')`;
 e DISCH_TAC;
@@ -766,7 +756,6 @@ e (rw [degr_def]);
 e (rw [CARD_INSERT,FINITE_INSERT,nbrs_finite]);
 val sum_degr_even_lem9 = top_thm ();
 
-val _ = print_endline "Sum of degrees must be even 5";
 
 g `~(e IN V) ==> FINITE V ==> ~(e' IN U) ==> SYM E ==> NBRS V E e = e' INSERT U ==> ?E'. SYM E' /\ NBRS V E' e = U /\ (!x. x IN V ==> DEGR V E' x = DEGR V E x) /\ SUC (DEGR (e INSERT V) E' e) = DEGR (e INSERT V) E e /\ SUC (∑ (DEGR (e INSERT V) E') V) = ∑ (DEGR (e INSERT V) E) V /\ (!x. x IN V DELETE e' ==> DEGR (e INSERT V) E x = DEGR (e INSERT V) E' x)`;
 e (rw []);
@@ -819,7 +808,6 @@ e (rw []);
 e (METIS_TAC [sum_degr_even_lem8]);
 val sum_degr_even_lem10 = top_thm ();
 
-val _ = print_endline "Sum of degrees must be even 6";
 
 g `~(e IN V) ==> FINITE V ==> (!x. x IN C ==> DEGR V E' x = DEGR V E x) ==> SUC (DEGR (e INSERT V) E' e) = DEGR (e INSERT V) E e ==> SUC (SUM_IMAGE (DEGR (e INSERT V) E') V) = ∑ (DEGR (e INSERT V) E) V ==> SUM_IMAGE (DEGR (e INSERT V) E) (e INSERT V) = 2 + SUM_IMAGE (DEGR (e INSERT V) E') (e INSERT V)`;
 e (rw [SUM_IMAGE_THM,DELETE_NON_ELEMENT]);
@@ -854,13 +842,9 @@ e (METIS_TAC []);
 e (METIS_TAC []);
 val sum_degr_even_lem12 = top_thm ();
 
-val _ = print_endline "Sum of degrees must be even 7";
-
 g `~(e IN V) ==> FINITE V ==> SYM E ==> SUM_IMAGE (DEGR (e INSERT V) E) (e INSERT V) = SUM_IMAGE (DEGR V E) V + 2 * CARD (NBRS V E e)`;
 e (PROVE_TAC [sum_degr_even_lem12,nbrs_finite]);
 val sum_degr_even_lem13 = top_thm ();
-
-val _ = print_endline "Sum of degrees must be even 8";
 
 g `SYM E ==> !V:num -> bool. FINITE V ==> EVEN (SUM_IMAGE (DEGR V E) V)`;
 e DISCH_TAC;
@@ -929,10 +913,10 @@ e decide_tac;
 val ramsey_4_4_18 = top_thm ();
 
 (* -------------------------------------------------------------------------
-   Proving that in a R(4,5,25) there must be a vertex of degree 8,10 or 12
+   Proving that in a R(4,5,25) there exists a vertex of degree 8,10 or 12
    ------------------------------------------------------------------------- *)
 
-val _ = print_endline "a vertex of degree 8,10 or 12";
+val _ = print_endline "Existence of a vertex of degree 8, 10 or 12";
 
 g `RAMSEYGRAPH 4 5 25 V E ==> !x. x IN V ==> DEGR V E x < 14`;
 e (rw [degr_def]);
@@ -940,6 +924,8 @@ e (ASM_CASES_TAC ``RAMSEYGRAPH (SUC 3) 5 25 V E``);
 e (METIS_TAC [ramseygraph_deg_card_bd,ramsey_3_5_14]);
 e (METIS_TAC [suc_3_4]);
 val ramseygraph_4_5_25_upper_bd = top_thm ();
+
+val _ = print_endline "Existence of a vertex of degree 8, 10 or 12 1";
 
 g `RAMSEYGRAPH 4 5 25 V E ==> !x. x IN V ==> 6 < DEGR V E x`;
 e (rw [degr_def]);
@@ -953,11 +939,15 @@ e (METIS_TAC [suc_4_5]);
 e decide_tac;
 val ramseygraph_4_5_25_lower_bd = top_thm ();
 
+val _ = print_endline "Existence of a vertex of degree 8, 10 or 12 2";
+
 g `ODD 25`;
 e (ASM_CASES_TAC ``25 = SUC (2 * 12)``);
 e (METIS_TAC [ODD_DOUBLE]);
 e decide_tac;
 val odd_25 = top_thm ();
+
+val _ = print_endline "Existence of a vertex of degree 8, 10 or 12 3";
 
 g `RAMSEYGRAPH 4 5 25 V E ==> ?x. x IN V /\ EVEN (DEGR V E x)`;
 e (rw []);
@@ -971,9 +961,13 @@ e (METIS_TAC [odd_degr_sum_V,ramseygraph_e1,HAS_SIZE,odd_25]);
 e (METIS_TAC [ODD_EVEN]);
 val ramseygraph_4_5_25_ex_even = top_thm ();
 
+val _ = print_endline "Existence of a vertex of degree 8, 10 or 12 4";
+
 g `6 < n ==> n < 14 ==> EVEN n ==> n = 8 \/ n = 10 \/ n = 12`;
 e ((rw_tac numLib.arith_ss) [] >> pop_assum (Q.X_CHOOSE_THEN `m` SUBST_ALL_TAC o REWRITE_RULE [EVEN_EXISTS, TIMES2]) >> rw_tac numLib.arith_ss []);
 val evens_between_6_14_are_8_10_12 = top_thm ();
+
+val _ = print_endline "Existence of a vertex of degree 8, 10 or 12 5";
 
 g `RAMSEYGRAPH 4 5 25 V E ==> ?x. x IN V /\ (DEGR V E x = 8 \/ DEGR V E x = 10 \/ DEGR V E x = 12)`;
 e (rw []);
