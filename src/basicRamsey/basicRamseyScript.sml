@@ -691,8 +691,7 @@ e (METIS_TAC [nbrs_def,SPECIFICATION]);
 e (METIS_TAC []);
 e (METIS_TAC []);
 e (METIS_TAC []);
-e (METIS_TAC []);
-e (METIS_TAC []);
+e (METIS_TAC []); (* 11 *)
 e CONJ_TAC;
 e GEN_TAC;
 e DISCH_TAC;
