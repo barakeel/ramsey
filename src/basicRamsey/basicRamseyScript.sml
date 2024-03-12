@@ -10,7 +10,8 @@ chatting := false;
 
 val _ = new_theory "basicRamsey";
 fun METIS_TAC thml goal = metisTools.METIS_TAC thml goal 
-  handle HOL_ERR _ => (print_endline (term_to_string (snd goal)); ALL_TAC goal);
+  handle HOL_ERR e => (print_endline (term_to_string (snd goal));
+  raise HOL_ERR e)
 
 (* -------------------------------------------------------------------------
    Definitions
@@ -614,8 +615,8 @@ g `(!x. x IN V ==> ODD (DEGR V E x)) ==> !U. FINITE U ==> U SUBSET V ==> (ODD (C
 e DISCH_TAC;
 e Induct;
 e CONJ_TAC;
-e (metis_tac [odd_degr_sum_base]);
-e (metis_tac [odd_degr_sum_ind]);
+e (METIS_TAC [odd_degr_sum_base]);
+e (METIS_TAC [odd_degr_sum_ind]);
 val odd_degr_sum = top_thm ();
 
 val odd_degr_sum_V = METIS_PROVE [odd_degr_sum,SUBSET_REFL] ``FINITE (V:num -> bool) ==> (!x. x IN V ==> ODD (DEGR V E x)) ==> (ODD (CARD V) <=> ODD (SUM_IMAGE (DEGR V E) V))``;
