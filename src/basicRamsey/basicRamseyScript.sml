@@ -2,16 +2,17 @@
 
 open HolKernel boolLib Parse simpLib boolSimps BasicProvers proofManagerLib bossLib;
 local open numTheory prim_recTheory SatisfySimps DefnBase in end;
-open aiLib kernel graph;
+open aiLib kernel sgraph;
 local open ramseyDefTheory in end 
 open arithmeticTheory pred_setTheory;
+
+chatting := false;
 
 val _ = new_theory "basicRamsey";
 
 (* -------------------------------------------------------------------------
    Definitions
    ------------------------------------------------------------------------- *)
-
 val _ = print_endline "Definitions";
 
 val sym = ``SYM (E:num -> num -> bool) = (!x:num. !y:num. E x y ==> E y x)``;
@@ -84,9 +85,10 @@ val c4412r_def = DB.fetch "ramseyDef" "C4412r_DEF";
 
 val _ = print_endline "R(2,m)";
 
-val nbrs_swap = TAC_PROOF (([], 
-  ``SYM E ==> y IN V ==> x IN NBRS V E y ==> y IN NBRS V E x``),
-  METIS_TAC [sym_def,nbrs_def,SPECIFICATION]);
+g `SYM E ==> y IN V ==> x IN NBRS V E y ==> y IN NBRS V E x`;
+e (METIS_TAC [sym_def,nbrs_def,SPECIFICATION]);
+
+val nbrs_swap = top_thm ();
 
 g `x < n <=> x IN count n`;
 e (simp []);
@@ -138,6 +140,7 @@ val ramsey_2_m_m = METIS_PROVE [ramsey_def,ramseygraph_e4,ramgraph2rmlem2] ``RAM
 (* -------------------------------------------------------------------------
    Symmetry of the roles between cliques and anti-cliques
    ------------------------------------------------------------------------- *)
+
 
 val _ = print_endline "Symmetry";
 
