@@ -20,16 +20,21 @@ else
    exit 1
 fi
 
-## HOL: installation
+## HOL configuration
 cd $DIR
 echo "Installing HOL (commit cf03ce2dc)"
 git clone https://github.com/HOL-Theorem-Prover/HOL
 cd HOL
 git checkout cf03ce2dc756feb6c0bc4b042f879595d21f2e68
 $DIR/polyml/bin/poly < "tools/smart-configure.sml"
-cat tools/sequences/kernel tools/sequences/core-theories > shortseq
-perl -p -i -e 's|\QFileSys.tmpName()\E|HOLDIR ^ FileSys.tmpName()|g' $DIR/HOL/src/HolSat/dimacsTools.sml
+
+## HOL patch
 mkdir tmp
+cp ../src/patch/Theory.sml src/postkernel/Theory.sml
+cp ../src/patch/dimacsTools.sml src/HolSat/dimacsTools.sml
+
+## HOL build
+cat tools/sequences/kernel tools/sequences/core-theories > shortseq
 bin/build --seq=shortseq
 
 ## HOL: safety check 
@@ -40,3 +45,5 @@ else
    echo 'Installing HOL: failure, aborting'; 
    exit 1
 fi
+
+cd $DIR
