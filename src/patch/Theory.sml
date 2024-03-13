@@ -261,7 +261,7 @@ in
            | ins [] = raise ERR "Graph.add_parent.ins" "not found"
      in ins (#1 (!theGraph))
      end
-   fun add_parent_dict (n,newp) = Redblackmap.peek (!theGraph,n) of
+   fun add_parent_dict (n,newp) = case Redblackmap.peek (#2 (!theGraph),n) of
        NONE => raise ERR "Graph.add_parent.ins" "not found"
      | SOME parents => 
          Redblackmap.insert 
@@ -269,7 +269,7 @@ in
    fun add_parent nodep =
      theGraph := (add_parent_assoc nodep, add_parent_dict nodep)  
    fun isin node = Option.isSome (Redblackmap.peek (#2 (!theGraph), node))
-   fun parents_of node = Redblackmap.peek (#2 (!theGraph), node)
+   fun parents_of node = Redblackmap.find (#2 (!theGraph), node)
      handle Redblackmap.NotFound => raise ERR "thyid_assoc" "not found"
    fun ancestryl L =
     let fun Anc P Q = rev_itlist
