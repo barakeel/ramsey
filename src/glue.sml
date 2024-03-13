@@ -169,6 +169,33 @@ fun benchmark_pbl expname pbl =
     writel (dir ^ "/summary") [heads];
     writel (dir ^ "/sattime") (map f (combine (pbl,rl)))
   end
+
+fun better_cover prefix (case35,hole35,hole44,expo) =
+  let 
+    val case44 = 24 - case35
+    fun msg s = append_endline (selfdir ^ "/log_bench_info") s
+    fun msg2 s = append_endline (selfdir ^ "/log_bench") s
+    val (a,b) = split_string "." (rts_round 3 expo)
+    val exps = a ^ "_" ^ b
+    val expname = prefix ^ "_" ^ its case35 ^ "_" ^ 
+      its hole35 ^ "_" ^ its hole44 ^ "_" ^ exps
+    val _ = msg expname
+    val _ = clean_dir (selfdir ^ "/gen")
+    val _ = exponent := expo
+    val _ = maxhole := hole35
+    val _ = select_number1 := 313
+    val _ = select_number2 := 1
+    val (_,t) = add_time (gen (3,5)) (case35,case35)
+    val _ = msg ("35: " ^ rts_round 2 t) 
+    val _ = maxhole := hole44
+    val _ = select_number1 := 1000
+    val _ = select_number2 := 100
+    val (_,t) = add_time (gen (4,4)) (case44,case44)
+    val _ = msg ("44: " ^ rts_round 2 t) 
+    val _ = cmd_in_dir selfdir ("cp -r gen gen_" ^ expname)
+  in
+    ()    
+  end
   
 fun tune prefix nex (case35,hole35,hole44,expo)  = 
   let 
@@ -359,9 +386,9 @@ write_pbl "glue358_pbl_dai07" pbl;
 *)
 
 (*
-export TMPDIR="$PWD/tmp"; mkdir tmp;
 load "glue"; open aiLib kernel graph enum gen glue;
 val glue358_pbl_dai07 = read_pbl (selfdir ^ "/glue358_pbl_dai07");
+run_script_pbl (selfdir ^ "/glue358_dai07_test") [hd glue358_pbl_dai07];
 run_script_pbl (selfdir ^ "/glue358_dai07") glue358_pbl_dai07;
 *)
 
@@ -563,33 +590,16 @@ fun mk_data expname =
 mk_data "e0e0bis";
 *)
 
-(* -------------------------------------------------------------------------
-   Post-processing test
-   ------------------------------------------------------------------------- *)
-
-(*
-load "glue"; open aiLib kernel graph enum gen glue;
-val m1 = random_elem (read_par 10 (3,5));
-val m2 = random_elem (read_par 14 (4,4));
-val file = selfdir ^ "/test/test_script.sml";
-write_script "test/testScript.sml" (m1,m2);
-smlExecScripts.exec_script file;
-*)
-
 
 (* -------------------------------------------------------------------------
-   Generating the dependencies (not necessary if one uses Holmake)
+   Generating the dependencies
    ------------------------------------------------------------------------- *)
 
 (* 
 create a Holmafile in work_glue358 with INCLUDES=..
-
 cd work_glue358
-
 ../../HOL/bin/genscriptdep r45_45753526901690_3583333758674368197732360914071565186738705964924502796773Theory.sig > ../template_ui
-
 ../../HOL/bin/genscriptdep r45_45753526901690_3583333758674368197732360914071565186738705964924502796773Theory.sml > ../template_uo
-
 remove last line of template_uo
 *)
 
@@ -598,13 +608,11 @@ load "glue"; open aiLib kernel graph enum gen glue;
 
 val template_ui = readl (selfdir ^ "/template_ui");
 val template_uo = readl (selfdir ^ "/template_uo");
-
 fun g s = 
   let val (s1,s2) = pair_of_list (String.tokens Char.isSpace s) in
     (stinf s1, stinf s2)
   end;
 val glue358_pbl_dai07 = map g (readl (selfdir ^ "/glue358_pbl_dai07"));
-
 
 fun write_dep_one dir (a,b) = 
   let 
@@ -616,19 +624,15 @@ fun write_dep_one dir (a,b) =
 
 val dir358 = "/local" ^ selfdir ^ "/work_glue358";
 app (write_dep_one dir358) glue358_pbl_dai07;
-
 val glue3510_pbl = 
   map g (readl (selfdir ^ "/glue3510_pbl_dai05")) @
   map g (readl (selfdir ^ "/glue3510_pbl_dai06"))
   ;
-
 val dir3510 = "/local" ^ selfdir ^ "/work_glue3510";
 app (write_dep_one dir3510) glue3510_pbl;
-
 val glue3512_pbl = 
   map g (readl (selfdir ^ "/glue3512_pbl_dai04")) @
   map g (readl (selfdir ^ "/glue3512_pbl_dai07"));
-
 val dir3512 = "/local" ^ selfdir ^ "/work_glue3512";
 app (write_dep_one dir3512) glue3512_pbl;
 *)
@@ -636,7 +640,6 @@ app (write_dep_one dir3512) glue3512_pbl;
 (* -------------------------------------------------------------------------
    Regrouping generalizations
    ------------------------------------------------------------------------- *)
-
 
 (*
 cp -r gen_bench16_8_4_0_0_5/* gen

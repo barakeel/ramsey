@@ -11,6 +11,7 @@ sig
   val tune : string -> int -> int * int * int * real -> unit
   val tune_3512 : string -> int -> int * int * real -> unit
   val tune_3510 : string -> int -> int * real -> unit
+  val better_cover : string -> int * int * int * real -> unit
   
   (* calling sat solvers *)
   val ramsey_clauses_mat : int * int -> mat -> ((int * int) * int) list list
