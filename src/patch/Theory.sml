@@ -198,7 +198,9 @@ fun thyid_assoc x [] = raise ERR "thyid_assoc" "not found"
 fun thyname_assoc x [] = raise ERR "thyname_assoc" "not found"
   | thyname_assoc x ((a,b)::t) = if x = thyid_name a then b
                                  else thyname_assoc x t;
+*)
 
+(*
 structure Graph = struct type graph = (thyid * thyid list) list
 local val theGraph = ref [(min_thyid,[])]
 in
@@ -248,26 +250,26 @@ structure Graph = struct type graph =
 local val theGraph = ref
   ([(min_thyid,[])],
    (Redblackmap.insert (Redblackmap.mkDict thyid_compare, min_thyid, []))) 
-in 
+in
    fun add (node,parents) = 
      theGraph := ((node,parents) :: #1 (!theGraph), 
                   Redblackmap.insert (#2 (!theGraph),node,parents))
    fun add_parent_assoc (n,newp) =
      let fun same (node,_) = thyid_eq node n
-         fun addp (node,parents) = (node, op_union thyid_eq [newp] parents)
+         fun addp(node,parents) = (node, op_union thyid_eq [newp] parents)
          fun ins (a::rst) = if same a then addp a::rst else a::ins rst
            | ins [] = raise ERR "Graph.add_parent.ins" "not found"
      in ins (#1 (!theGraph))
      end
-   fun add_parent_dict (n,newp) = case Redblackmap.peek (#2 (!theGraph),n) of
+   fun add_parent_dict (n,newp) = Redblackmap.peek (!theGraph,n) of
        NONE => raise ERR "Graph.add_parent.ins" "not found"
      | SOME parents => 
          Redblackmap.insert 
          (#2 (!theGraph), n, op_union thyid_eq [newp] parents)
-   fun add_parent x =
-     theGraph := (add_parent_assoc x, add_parent_dict x)
+   fun add_parent nodep =
+     theGraph := (add_parent_assoc nodep, add_parent_dict nodep)  
    fun isin node = Option.isSome (Redblackmap.peek (#2 (!theGraph), node))
-   fun parents_of node = Redblackmap.find (#2 (!theGraph), node)
+   fun parents_of node = Redblackmap.peek (#2 (!theGraph), node)
      handle Redblackmap.NotFound => raise ERR "thyid_assoc" "not found"
    fun ancestryl L =
     let fun Anc P Q = rev_itlist

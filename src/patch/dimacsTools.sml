@@ -1,4 +1,3 @@
-
 structure dimacsTools = struct
 
 local
