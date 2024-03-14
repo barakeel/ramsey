@@ -35,9 +35,8 @@ Please edit the `src/config` file:
 
 
 ### Enumeration of generalizations (skip)
-Please download and extract
-`http://grid01.ciirc.cvut.cz/~thibault/gen.tar.gz` for replicability
-in the `src` directory.
+In the `src` directory, please download and extract 
+the covers from `http://grid01.ciirc.cvut.cz/~thibault/gen.tar.gz`.
 If you want to create your own covers, please follow the instruction
 of the next paragraph otherwise skip to the paragraph "Definition".
 Some randomness is introduced when sampling graphs, therefore
@@ -239,7 +238,6 @@ val glue3512_pbl = read_pbl (selfdir ^ "/glue3512_pbl");
 run_script_pbl (selfdir ^ "/work_glue3512") glue3512_pbl;
 ```
 
-
 Warning: we needed to restart the proof as one of the process
 ended with an out of memory error.
 After determining which script was killed by looking at which `fooTheory.sml`
@@ -279,8 +277,6 @@ load "merge"; open merge;
 write_mergescript8 ();
 write_mergescripts 10;
 write_mergescripts 12;
-write_regscript 10;
-write_regscript 12;
 ```
 
 The option `--no_prereqs` is used from this point on 
@@ -305,20 +301,8 @@ cd merge3512
 ../../HOL/bin/Holmake --no_prereqs -j 12 | tee ../aaa_log_merge3512
 ```
 
-Merging lemmas from the parallel calls:
-```
-cd merge3510f
-../../HOL/bin/Holmake --no_prereqs
-```
+## Final step of a proof
 
-```
-cd merge3512f
-../../HOL/bin/Holmake --no_prereqs
-```
-
-## Final step of a proof (10 hours)
-It takes a long time because one need to load all the
-dependent theories (about one million of them).
 
 
 
