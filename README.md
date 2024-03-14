@@ -255,7 +255,7 @@ write_pbl "glue3512_pbl_todo" pbltodo;
 run_script_pbl (selfdir ^ "/work_glue3512") pbltodo;
 ```
 
-## Merge the gluing lemmas (4 hours)
+## Merge the gluing lemmas (1 hour)
 First, we create some functions to prove that we can merge the gluing lemmas
 to prove that all the cases being covered
 ```
@@ -288,7 +288,7 @@ cd merge3512
 ../../HOL/bin/Holmake --no_prereqs -j 12 | tee ../aaa_log_merge3512
 ```
 
-## Final step of a proof
+## Final step of the proof
 This the final merging script combining theorems about the
 existence of a R(4,5,24)-graph, the impossibility of a vertex of
 a degree 8, 10 or 12 in a R(4,5,25). Those theorems are enough to
