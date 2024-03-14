@@ -1,18 +1,13 @@
 This repository contains the software accompanying the paper 
 "A formal proof of Ramsey(4,5)=24". 
 
-## Install
-The following installation instructions are for the Ubuntu OS.
-
-
 ### Install dependencies: polyml + HOL4
+The following installation instructions are for the Ubuntu OS.
 This takes about 15 min to complete. The first command is optional.
-
 ``` 
 sudo apt install -y libgmp-dev rlwrap
 sh install_dep.sh
 ```
-
 The HOL4 scripts are found in subdirectories of the `src` directory.
 
 ### Install ramsey
@@ -99,7 +94,6 @@ directories
 ### Definition (8 min)
 Defines first-order representations of clique conditions and 
 covers. The relatively long time is due to the size of the covers.
-
 ```
 cd def
 ../../HOL/bin/Holmake 
@@ -109,14 +103,14 @@ cd def
 Prove the degree constraints and that together with the
 existence of a R(4,5,24)-graph, we would obtain the final theorem:
 ```
-cd basicRamsey
+cd ../basicRamsey
 ../../HOL/bin/Holmake 
 ```
 
 ### Proof of the existence of a R(4,5,24)-graph (10 min)
 This uses the graph taken from the file `r4524exist/r4524`:
 ```
-cd r4524exist
+cd ../r4524exist
 ../../HOL/bin/Holmake 
 ```
 
@@ -141,11 +135,11 @@ find /tmp -maxdepth 1 -type f -name 'MLTEMP*' ! -exec rm {} \;
 ```
 
 First, create the final enumeration script in an interactive session:
-
 ```
 load "enump"; open enump;
 write_enumfinalscript ();
 ```
+
 And then, run the script:
 ```
 cd enumf
@@ -262,7 +256,6 @@ run_script_pbl (selfdir ^ "/work_glue3512") pbltodo;
 ```
 
 ## Merge the gluing lemmas (4 hours)
-
 First, we create some functions to prove that we can merge the gluing lemmas
 to prove that all the cases being covered
 ```
@@ -279,18 +272,12 @@ write_mergescripts 10;
 write_mergescripts 12;
 ```
 
-The option `--no_prereqs` is used from this point on 
-as we are not very familiar with how `Holmake` works 
-and we are afraid that it does not know that the gluing scripts 
-have already been built by the `buildheap` command and that it would 
-try to rebuild them.
-
+Run the scripts:
 ```
 cd merge358
 ../../HOL/bin/Holmake --no_prereqs
 ```
 
-Parallel calls on each 3,5,k (gluing with it all possible 4,4,24-k)
 ```
 cd merge3510
 ../../HOL/bin/Holmake --no_prereqs -j 22 | tee ../aaa_log_merge3510

@@ -30,7 +30,6 @@ $DIR/polyml/bin/poly < "tools/smart-configure.sml"
 
 ## HOL patch
 mkdir tmp
-cp ../src/patch/Theory.sml src/postkernel/Theory.sml
 cp ../src/patch/dimacsTools.sml src/HolSat/dimacsTools.sml
 
 ## HOL build
