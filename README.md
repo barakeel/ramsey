@@ -289,8 +289,23 @@ cd merge3512
 ```
 
 ## Final step of a proof
+This the final merging script combining theorems about the
+existence of a R(4,5,24)-graph, the impossibility of a vertex of
+a degree 8, 10 or 12 in a R(4,5,25). Those theorems are enough to
+prove R(4,5) = 25 as formalized in the `basicRamsey` theory.
+```
+cd mergef
+../../HOL/bin/Holmake --no_prereqs
+```
 
+To see the final theorem, run in the `mergef` directory 
+`rlwrap ../../HOL/bin/hol`:
 
+```
+load "r45_equals_25Theory"; 
+open r45_equals_25Theory;
+r45_equals_25;
+```
 
 
 
