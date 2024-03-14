@@ -55,7 +55,8 @@ val r45_degree12' = GEN E (DISCHL (prec hyp2) r45_degree12);
    ---------------------------------------------------------------------- *)
 
 val r45_equals_25 = 
-  PROVE_HYPL [r45_degree8',r45_degree10',r45_degree12',r4524exist]    
+  PROVE_HYPL [r45_degree8',r45_degree10',r45_degree12',
+              r4524existTheory.r4524exist]    
     ramsey_4_5_25_hyp
 
 val _ = new_theory "r45_equals_25"
