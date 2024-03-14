@@ -2,11 +2,9 @@
    Final step of the proof of R(4,5) = 25
    ========================================================================= *)
 
-open HolKernel boolLib aiLib kernel gen sat syntax merge;
-local open TheoryReaderDrop
-  ramseyDefTheory basicRamseyTheory r45_degree8Theory r4524existTheory
-in end;
-
+open HolKernel boolLib aiLib kernel gen sat syntax merge
+open TheoryReaderDrop
+open r45_degree8Theory r4524existTheory basicRamseyTheory
 
 (* ----------------------------------------------------------------------
    Work around to load theorems without growing the theory graph.
@@ -17,7 +15,7 @@ fun load_r45_degree10_theory n =
     val thyname = "r45_degree10_" ^ its n
     val filedat = selfdir ^ "/merge3510/" ^ thyname ^ "Theory.dat"
   in
-    TheoryReaderDrop.load_thydata_nolink thyname filedat;
+    load_thydata_nolink thyname filedat;
     Theory.load_complete thyname
   end;
 
@@ -26,7 +24,7 @@ fun load_r45_degree12_theory n =
     val thyname = "r45_degree12_" ^ its n
     val filedat = selfdir ^ "/merge3512/" ^ thyname ^ "Theory.dat"
   in
-    TheoryReaderDrop.load_thydata_nolink thyname filedat;
+    load_thydata_nolink thyname filedat;
     Theory.load_complete thyname
   end;
 
@@ -36,7 +34,6 @@ fun load_r45_degree12_theory n =
    Changing their shape to match hypothesis in ramsey_4_5_25_hyp.
    ---------------------------------------------------------------------- *)
 
-val r45_degree8 = DB.fetch "r45_degree8" "r45_degree8";
 val _ = ignore (List.tabulate (43,load_r45_degree10_theory));
 val r45_degree10 = IMPOSSIBLE_REG_35 10;
 val _ = ignore (List.tabulate (12,load_r45_degree12_theory));
@@ -55,8 +52,7 @@ val r45_degree12' = GEN E (DISCHL (prec hyp2) r45_degree12);
    ---------------------------------------------------------------------- *)
 
 val r45_equals_25 = 
-  PROVE_HYPL [r45_degree8',r45_degree10',r45_degree12',
-              r4524existTheory.r4524exist]    
+  PROVE_HYPL [r45_degree8',r45_degree10',r45_degree12',r4524exist]
     ramsey_4_5_25_hyp
 
 val _ = new_theory "r45_equals_25"
