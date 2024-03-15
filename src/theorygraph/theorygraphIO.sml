@@ -34,13 +34,19 @@ fun theorygraph_of_thy thy =
   
 fun file_of_thy thy = selfdir ^ "/theorygraph/" ^ thy ^ ".graph"  
   
+fun write_theorygraph filename thygraph =
+  writel filename (map node_to_string thygraph)  
+  
+fun read_theorygraph filename =
+  map node_from_string (readl filename)  
+  
 fun write_theorygraph_nocheck thy thygraph =
   writel (file_of_thy thy) (map node_to_string thygraph)
   
-fun read_theorygraph thy =
+fun read_theorygraph_of_thy thy =
   map node_from_string (readl (file_of_thy thy))
 
-fun write_theorygraph thy = 
+fun write_theorygraph_of_thy thy = 
   let
     val thygraph = theorygraph_of_thy thy
     val _ = write_theorygraph_nocheck thy thygraph
