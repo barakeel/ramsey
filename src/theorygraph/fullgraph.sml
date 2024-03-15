@@ -137,11 +137,13 @@ fun combine_theorygraph thygraphl =
      loop [] ltop prevntop dtop
    end
    
-val finaltheorygraph = combine_theorygraph 
+val fulltheorygraph = combine_theorygraph 
   [degree10thygraphl,degree12thygraphl,r45thygraph];
-    
-write_theory_graph    
-length finaltheorygraph;
+
+length fulltheorygraph;
+
+write_theorygraph "fulltheorygraph.graph" fulltheorygraph;
+
 
 
 
