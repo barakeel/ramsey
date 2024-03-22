@@ -121,10 +121,9 @@ fun combine_theorygraph thygraphl =
     val namedtop = dempty String.compare
     val ltop = List.concat thygraphl 
     val prevntop = length ltop 
-    fun loop depth l' l prevn named d =
-      if null l andalso null l' 
-        then dlist d
-      else if null l then 
+    fun loop depth l' l prevn named d = case (l',l) of
+        ([],[]) => dlist d
+      | (_,[]) =>
         let val newprevn = length l' in
           if prevn = newprevn
           then raise ERR "combine_theorygraph" "cycle"
@@ -134,21 +133,18 @@ fun combine_theorygraph thygraphl =
                loop (depth + 1) [] (rev l') newprevn named d)
                )
         end
-      else
-        let 
-          val (node,parentl) = hd l 
-          val _ = check_thyname node named  
-        in
+      | (_, (node,parentl) :: m) => 
+        let val _ = check_thyname node named in
           case dfindo node d of
             NONE => 
             if all (fn x => dmem x d) parentl
-            then loop depth l' (tl l) prevn (dadd (#1 node) node named)
+            then loop depth l' m prevn (dadd (#1 node) node named)
                    (dadd node parentl d)
-            else loop depth (hd l :: l') (tl l) prevn named d
+            else loop depth ((node,parentl) :: l') m prevn named d
           | SOME parl => 
             if elist (enew thyid_compare parl) = 
                elist (enew thyid_compare parentl)
-            then loop depth l' (tl l) prevn named d
+            then loop depth l' m prevn named d
             else raise ERR "combine_theorygraph" 
               ((#1 node) ^ " theory has different sets of parents") 
         end
