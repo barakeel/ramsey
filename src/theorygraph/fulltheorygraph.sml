@@ -108,37 +108,33 @@ val r45thygraph = r45graph';
 fun thyid_compare (thyid1,thyid2) = 
   triple_compare String.compare Arbnum.compare Arbnum.compare (thyid1,thyid2);
 
-fun check_thyname node named = case dfindo (#1 node) named of 
+fun check_thyname node named = case dfindo (fst3 node) named of 
     NONE => ()
   | SOME nodealt => 
     if node = nodealt then () 
     else raise ERR "check_thyname" ((#1 node) ^ 
-      " theory exists in the graph with different time stamps")
+      " theory exists in the graph with different time stamps");
 
 fun combine_theorygraph thygraphl =
-  let 
-    val dtop = dempty thyid_compare
-    val namedtop = dempty String.compare
+  let
     val ltop = List.concat thygraphl 
-    val prevntop = length ltop 
+    val prevntop = length ltop
     fun loop depth l' l prevn named d = case (l',l) of
         ([],[]) => dlist d
       | (_,[]) =>
         let val newprevn = length l' in
           if prevn = newprevn
           then raise ERR "combine_theorygraph" "cycle"
-          else (
-               print_endline (its (dlength d) ^ " theories at depth " ^ 
-                              its depth); 
+          else (print_endline (its (dlength d) ^ " theories at depth " ^ 
+                  its depth); 
                loop (depth + 1) [] (rev l') newprevn named d)
-               )
         end
       | (_, (node,parentl) :: m) => 
         let val _ = check_thyname node named in
           case dfindo node d of
-            NONE => 
+            NONE =>
             if all (fn x => dmem x d) parentl
-            then loop depth l' m prevn (dadd (#1 node) node named)
+            then loop depth l' m prevn (dadd (fst3 node) node named)
                    (dadd node parentl d)
             else loop depth ((node,parentl) :: l') m prevn named d
           | SOME parl => 
@@ -149,7 +145,7 @@ fun combine_theorygraph thygraphl =
               ((#1 node) ^ " theory has different sets of parents") 
         end
    in
-     loop 0 [] ltop prevntop namedtop dtop
+     loop 0 [] ltop prevntop (dempty String.compare) (dempty thyid_compare)
    end;
    
 val fulltheorygraph = combine_theorygraph 
