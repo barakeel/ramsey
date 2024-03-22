@@ -53,7 +53,6 @@ fun run_script3512 i =
 val _ = smlParallel.parapp_queue 12 run_script3512 (List.tabulate (12,I));
 
 
-
 (* -------------------------------------------------------------------------
    Reading back all theory graphs
    ------------------------------------------------------------------------- *)
@@ -107,45 +106,60 @@ val degree12thygraphl = map snd degree12l;
 val r45thygraph = r45graph';
 
 fun thyid_compare (thyid1,thyid2) = 
-  triple_compare String.compare Arbnum.compare Arbnum.compare
+  triple_compare String.compare Arbnum.compare Arbnum.compare (thyid1,thyid2);
+
+fun check_thyname node named = case dfindo (#1 node) named of 
+    NONE => ()
+  | SOME nodealt => 
+    if node = nodealt then () 
+    else raise ERR "check_thyname" ((#1 node) ^ 
+      " theory exists in the graph with different time stamps")
 
 fun combine_theorygraph thygraphl =
   let 
     val dtop = dempty thyid_compare
-    val prevntop = dlength d
-    val ltop = List.concat thygraphl
-  in
-    fun loop l' l prevn d =
-      if null l andalso null l' then dlist d
+    val namedtop = dempty String.compare
+    val ltop = List.concat thygraphl 
+    val prevntop = length ltop 
+    fun loop depth l' l prevn named d =
+      if null l andalso null l' 
+        then dlist d
       else if null l then 
-        if prevn = dlength d 
-        then raise ERR "combine_theorygraph" "cycle"
-        else loop [] (rev l') (dlength d) d
+        let val newprevn = length l' in
+          if prevn = newprevn
+          then raise ERR "combine_theorygraph" "cycle"
+          else (
+               print_endline (its (dlength d) ^ " theories at depth " ^ 
+                              its depth); 
+               loop (depth + 1) [] (rev l') newprevn named d)
+               )
+        end
       else
-        let val (node,parentl) = hd l in
+        let 
+          val (node,parentl) = hd l 
+          val _ = check_thyname node named  
+        in
           case dfindo node d of
-            NONE => if all (fn x => dmem x (!d)) parentl
-                    then loop l' (tl l) (dadd node parentl d)
-                    else loop (hd l :: l') (tl l) d
-          | SOME (_,parl) => 
+            NONE => 
+            if all (fn x => dmem x d) parentl
+            then loop depth l' (tl l) prevn (dadd (#1 node) node named)
+                   (dadd node parentl d)
+            else loop depth (hd l :: l') (tl l) prevn named d
+          | SOME parl => 
             if elist (enew thyid_compare parl) = 
                elist (enew thyid_compare parentl)
-            then loop l' (tl l) d
-            else raise ERR "combine_theorygraph" "different sets of parents"   
+            then loop depth l' (tl l) prevn named d
+            else raise ERR "combine_theorygraph" 
+              ((#1 node) ^ " theory has different sets of parents") 
         end
    in
-     loop [] ltop prevntop dtop
-   end
+     loop 0 [] ltop prevntop namedtop dtop
+   end;
    
 val fulltheorygraph = combine_theorygraph 
-  [degree10thygraphl,degree12thygraphl,r45thygraph];
+  (List.concat [[r45thygraph], degree10thygraphl, degree12thygraphl]);
 
 length fulltheorygraph;
 
 write_theorygraph "fulltheorygraph.graph" fulltheorygraph;
-
-
-
-
-
 
