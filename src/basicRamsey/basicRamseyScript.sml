@@ -13,6 +13,7 @@ open arithmeticTheory pred_setTheory aiLib kernel graph;
 local open numTheory prim_recTheory SatisfySimps DefnBase ramseyDefTheory 
 in end;
 
+chatting := false;
 val _ = new_theory "basicRamsey";
 
 (* -------------------------------------------------------------------------
