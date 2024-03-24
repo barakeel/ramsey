@@ -7,7 +7,8 @@
    ========================================================================= *)
 
 (* load "graph"; load "../def/ramseyDefTheory"; *)
-open HolKernel boolLib Parse simpLib boolSimps BasicProvers bossLib;
+open HolKernel boolLib Parse simpLib boolSimps BasicProvers bossLib 
+proofManagerLib;
 open arithmeticTheory pred_setTheory aiLib kernel graph;
 local open numTheory prim_recTheory SatisfySimps DefnBase ramseyDefTheory 
 in end;
