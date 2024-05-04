@@ -38,6 +38,21 @@ Some randomness is introduced when sampling graphs, therefore
 you will not get the same covers as in `gen.tar.gz` but it should
 be of similar quality.
 
+### Representations of graph numbers in the gen files (for information only)
+Each line of the `gen*` files consists of a generalization graph followed by 
+a series of normalized graphs ,that are instantiations of the generalizations, 
+together with the permutation that was applied to normalize them.
+After converting a graph number to base 3,
+the graph number always start with a 1. 
+This leading digit should be ignored.
+For example the number 1020121 in base 3 represents the upper triangular matrix:
+x 0 2 0
+  x 1 2 
+    x 1
+      x
+The number 1 represents a blue edge, the number 2 a red edge and the number 0
+a grey edge.
+
 ### Enumeration of generalizations (2 hours)
 First, we enumerate of all the ramsey 4,4 graphs (R(4,4,k)) 
 and all ramsey 3,5 graphs (R(3,5,k)) up to isomorphism.
@@ -52,7 +67,7 @@ enum (3,5);
 The results are stored in the directory `enum`.
 They can be read using the function `enum.read_enum`.
 
-For each set R(3,5,k) (resp. (R(4,4,k)), we consturct a set of 
+For each set R(3,5,k) (resp. (R(4,4,k)), we construct a set of 
 graph generalizations G(3,5,k) (resp. (G(4,4,k)) with the following code.
 
 Execute in an interactive session:
