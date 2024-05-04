@@ -50,8 +50,8 @@ x 0 2 0
   x 1 2 
     x 1
       x
-The number 1 represents a blue edge, the number 2 a red edge and the number 0
-a grey edge.
+The number 1 stands for a blue edge, the number 2 a red edge and the number 0
+a gray edge.
 
 ### Enumeration of generalizations (2 hours)
 First, we enumerate of all the ramsey 4,4 graphs (R(4,4,k)) 
