@@ -39,7 +39,7 @@ you will not get the same covers as in `gen.tar.gz` but it should
 be of similar quality.
 
 ### Representations of graph numbers in the gen files (for information only)
-Each line of the `gen*` files consists of a generalization graph followed by 
+Each line of the `gen` files consists of a generalization graph followed by 
 a series of normalized graphs ,that are instantiations of the generalizations, 
 together with the permutation that was applied to normalize them.
 After converting a graph number to base 3,
