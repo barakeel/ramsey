@@ -140,6 +140,4 @@ val timer_glob4 = ref 0.0
 val timer_glob5 = ref 0.0
 
 
-
-  
 end (* struct *)

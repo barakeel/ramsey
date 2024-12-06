@@ -47,13 +47,18 @@ val size_glob = ref 0
 val pos_thm = ref TRUTH
 val neg_thm = ref TRUTH
 
+val skipd_glob = ref (eempty Int.compare)
+
 fun get_color assignv v = !(fst (Vector.sub (assignv,v)))
 fun get_lit assignv v = (v, get_color assignv v)
+    
     
 fun next_dec assignv v = 
   let val newv = v+1 in
     if newv >= Vector.length assignv then NONE else
-    if get_color assignv newv = 0 then SOME newv else next_dec assignv newv
+    if get_color assignv newv = 0 andalso 
+       not (emem newv (!skipd_glob))
+    then SOME newv else next_dec assignv newv
   end
 
 fun string_of_clause clause = 

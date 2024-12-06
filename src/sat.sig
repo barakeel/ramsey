@@ -5,6 +5,8 @@ sig
   type mat = int Array2.array
   type clause = ((int * int) * int) list
   
+  val skipd_glob : int Redblackset.set ref
+  
   (* vector with constant time deletion *)
   val dlv_fromlist : 'a -> 'a list -> ((int ref * int ref) * 'a) vector
   val dlv_del : int -> ((int ref * int ref) * 'a) vector -> unit -> unit
