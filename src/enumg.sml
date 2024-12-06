@@ -74,7 +74,7 @@ fun cover l =
   let
     val restd = ref (enew IntInf.compare l)
     val (newl,t) = add_time (cover_aux restd) []
-    val _ = print_endline ("time: " ^ rts_round 2 t ^ " " ^ its (length newl))
+    val _ = log ("time: " ^ rts_round 2 t ^ " " ^ its (length newl))
   in
     newl
   end
@@ -186,23 +186,51 @@ fun cover_para ncore initset =
     cover_para_aux ncore set result
   end
 
+(* -------------------------------------------------------------------------
+   Gradually increasing the number of edges
+   ------------------------------------------------------------------------- *)
 
+fun enumg_loop dir curn startn stopn l =
+  if curn >= stopn then () else
+  let 
+    val _ = log "extension"
+    val (lext,t) = if curn = startn then (l,0.0) else add_time extend l
+    val _ = log (its (length lext) ^ " extensions in " ^ 
+                 rts_round 2 t ^ " seconds")
+    val _ = log "iterative cover"
+    val (lgen,t) = add_time iter_cover lext
+    val _ = log (its (length lgen) ^ " generalizations in " ^ 
+                 rts_round 2 t ^ " seconds")
+    val _ = write_infl (dir ^ "/gen" ^ its curn) lgen           
+  in
+    enumg_loop dir (curn+1) startn stopn lgen
+  end
+  
+fun enumg expname (bluen,redn) startn stopn = 
+  let 
+    val dir = selfdir ^ "/exp/" ^ expname
+    val _ = logfile := dir ^ "/log" 
+    val _ = app mkDir_err [selfdir ^ "/exp",dir] 
+    val l = enum.read_enum startn (bluen,redn)
+  in
+    enumg_loop dir startn startn stopn l
+  end
 
 (*
 load "enumg"; load "enum"; 
 open aiLib kernel enum enumg;
 
-val l8 = read_enum 8 (4,4);
+fun 
 
 val (l8gen,t) = add_time iter_cover l8;
+val _ = write_
 val l9 = extend l8gen;
-val l9gen = cover_para 4 (enew IntInf.compare l8);
 val (l9gen,t) = add_time iter_cover l9;
 val l10 = extend l9gen;
 val (l10gen,t) = add_time iter_cover l10;
-disable_log := false;
 
-
+fun write_infl file l = writel file (map infts l);
+write_infl 
 
 *)
 
