@@ -29,8 +29,9 @@ fun rflag s r =
   valOf (Real.fromString (dfind s configd)) handle NotFound => r
 
 (* global parameters *)
-val memory = iflag "memory" 10000
+val memory = iflag "memory" 5000
 val ncore = (string_to_int (dfind "ncore" configd) handle NotFound => 32)
+val _ = smlExecScripts.buildheap_options :=  "--maxheap " ^ its memory
 
 (* used in sat.sml (default is unlimited) *)
 val real_time = rflag "real_time" 0.0
