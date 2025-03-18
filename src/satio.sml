@@ -77,11 +77,11 @@ val picobin = selfdir ^ "/../picosat-965/picosat"
 val cadicalbin = "cadical"
 val cmd = picobin ^ " -o " ^ fileout ^ " --all " ^ file
 
-load "enum"; open enum;
+load "enum"; open aiLib kernel enum;
 
 val csize = 10;
 val m1 = random_elem (enum.read_enum csize (3,5));
-val m2 = random_elem (enum.read_enum (24 - csize) (4,4));
+val m2 = random_elem (enum.read_enum (21 - csize) (4,4));
 val m2u = unzip_mat m2;
 val m2sub = zip_mat (random_subgraph (mat_size m2u - 2) m2u);
 writel (file ^ "_mat") (map infts [m1,m2sub]);
