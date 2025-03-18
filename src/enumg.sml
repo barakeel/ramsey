@@ -4,7 +4,9 @@ struct
 open HolKernel aiLib kernel graph nauty sat syntax
 val ERR = mk_HOL_ERR "enumg"
 
-(* read graphs *)
+(* -------------------------------------------------------------------------
+   Tools
+   ------------------------------------------------------------------------- *)
 
 val zn = zip_mat o normalize_nauty;
 
@@ -29,6 +31,14 @@ fun all_children mi =
     map mk_child edgecl
   end
 
+fun parent_of mi (i,j) = 
+  let
+    val m = unzip_mat mi 
+    val _ = mat_update_sym (m,i,j,0)
+  in
+    zn m
+  end
+  
 (* -------------------------------------------------------------------------
    Finding the best edge to generalize on
    ------------------------------------------------------------------------- *)
@@ -55,25 +65,42 @@ fun best_edge restd mi edgel =
 
 fun rm_child restd c = restd := erem c (!restd)
 
-
-fun cover_aux restd acc = case elist (!restd) of [] => rev acc | mi :: _ =>  
+fun cover_aux fulld restd acc = 
+  case elist (!restd) of [] => rev acc | mi :: _ =>  
   let
     val m = unzip_mat mi
     val edgel = map fst (mat_to_edgecl m)
-    val (i,j) = best_edge (!restd) mi edgel
-    val _ = mat_update_sym (m,i,j,0)
-    val mgi = zn m
-    val cl = filter (fn x => emem x (!restd)) (all_children mgi)
-  in
-    if null cl 
-    then cover_aux restd acc
-    else (app (rm_child restd) cl; cover_aux restd (mgi :: acc))
+  in  
+    if exists (fn x => emem (parent_of mi x) (!fulld)) edgel
+    then cover_aux fulld restd acc
+    else
+    let
+      val edge = best_edge (!restd) mi edgel
+      val mgi = parent_of mi edge
+      val cl = filter (fn x => emem x (!restd)) (all_children mgi)
+    in
+      (*
+      if length cl <= 1 then 
+        (
+        app (rm_child restd) cl;
+        fulld := eadd mi (!fulld); 
+        cover_aux fulld restd (mi :: acc)
+        )
+      else
+      *) 
+      (
+      app (rm_child restd) cl;
+      fulld := eadd mgi (!fulld); 
+      cover_aux fulld restd (mgi :: acc)
+      )
+    end
   end
 
 fun cover l = 
   let
     val restd = ref (enew IntInf.compare l)
-    val (newl,t) = add_time (cover_aux restd) []
+    val fulld = ref (enew IntInf.compare l)
+    val (newl,t) = add_time (cover_aux fulld restd) []
     val _ = log ("time: " ^ rts_round 2 t ^ " " ^ its (length newl))
   in
     newl
@@ -84,7 +111,7 @@ fun iter_cover l =
     val newl = cover l 
   in
     if length newl = length l then raise ERR "iter_cover" "stable" else
-    if length newl <= 1000 then newl else iter_cover newl
+    if length newl <= 100 then newl else iter_cover newl
   end
   
 (* -------------------------------------------------------------------------
@@ -103,7 +130,7 @@ fun extend_one mi =
     val _ = disable_log := mem
   in
     ml2
-  end;
+  end
   
 fun extend l = 
   mk_fast_set IntInf.compare (List.concat (map extend_one l));
@@ -190,6 +217,16 @@ fun cover_para ncore initset =
    Gradually increasing the number of edges
    ------------------------------------------------------------------------- *)
 
+fun shape_of lgen = 
+  let
+    val ml = map unzip_mat lgen
+    val nmd = dregroup Int.compare (map (fn x => (number_of_holes x, x)) ml);
+    val nml = map_snd length (dlist nmd)         
+  in
+    log ("shape: " ^ 
+      String.concatWith " " (map (fn (a,b) => its a ^ ":" ^ its b) nml))  
+  end
+  
 fun enumg_loop dir curn startn stopn l =
   if curn >= stopn then () else
   let 
@@ -201,6 +238,7 @@ fun enumg_loop dir curn startn stopn l =
     val (lgen,t) = add_time iter_cover lext
     val _ = log (its (length lgen) ^ " generalizations in " ^ 
                  rts_round 2 t ^ " seconds")
+    val _ = shape_of lgen   
     val _ = write_infl (dir ^ "/gen" ^ its curn) lgen           
   in
     enumg_loop dir (curn+1) startn stopn lgen
@@ -218,19 +256,15 @@ fun enumg expname (bluen,redn) startn stopn =
 
 (*
 load "enumg"; load "enum"; 
-open aiLib kernel enum enumg;
+open aiLib kernel enum enumg graph;
 
-fun 
+val expname = "enumg44_1";
+store_log := true;
+enumg expname (4,4) 8 18;
 
-val (l8gen,t) = add_time iter_cover l8;
-val _ = write_
-val l9 = extend l8gen;
-val (l9gen,t) = add_time iter_cover l9;
-val l10 = extend l9gen;
-val (l10gen,t) = add_time iter_cover l10;
+val l = read_infl "exp/enumg44_0/gen12";
+val ml = map unzip_mat l;
 
-fun write_infl file l = writel file (map infts l);
-write_infl 
 
 *)
 

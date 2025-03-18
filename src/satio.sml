@@ -70,15 +70,14 @@ fun read_sol file =
     end 
   end
 
-(* -------------------------------------------------------------------------
-   Deprecated code: running picosat returning all satisfiable assignments
-   ------------------------------------------------------------------------- *)
-
 (* 
 val file = "aaa_test"
 val fileout = file ^ "_sol"
 val picobin = selfdir ^ "/../picosat-965/picosat"
+val cadicalbin = "cadical"
 val cmd = picobin ^ " -o " ^ fileout ^ " --all " ^ file
+
+load "enum"; open enum;
 
 val csize = 10;
 val m1 = random_elem (enum.read_enum csize (3,5));
