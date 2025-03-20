@@ -367,6 +367,13 @@ fun all_coloring edgel =
   in
     cartesian_productl edgebothl
   end
+  
+fun swap_colors m = 
+  let fun f (i,j) = 
+    let val x = mat_sub (m,i,j) in if x = 0 then 0 else 3-x end
+  in 
+    mat_tabulate (mat_size m, f)
+  end
 
 (* -------------------------------------------------------------------------
    Properties

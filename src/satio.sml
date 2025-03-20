@@ -1,11 +1,11 @@
 (* =========================================================================
-   Glue generalized graphs with the help of cone clauses.
+   Communication with external sat solvers
    ========================================================================= *)
    
 structure satio :> satio =
 struct   
 
-open HolKernel Abbrev boolLib aiLib kernel graph
+open HolKernel Abbrev boolLib aiLib kernel graph glue
 val ERR = mk_HOL_ERR "satio"
 
 (* -------------------------------------------------------------------------
@@ -30,7 +30,7 @@ fun write_dimacs file clausel =
   end
 
 (* -------------------------------------------------------------------------
-   Reading the result of allsat problems
+   Reading the result of satisfiable problems
    ------------------------------------------------------------------------- *)
 
 fun read_map file = 
@@ -56,7 +56,7 @@ fun read_sol_one d sl =
     map f il3
   end
 
-fun read_sol file = 
+fun read_soll file = 
   let 
     val d = read_map (file ^ "_map")
     val sl0 = readl (file ^ "_sol")
@@ -70,47 +70,88 @@ fun read_sol file =
     end 
   end
 
-(* 
-val file = "aaa_test"
-val fileout = file ^ "_sol"
-val picobin = selfdir ^ "/../picosat-965/picosat"
-val cadicalbin = "cadical"
-val cmd = picobin ^ " -o " ^ fileout ^ " --all " ^ file
+fun read_sol file = 
+  let 
+    val d = read_map (file ^ "_map")
+    val sl0 = readl (file ^ "_sol")
+  in
+    case hd sl0 of
+      "s SATISFIABLE" => SOME (read_sol_one d (tl sl0))
+    | "s UNSATISFIABLE" => NONE
+    | _ => raise ERR "read_sol" ""
+  end
 
-load "enum"; open aiLib kernel enum;
+fun complete_graph (bsize,rsize) m = 
+  let
+    val file = selfdir ^ "/aaa_complete"
+    val clausel = ramsey_clauses_mat (bsize,rsize) m
+    val _ = write_dimacs file clausel
+    val cmd = "cadical -q " ^ file ^ " > " ^ file ^ "_sol"
+    val (_,t) = add_time (cmd_in_dir selfdir) cmd
+  in
+    case read_sol file of
+      NONE => NONE
+    | SOME sol => SOME (edgecl_to_mat (mat_size m) (sol @ mat_to_edgecl m))
+  end;
+
+(* 
+load "satio"; load "enum"; 
+open aiLib kernel graph enum glue satio;
+
 
 val csize = 10;
 val m1 = random_elem (enum.read_enum csize (3,5));
 val m2 = random_elem (enum.read_enum (21 - csize) (4,4));
-val m2u = unzip_mat m2;
-val m2sub = zip_mat (random_subgraph (mat_size m2u - 2) m2u);
-writel (file ^ "_mat") (map infts [m1,m2sub]);
+val m = diag_mat (unzip_mat m1) (unzip_mat m2);
 
-val m = diag_mat (unzip_mat m1) (unzip_mat m2sub);
-val clausel = ramsey_clauses_mat (4,5) m;
-val _ = write_dimacs file clausel;
-val cmd = "../../picosat-965/picosat -o " ^ file ^ "_sol --all " ^ file;
-val (_,t) = add_time (cmd_in_dir dir) cmd;
-val soll = read_sol file;
 
-val m3 = diag_mat (unzip_mat m1) (unzip_mat m2sub);
-val sol = hd soll;
-val m4 = edgecl_to_mat (mat_size m3) (mat_to_edgecl m3 @ sol);
-print_mat m3;
-print_mat m4;
-is_ramsey (4,5) m4;
 
-val m4' = edgecl_to_mat (mat_size m3 + 2) (mat_to_edgecl m3 @ sol);
-print_mat m4';
-val clausel = ramsey_clauses_mat (4,5) m4';
-val file = dir ^ "/teste";
-write_dimacs file clausel;
-val cmd = "../../picosat-965/picosat -o " ^ file ^ "_sol --all " ^ file;
-val (_,t) = add_time (cmd_in_dir dir) cmd;
-val sl = readl (file ^ "_sol");
-val soll = read_sol file;
+
+
+  
+
+
+
+load "nauty"; open nauty;
+val mfulln = normalize_nauty mfull;
+val m55 = diag_mat mfull (swap_colors mfull);
+
+val bnl = neighbor_of 1 m55 0 @ (List.tabulate (11,fn x => x + 21));
+val rnl = neighbor_of 2 m55 0 @ (List.tabulate (10,fn x => x + 32));
+
+val bm = mat_permute (m55,length bnl) (mk_permf bnl);
+
+val rm = mat_permute (m55,length rnl) (mk_permf rnl); print_mat rm;
+
+
+
+
+
+
+val neighborl = List.tabulate (10,
+mat_update_sym (m55,0,21,2
+
+
+
+
+
+val clausel55 = ramsey_clauses_mat (5,5) m55;
+write_dimacs "aaa_test55" clausel55;
+val cmd = "cadical -q aaa_test55 > aaa_test55_sol";
+val (_,t) = add_time (cmd_in_dir selfdir) cmd;
+
+
+idea:
+1) take a vertex (let's say vertex 1)
+2) look at its neighbor in the 4,5 graph.
+3) choose some of it neighbor in the 5,4 graph.
+
+4) construct a completion of the new neigbhor 4,5 graph
+5) 
+let us say the first n in the complement
+try to complete the graph if possible.
+
 *)
-
 
 
 end (* struct *)

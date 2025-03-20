@@ -76,7 +76,7 @@ sig
   (* applying colorings *)
   val all_coloring : (int * int) list -> coloring list
   val apply_coloring : mat -> coloring -> mat
-  
+  val swap_colors : mat -> mat
   
    
 end
