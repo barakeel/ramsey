@@ -135,15 +135,13 @@ fun inneighbor_of color graph x =
    Debug
    ------------------------------------------------------------------------- *)
 
-fun string_of_edgel edgel = 
-  let fun f (i,j)= its i ^ "-" ^ its j in
-    String.concatWith " " (map f edgel)
-  end
+fun string_of_edge (i,j) = its i ^ "-" ^ its j
 
-fun string_of_edgecl edgecl = 
-  let fun f ((i,j),x) = its i ^ "-" ^ its j ^ ":" ^ its x in
-    String.concatWith " " (map f edgecl)
-  end
+fun string_of_edgel edgel = String.concatWith " " (map string_of_edge edgel)
+
+fun string_of_edgec ((i,j),x) = its i ^ "-" ^ its j ^ ":" ^ its x
+
+fun string_of_edgecl edgecl = String.concatWith " " (map string_of_edgec edgecl)
 
 fun named_neighbor color graph = 
   let
@@ -328,7 +326,8 @@ fun mk_permf perm =
   in 
     f 
   end
-  
+
+(* only works for full perm *)
 fun invert_perm perm = 
   let val permd = dnew Int.compare (number_snd 0 perm) in
     List.tabulate (dlength permd, fn i => dfind i permd)

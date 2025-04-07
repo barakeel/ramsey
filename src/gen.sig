@@ -12,10 +12,18 @@ sig
   val mincover : real ref
   val select_basic : bool ref
   
+  
   (* scoring number of shapes *)
   val get_average35 : IntInf.int list -> ((int * int) * real) list
   val get_average44 : IntInf.int list -> ((int * int) * real) list
   val difficulty_pair : IntInf.int * IntInf.int -> real
+  
+  (* simple generalization *)
+  val extra_clausel : ((int * int) * int) list list ref
+   
+  val gen_simple : int * int ->
+    ((int * int) * int) list -> int -> IntInf.int -> IntInf.int -> 
+    int -> (int * int) list
   
   (* parallelization *)
   val genspec : ((int * int) * IntInf.int Redblackset.set, IntInf.int, 

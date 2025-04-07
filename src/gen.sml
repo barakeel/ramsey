@@ -6,7 +6,7 @@
 structure gen :> gen =
 struct   
 
-open HolKernel Abbrev boolLib aiLib kernel graph nauty syntax enum
+open HolKernel Abbrev boolLib aiLib kernel graph nauty syntax enum sat
 val ERR = mk_HOL_ERR "gen"
 type vleafs = int * int * (IntInf.int * int list) list  
 
@@ -30,6 +30,7 @@ fun enc_color (x,c) = if c = 1 then 2 * x else 2 * x + 1;
 fun enc_edgec (e,c) = enc_color (edge_to_var e,c);
 fun dec_edgec x = (var_to_edge (x div 2), (x mod 2) + 1);
 fun opposite (e,x) = (e,3 - x)
+fun opposite_v v = (enc_edgec o opposite o dec_edgec) v
 
 (* -------------------------------------------------------------------------
    Getting all_leafs of 
@@ -282,7 +283,7 @@ fun concat_cpermll (leafi,vleafsl) =
       ((leafi,idperm) :: List.concat (map #3 vleafsl))
   end
 
-
+(* each entry of varv contains the list of clause the variable i occurs in *)
 fun sgeneralize (bluen,redn) uset leafi =
   let
     val leaf = unzip_mat leafi
@@ -333,6 +334,169 @@ fun sgeneralize (bluen,redn) uset leafi =
       end 
   in  
     try ()
+  end;
+
+(* -------------------------------------------------------------------------
+   Test for presence of cliques
+   ------------------------------------------------------------------------- *)
+
+(* assumes that we are not removing variable twice *)
+fun decr_numbera a varv v = 
+  let 
+    val il = Vector.sub (varv,v) 
+    fun g i = Array.update (a,i, if Array.sub(a,i) - 1 < 0 then raise ERR
+      "decr_numbera" "" else Array.sub(a,i) - 1) 
+  in
+    app g il
+  end
+  
+fun incr_numbera a varv v = 
+  let 
+    val il = Vector.sub (varv,v) 
+    fun g i = Array.update (a,i, Array.sub(a,i) + 1) 
+  in
+    app g il
+  end
+
+fun can_increase a sizev clause =
+  Array.sub (a, clause) + 1 < Vector.sub (sizev,clause)
+
+fun can_increase2 a sizev clause =
+  Array.sub (a, clause) + 2 < Vector.sub (sizev,clause)
+
+fun test_v2 sizev a varv (v1,v2) =
+  let
+    val _ = decr_numbera a varv v1
+    val _ = decr_numbera a varv v2
+    val v1o = opposite_v v1
+    val v2o = opposite_v v2
+    val vvl = [(v1,v2o),(v1o,v2),(v1o,v2o)]
+    fun test_vv (va,vb) = 
+      let
+        val clausela = Vector.sub (varv,va)
+        val clauselb = Vector.sub (varv,vb)
+        (* slow intersection: probably do and undo is faster and
+           catch error *)
+        val da = enew Int.compare clausela
+        val clauselab = filter (fn x => emem x da) clauselb
+      in
+        all (can_increase a sizev) clausela andalso
+        all (can_increase a sizev) clauselb andalso
+        all (can_increase2 a sizev) clauselab        
+      end
+    val vvl' = filter test_vv vvl
+    (* restore *)
+    val _ = incr_numbera a varv v1 
+    val _ = incr_numbera a varv v2
+  in
+    if null vvl' then NONE else SOME ((v1,v2) :: vvl')
+  end
+
+fun test_allpairs sizev a varv edgecgenl =
+  let 
+    val vl = map enc_edgec edgecgenl
+    val vvl = all_pairs vl
+    val vvll = List.mapPartial (test_v2 sizev a varv) vvl
+    fun f (v1,v2) = string_of_edgec (dec_edgec v1) ^ "|" ^ 
+                    string_of_edgec (dec_edgec v2)
+    fun g x = print_endline (String.concatWith " " (map f x))
+  in
+    print_endline (its (length vvll) ^ " gen2");
+    app g (first_n 10 vvll)
+  end
+
+fun test_allsingleton sizev a varv edgecgenl =
+  let 
+    fun conflicts v = 
+      let val clausel = Vector.sub (varv,v) in
+        length (
+        filter (fn x => Array.sub (a, x) + 1 >= Vector.sub(sizev,x)) clausel)
+      end
+    val vlopp = map (enc_edgec o opposite) edgecgenl
+    fun f (v,cn) = 
+      print_endline (string_of_edgec (dec_edgec v) ^ ": " ^ its cn)
+    val l = dict_sort compare_imin (map_assoc conflicts vlopp)   
+  in
+    print_endline ("variable: conflict number");
+    app f l
+  end
+
+(* -------------------------------------------------------------------------
+   Cover for transverse edges
+   ------------------------------------------------------------------------- *)
+
+fun reduce_clause mat acc clause = case clause of
+    [] => SOME (rev acc)
+  | (lit as ((i,j),color)) :: m => 
+    let val newcolor = mat_sub (mat,i,j) in
+      if newcolor = 0 
+        then reduce_clause mat (lit :: acc) m
+      else if color = newcolor 
+        then reduce_clause mat acc m else NONE
+    end
+
+fun ramsey_clauses_mat (bluen,redn) mat =
+  List.mapPartial (reduce_clause mat []) 
+    (ramsey_clauses_bare (mat_size mat) (bluen,redn));
+
+val extra_clausel = ref ([]: ((int * int) * int) list list)
+  
+fun init_sgen_reduce size (bluen,redn) mat = 
+  let
+    val clauses1 = map (map_fst edge_to_var) 
+      (ramsey_clauses_mat (bluen,redn) mat @ !extra_clausel)
+    val clauses2 = map (map enc_color) clauses1
+    val clausev = Vector.fromList clauses2;
+    val claused = dnew (list_compare Int.compare) (number_snd 0 clauses2)
+    fun g clause = map_assoc (fn _ => clause) clause
+    val clauses3 = List.concat (map g clauses2)
+    val clauses4 = dlist (dregroup Int.compare clauses3)
+    val clauses5 = map_snd (map (fn x => dfind x claused)) clauses4
+    val clauses6 = map_snd (dict_sort Int.compare) clauses5
+    val varv = Vector.fromList (map snd clauses6)
+  in
+    (varv,clausev)
+  end;
+
+fun gen_simple (bluen,redn) edgecgenl nhole parenti leafi ntry =
+  let
+    val leaf = unzip_mat leafi
+    val parent = unzip_mat parenti
+    val size = mat_size leaf
+    (* initalization *)
+    val (varv,clausev) = init_sgen_reduce size (bluen,redn) parent
+    val sizev = Vector.map (fn x => length x) clausev (* changed *)
+    val inita = Array.array (Vector.length clausev,0)
+    val edgecl = list_diff (mat_to_edgecl leaf) (mat_to_edgecl parent)
+    val _ = app (incr_numbera inita varv) (map enc_edgec edgecl)
+    val _ = test_allsingleton sizev inita varv edgecgenl
+    (* generalization loop *)
+    fun gen_loop () = 
+      let
+        val locala = Array.tabulate 
+          (Array.length inita, fn i => Array.sub (inita,i))
+        val vlopp = shuffle (map (enc_edgec o opposite) edgecgenl)
+        fun test v = 
+          let val clausel = Vector.sub (varv,v) in
+            all 
+            (fn x => Array.sub (locala, x) + 1 < Vector.sub(sizev,x)) clausel
+          end
+        fun sgen_loop vl result = 
+          if length result >= nhole then rev result else
+          case vl of
+            [] => (test_allsingleton sizev locala varv edgecgenl; rev result)
+          | v :: rem => 
+            let val edge = fst (dec_edgec v) in
+              incr_numbera locala varv v;
+              sgen_loop (filter test rem) (edge :: result)
+            end   
+      in
+        sgen_loop (filter test vlopp) []
+      end 
+    val rl = List.tabulate (ntry, fn _ => gen_loop ())
+    val rli = map_assoc length rl
+  in  
+    fst (hd (dict_sort compare_imax rli))
   end;
 
 (* -------------------------------------------------------------------------
@@ -510,7 +674,7 @@ fun read_par size (bluen,redn) =
       end
   in
     map f sl
-  end  
+  end
 
 fun write_cover size (bluen,redn) cover = 
   let 

@@ -32,7 +32,9 @@ sig
   val unzip_full_edgecl : int -> IntInf.int -> ((int * int) * int) list
   
   (* debug *)
+  val string_of_edge : (int * int) -> string
   val string_of_edgel : (int * int) list -> string
+  val string_of_edgec : ((int * int) * int) -> string
   val string_of_edgecl : ((int * int) * int) list -> string
   val string_of_graph : mat -> string
   val string_of_bluegraph : mat -> string

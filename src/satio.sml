@@ -81,10 +81,13 @@ fun read_sol file =
     | _ => raise ERR "read_sol" ""
   end
 
+(* sometimes completion does not complete fully *)
+val other_clausel = ref []
+
 fun complete_graph (bsize,rsize) m = 
   let
     val file = selfdir ^ "/aaa_complete"
-    val clausel = ramsey_clauses_mat (bsize,rsize) m
+    val clausel = ramsey_clauses_mat (bsize,rsize) m @ !other_clausel
     val _ = write_dimacs file clausel
     val cmd = "cadical -q " ^ file ^ " > " ^ file ^ "_sol"
     val (_,t) = add_time (cmd_in_dir selfdir) cmd
@@ -94,63 +97,170 @@ fun complete_graph (bsize,rsize) m =
     | SOME sol => SOME (edgecl_to_mat (mat_size m) (sol @ mat_to_edgecl m))
   end;
 
-(* 
-load "satio"; load "enum"; 
-open aiLib kernel graph enum glue satio;
 
+
+(* 
+load "satio"; load "enum"; load "nauty"; load "gen";
+open aiLib kernel graph enum glue satio nauty gen;
 
 val csize = 10;
 val m1 = random_elem (enum.read_enum csize (3,5));
 val m2 = random_elem (enum.read_enum (21 - csize) (4,4));
-val m = diag_mat (unzip_mat m1) (unzip_mat m2);
+val mdiag = diag_mat (unzip_mat m1) (unzip_mat m2);
+
+(* todo prefer conflicts that would result in a small clause *)
+
+(* enumerating 4,5 *)
+fun new_clause clausel =
+  let
+    val _ = other_clausel := clausel
+    val _ = print_endline "completion"
+  in
+    case (complete_graph (4,5) mdiag) of NONE => NONE | SOME mfull =>
+    let
+      val edgecgenl = list_diff (mat_to_edgecl mfull) (mat_to_edgecl mdiag);
+      val _ = extra_clausel := clausel
+      val _ = print_endline "generalization"
+      val edgel = dict_sort edge_compare
+        (gen_simple (4,5) edgecgenl 1000 (zip_mat mfull) 1);
+      val _ = print_endline ("edgel: " ^ string_of_edgel edgel)
+      val d = enew edge_compare edgel;
+      val clause = filter (fn (a,b) => not (emem a d)) edgecgenl
+    in
+      SOME (dict_sort (fst_compare edge_compare) clause)
+    end
+ end;
+
+val clause1 = new_clause [];
+val clause2 = new_clause [clause1];
+val clause3 = new_clause [clause1,clause2];
+
+fun loop clausel = 
+  let 
+    val (newclauseo,t) = add_time new_clause clausel 
+    val _ = print_endline (its (length clausel) ^ ": " ^ rts_round 2 t)
+  in
+    case newclauseo of 
+      NONE => clausel
+    | SOME newclause => loop (newclause :: clausel)
+  end;
+
+val clausel = loop [];
 
 
+val edgel1 = available_gen (4,5) edgecgenl (zip_mat mfull);
+val edgel1' = edge_sort edgel1;
+
+val edgel2' = edgel2;
+
+val edgel3 = edge_sort (gen_simple (4,5) edgecgenl nhole (zip_mat mfull) 1);
 
 
+list_compare edge_compare (edgel2',edgel3);
+list_diff edgel2' edgel3;
+list_diff edgel3 edgel2';
 
+val edgell = List.tabulate (10, fn _ =>  
+  gen_simple (4,5) edgecgenl nhole (zip_mat mfull) 1);
+
+val m55 = diag_mat mfull (swap_colors mfull);
+
+val extral = List.tabulate (21, fn x => x + 21);
+
+  
+val m55' = mat_copy m55;  
+
+fun loop () =
+  let
+    val (bnl',rnl') = part_n (random_int (0,21)) (shuffle extral);
+    val bnl = neighbor_of 1 m55 0 @ bnl';
+    val rnl = neighbor_of 2 m55 0 @ rnl';
+    val bm = mat_permute (m55,length bnl) (mk_permf bnl);
+    val rm = mat_permute (m55,length rnl) (mk_permf rnl);
+    val bmfull = complete_graph (4,5) bm;
+  in
+    if not (isSome bmfull) then loop () else
+    let
+      val _ = print "."
+      val rmfull = complete_graph (5,4) rm
+    in
+      if not (isSome rmfull) then loop () else
+      (bnl,rnl,valOf bmfull,valOf rmfull)
+    end
+  end;
+
+val (r,t) = add_time loop ();
+val (bperm,rperm,bm,rm) = r;
+
+val bd = dnew Int.compare (number_snd 0 bperm);
+val bmincl = mat_tabulate (42, fn (i,j) => mat_sub (bm,dfind i bd, dfind j bd) handle NotFound => 0);
+
+val rd = dnew Int.compare (number_snd 0 rperm);
+val rmincl = mat_tabulate (42, fn (i,j) => mat_sub (rm,dfind i rd, dfind j rd) handle NotFound => 0);
+
+val ERR = mk_HOL_ERR "test";
+fun merge_mat size m1 m2 = 
+  let 
+    fun f (i,j) = 
+      let val (a,b) = (mat_sub (m1,i,j),mat_sub (m2,i,j)) in
+        if a = 0 andalso b = 0 then 0
+        else if a = 0 then b
+        else if b = 0 then a
+        else if a = b then a else raise ERR "merge_mat" ""
+      end
+  in
+    mat_tabulate (size,f)
+  end;
+  
+val rbmincl = merge_mat 42 bmincl rmincl;  
+
+val m55incl = merge_mat 42 m55 rbmincl;
+
+val neigh = mat_tabulate (42, fn (i,j) => 
+  if i = 0 andalso dmem j bd then 1
+  else if i = 0 andalso dmem j rd then 2
+  else 0);
+  
+val m55incl2 = merge_mat 42 m55incl neigh;  
+
+val (x,t) = add_time (complete_graph (5,5)) m55incl;
+val (x,t) = add_time (complete_graph (5,5)) m55incl2;
+
+(* todo generalization with binary clauses *)
+
+blue blue
+red blue
+red red
+
+3/4 better generalization
+2/4 
+
+but equality do not make sense if one can just generalize
+one of them
+
+(* let's try distinct support for now *)
+(* the generalization must work for all edgecll *)
+
+Do the process in the most stupid way.
+
+Have a tester for Ramsey (4,5) maybe with edges
+
+Delete a color
+Add a color
+And split a
+
+it's possible to have a conflict with the predecessor and
+not put them as clauses (or one can put them as clauses).
+
+fun gen_bin mi edgecll = 
+  
   
 
 
 
-load "nauty"; open nauty;
-val mfulln = normalize_nauty mfull;
-val m55 = diag_mat mfull (swap_colors mfull);
-
-val bnl = neighbor_of 1 m55 0 @ (List.tabulate (11,fn x => x + 21));
-val rnl = neighbor_of 2 m55 0 @ (List.tabulate (10,fn x => x + 32));
-
-val bm = mat_permute (m55,length bnl) (mk_permf bnl);
-
-val rm = mat_permute (m55,length rnl) (mk_permf rnl); print_mat rm;
-
-
-
-
-
-
-val neighborl = List.tabulate (10,
-mat_update_sym (m55,0,21,2
-
-
-
-
-
-val clausel55 = ramsey_clauses_mat (5,5) m55;
-write_dimacs "aaa_test55" clausel55;
-val cmd = "cadical -q aaa_test55 > aaa_test55_sol";
-val (_,t) = add_time (cmd_in_dir selfdir) cmd;
-
-
-idea:
-1) take a vertex (let's say vertex 1)
-2) look at its neighbor in the 4,5 graph.
-3) choose some of it neighbor in the 5,4 graph.
-
-4) construct a completion of the new neigbhor 4,5 graph
-5) 
-let us say the first n in the complement
-try to complete the graph if possible.
-
+Test the idea: on 4,5 first if it is good it should be
+speeding up 4,5. Evaluate the idea of double splitting.
+maybe a concept of distance to keep only the ones that are close
 *)
 
 
