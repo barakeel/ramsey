@@ -4,8 +4,11 @@ struct
 open HolKernel Abbrev boolLib aiLib kernel smlParallel
 val ERR = mk_HOL_ERR "graph"
 
-type mat = int Array2.array
-type coloring = ((int * int) * int) list
+type vertex = int
+type edge = int * int
+type color = int
+type mat = color Array2.array
+type coloring = (edge * color) list
 
 val blue = 1
 val red =2
@@ -54,6 +57,9 @@ fun symmetrify m =
    ------------------------------------------------------------------------- *)
 
 val edge_compare = cpl_compare Int.compare Int.compare  
+
+val edgec_compare = 
+  cpl_compare (cpl_compare Int.compare Int.compare) Int.compare
 
 fun mat_compare_aux size a1 a2 i j = 
   case Int.compare (mat_sub (a1,i,j),mat_sub (a2,i,j)) of
@@ -342,6 +348,30 @@ fun random_subgraph subsize m =
     mat_permute (m,subsize) permf
   end
 
+
+exception Merge;
+fun mat_merge m1 m2 = 
+  let 
+    val _ = if mat_size m1 <> mat_size m2 then raise ERR "mat_merge" "" else ()
+    fun f (i,j) = 
+      let val (a,b) = (mat_sub (m1,i,j),mat_sub (m2,i,j)) in
+        if a = 0 andalso b = 0 then 0
+        else if a = 0 then b
+        else if b = 0 then a
+        else if a = b then a else raise Merge
+      end
+  in
+    SOME (mat_tabulate (mat_size m1,f)) handle Merge => NONE
+  end;
+
+fun mat_inject size m vl = 
+  let 
+    val d = dnew Int.compare (number_snd 0 vl);
+    fun f (i,j) = mat_sub (m,dfind i d, dfind j d) handle NotFound => 0
+  in
+    mat_tabulate (size,f)
+  end
+
 (* -------------------------------------------------------------------------
    Generalizations and colorings
    ------------------------------------------------------------------------- *)
@@ -420,6 +450,20 @@ fun all_cedges m =
     mat_traverse f m; !l
   end 
 
+fun is_clique m color l = 
+  let val l' = map pair_of_list (subsets_of_size 2 l) in
+    all (fn (a,b) => mat_sub (m,a,b) = color) l'
+  end
+
+fun all_cliques size color m =
+  let 
+    val vl = List.tabulate (mat_size m,I) 
+    val cliquel = subsets_of_size size vl
+  in
+    filter (is_clique m color) cliquel
+  end
+  
+(* works with holes *)
 fun is_ramsey (bluen,redn) topm = 
   let 
     val vertexl = List.tabulate (mat_size topm,I)
@@ -437,6 +481,98 @@ fun is_ramsey (bluen,redn) topm =
     not (exists (is_clique bluem blue) (subsets_of_size bluen vertexl)) andalso
     not (exists (is_clique redm red) (subsets_of_size redn vertexl)) 
   end
+
+
+fun subsets1_f f x1 x2 x3 x4 l = case l of 
+    [] => ()
+  | x5 :: m5 => (f x1 x2 x3 x4 x5; subsets1_f f x1 x2 x3 x4 m5);
+                                             
+fun subsets2_f f x1 x2 x3 l = case l of 
+    [] => ()
+  | x4 :: m4 => (subsets1_f f x1 x2 x3 x4 m4; subsets2_f f x1 x2 x3 m4)
+
+fun subsets3_f f x1 x2 l = case l of 
+    [] => ()
+  | x3 :: m3 => (subsets2_f f x1 x2 x3 m3; subsets3_f f x1 x2 m3);
+  
+fun subsets4_f f x1 l = case l of 
+    [] => ()
+  | x2 :: m2 => (subsets3_f f x1 x2 m2; subsets4_f f x1 m2);
+
+fun subsets5_f f l = case l of 
+    [] => ()
+  | x1 :: m1 => (subsets4_f f x1 m1; subsets5_f f m1);
+
+fun forall_pairs f (a,b,c,d,e) = 
+  f (a,b) andalso f (a,c) andalso f (a,d) andalso f (a,e) andalso
+  f (b,c) andalso f (b,d) andalso f (b,e) andalso
+  f (c,d) andalso f (c,e) andalso
+  f (d,e);
+  
+  
+fun is_good_lit color mat (i,j) =
+  let val newcolor = mat_sub (mat,i,j) in
+    newcolor = 0 orelse color = newcolor
+  end;
+ 
+fun all_5cliques color m = 
+  let 
+    val l = ref []
+    val vertexl = List.tabulate (mat_size m,I)
+    fun f a b c d e = 
+      if forall_pairs (is_good_lit color m) (a,b,c,d,e) 
+      then l := (a,b,c,d,e) :: !l
+      else ()
+  in 
+    subsets5_f f vertexl; !l
+  end
+
+(* -------------------------------------------------------------------------
+   Efficiently checking if a graph contains a k-clique or not
+   ------------------------------------------------------------------------- *)
+
+fun exist_withtail f l = case l of 
+    [] => false
+  | a :: m => f a m orelse exist_withtail f m
+
+fun exist_clique_v n f v l =
+  exist_clique (n-1) f (filter (fn x => f(v,x)) l)
+  
+and exist_clique n f l = 
+  if n = 0 then true else
+  if length l < n then false else
+  exist_withtail (exist_clique_v n f) l
+
+fun exist_clique_mat m (color,size) =
+  let 
+    fun f (i,j) = let val newcolor = mat_sub (m,i,j) in
+                    newcolor = color
+                  end
+    val vl = List.tabulate (mat_size m,I)
+  in
+    exist_clique size f vl
+  end
+
+fun exist_clique_edge m (color,size) (a,b) =
+  let 
+    fun f (i,j) = let val newcolor = mat_sub (m,i,j) in
+                    newcolor = color
+                  end              
+    val vl = List.tabulate (mat_size m,I)
+    val vl' = filter (fn x => f(a,x) andalso f(b,x)) vl
+  in
+    exist_clique (size-2) f vl'
+  end
+
+fun can_extend_edge (bsize,rsize) m (a,b) =
+  let 
+    val orgcolor = mat_sub (m,a,b) 
+    val color = 3-orgcolor
+    val size = if color = blue then bsize else rsize
+  in
+    exist_clique_edge m (color,size) (a,b)
+  end
+
 
 
 

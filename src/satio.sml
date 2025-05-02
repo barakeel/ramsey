@@ -9,7 +9,7 @@ open HolKernel Abbrev boolLib aiLib kernel graph glue
 val ERR = mk_HOL_ERR "satio"
 
 (* -------------------------------------------------------------------------
-   Exporting problems in the dimacs format
+   Exporting problems in the dimacs format (number the edges)
    ------------------------------------------------------------------------- *)
 
 fun write_dimacs file clausel = 
@@ -56,20 +56,6 @@ fun read_sol_one d sl =
     map f il3
   end
 
-fun read_soll file = 
-  let 
-    val d = read_map (file ^ "_map")
-    val sl0 = readl (file ^ "_sol")
-  in
-    if last sl0 = "s SOLUTIONS 0" then [] else
-    let
-      val sl1 = tl (butlast (readl (file ^ "_sol")))
-      val sll1 = rpt_split_sl "s SATISFIABLE" sl1    
-    in
-      map (read_sol_one d) sll1
-    end 
-  end
-
 fun read_sol file = 
   let 
     val d = read_map (file ^ "_map")
@@ -81,186 +67,208 @@ fun read_sol file =
     | _ => raise ERR "read_sol" ""
   end
 
-(* sometimes completion does not complete fully *)
-val other_clausel = ref []
+(* sometimes completion does not complete fully ?? *)
+fun full m = ignore (assert null (all_holes m));
+
+fun reduce_clause_err mat acc clause = case clause of
+    [] => rev acc
+  | (lit as ((i,j),color)) :: m => 
+    let val newcolor = mat_sub (mat,i,j) in
+      if newcolor = 0 then reduce_clause_err mat (lit :: acc) m
+      else if color = newcolor then reduce_clause_err mat acc m 
+      else raise ERR "reduce_clause_err" ""
+    end;
+
+fun mk_clause5 mat color (a,b,c,d,e) = 
+  reduce_clause_err mat [] (map_assoc (fn _ => color) (all_pairs [a,b,c,d,e]));
+
+fun ramsey_clauses5_mat m = 
+  let 
+    val clb = all_5cliques blue m
+    val clb2 = map (mk_clause5 m blue) clb
+    val clr = all_5cliques red m  
+    val clr2 = map (mk_clause5 m red) clr
+  in
+    clb2 @ clr2
+  end
+
+fun read_instructions file = 
+  let 
+    val file2 = file ^ "2"
+    val cmd = "awk '/instructions:u/ { gsub(\",\", \"\", $1); print $1 }' " ^
+      file ^ " > " ^ file2
+    val _ = cmd_in_dir selfdir cmd
+    val t = string_to_int (hd (readl file2)) handle _ => valOf (Int.maxInt) 
+  in
+    t
+  end 
 
 fun complete_graph (bsize,rsize) m = 
   let
     val file = selfdir ^ "/aaa_complete"
-    val clausel = ramsey_clauses_mat (bsize,rsize) m @ !other_clausel
+    val statfile = selfdir ^ "/perf_stat_out"
+    val clausel = 
+      if (bsize,rsize) = (5,5)
+      then ramsey_clauses5_mat m
+      else ramsey_clauses_mat (bsize,rsize) m
     val _ = write_dimacs file clausel
-    val cmd = "cadical -q " ^ file ^ " > " ^ file ^ "_sol"
-    val (_,t) = add_time (cmd_in_dir selfdir) cmd
+    val cmd = "perf stat -e instructions:u cadical -q " ^ 
+      file ^ " > " ^ file ^ "_sol" ^ " 2> " ^ statfile
+    val (_,t1) = add_time (cmd_in_dir selfdir) cmd
+    val t2 = read_instructions statfile
   in
     case read_sol file of
-      NONE => NONE
-    | SOME sol => SOME (edgecl_to_mat (mat_size m) (sol @ mat_to_edgecl m))
-  end;
-
-
-
-(* 
-load "satio"; load "enum"; load "nauty"; load "gen";
-open aiLib kernel graph enum glue satio nauty gen;
-
-val csize = 10;
-val m1 = random_elem (enum.read_enum csize (3,5));
-val m2 = random_elem (enum.read_enum (21 - csize) (4,4));
-val mdiag = diag_mat (unzip_mat m1) (unzip_mat m2);
-
-(* todo prefer conflicts that would result in a small clause *)
-
-(* enumerating 4,5 *)
-fun new_clause clausel =
-  let
-    val _ = other_clausel := clausel
-    val _ = print_endline "completion"
-  in
-    case (complete_graph (4,5) mdiag) of NONE => NONE | SOME mfull =>
-    let
-      val edgecgenl = list_diff (mat_to_edgecl mfull) (mat_to_edgecl mdiag);
-      val _ = extra_clausel := clausel
-      val _ = print_endline "generalization"
-      val edgel = dict_sort edge_compare
-        (gen_simple (4,5) edgecgenl 1000 (zip_mat mfull) 1);
-      val _ = print_endline ("edgel: " ^ string_of_edgel edgel)
-      val d = enew edge_compare edgel;
-      val clause = filter (fn (a,b) => not (emem a d)) edgecgenl
-    in
-      SOME (dict_sort (fst_compare edge_compare) clause)
-    end
- end;
-
-val clause1 = new_clause [];
-val clause2 = new_clause [clause1];
-val clause3 = new_clause [clause1,clause2];
-
-fun loop clausel = 
-  let 
-    val (newclauseo,t) = add_time new_clause clausel 
-    val _ = print_endline (its (length clausel) ^ ": " ^ rts_round 2 t)
-  in
-    case newclauseo of 
-      NONE => clausel
-    | SOME newclause => loop (newclause :: clausel)
-  end;
-
-val clausel = loop [];
-
-
-val edgel1 = available_gen (4,5) edgecgenl (zip_mat mfull);
-val edgel1' = edge_sort edgel1;
-
-val edgel2' = edgel2;
-
-val edgel3 = edge_sort (gen_simple (4,5) edgecgenl nhole (zip_mat mfull) 1);
-
-
-list_compare edge_compare (edgel2',edgel3);
-list_diff edgel2' edgel3;
-list_diff edgel3 edgel2';
-
-val edgell = List.tabulate (10, fn _ =>  
-  gen_simple (4,5) edgecgenl nhole (zip_mat mfull) 1);
-
-val m55 = diag_mat mfull (swap_colors mfull);
-
-val extral = List.tabulate (21, fn x => x + 21);
-
-  
-val m55' = mat_copy m55;  
-
-fun loop () =
-  let
-    val (bnl',rnl') = part_n (random_int (0,21)) (shuffle extral);
-    val bnl = neighbor_of 1 m55 0 @ bnl';
-    val rnl = neighbor_of 2 m55 0 @ rnl';
-    val bm = mat_permute (m55,length bnl) (mk_permf bnl);
-    val rm = mat_permute (m55,length rnl) (mk_permf rnl);
-    val bmfull = complete_graph (4,5) bm;
-  in
-    if not (isSome bmfull) then loop () else
-    let
-      val _ = print "."
-      val rmfull = complete_graph (5,4) rm
-    in
-      if not (isSome rmfull) then loop () else
-      (bnl,rnl,valOf bmfull,valOf rmfull)
-    end
-  end;
-
-val (r,t) = add_time loop ();
-val (bperm,rperm,bm,rm) = r;
-
-val bd = dnew Int.compare (number_snd 0 bperm);
-val bmincl = mat_tabulate (42, fn (i,j) => mat_sub (bm,dfind i bd, dfind j bd) handle NotFound => 0);
-
-val rd = dnew Int.compare (number_snd 0 rperm);
-val rmincl = mat_tabulate (42, fn (i,j) => mat_sub (rm,dfind i rd, dfind j rd) handle NotFound => 0);
-
-val ERR = mk_HOL_ERR "test";
-fun merge_mat size m1 m2 = 
-  let 
-    fun f (i,j) = 
-      let val (a,b) = (mat_sub (m1,i,j),mat_sub (m2,i,j)) in
-        if a = 0 andalso b = 0 then 0
-        else if a = 0 then b
-        else if b = 0 then a
-        else if a = b then a else raise ERR "merge_mat" ""
+      NONE => (NONE,(t1,t2))
+    | SOME sol => 
+      let val newm = edgecl_to_mat (mat_size m) (sol @ mat_to_edgecl m) in
+        full newm; (SOME newm,(t1,t2))
       end
+  end
+
+(* -------------------------------------------------------------------------
+   Write sat problems (without edge correspondance) + 
+   shift the indices by 1
+   ------------------------------------------------------------------------- *)
+   
+fun write_pdimacs file clausel = 
+  let
+    val nvar = list_imax (map fst (List.concat clausel)) + 1
+    fun g (i,b) = (if not b then "-" else "") ^ its (i+1)     
+    fun f clause = String.concatWith " " (map g clause) ^ " 0"
+    val header = "p cnf " ^ its nvar ^ " " ^ its (length clausel)
+  in
+    writel file (header :: map f clausel)
+  end;
+
+fun read_plit s = 
+  let val i = string_to_int s in 
+    if i = 0 then NONE else SOME (Int.abs i - 1, i > 0) end;
+  
+fun read_pclause s =
+  List.mapPartial read_plit (String.tokens Char.isSpace s)
+
+fun read_pdimacs file = map (read_pclause) (readl file)
+
+(* maybe: do this with edge variables *)
+fun all_cones54 m = 
+  let
+    val cliqueb = all_cliques 4 blue m;
+    (* val cliquer = all_cliques 3 red m; *)
+    val satclauseb = map (map_assoc (fn _ => false)) cliqueb;
+    (* val satclauser = map (map_assoc (fn _ => true)) cliquer; *)
+    val clausel = satclauseb (* @ satclauser *)
+    val filein = selfdir ^ "/aaa_cones54"
+    val fileout = filein ^ "_all"
+    val filedebug = filein ^ "_debug"
+    val _ = write_pdimacs filein clausel
+    val cmd = "bdd_minisat_all " ^ filein ^ " " ^ fileout ^ " > " ^ filedebug
+    val (_,t) = add_time (cmd_in_dir selfdir) cmd
+  in
+    read_pdimacs fileout
+  end
+
+
+fun mat_shift1 m = 
+  let 
+    val size = mat_size m 
+    val perm = List.tabulate (size, fn x => x + 1)  
+  in
+    mat_inject (size + 1) m perm
+  end
+
+fun mat_vertex0 size neigh =
+  let
+    fun f (i,j) = 
+      if i = j then 0 
+      else if i = 0 then (if j <= neigh then 1 else 2)
+      else if j = 0 then (if i <= neigh then 1 else 2)
+      else 0;
   in
     mat_tabulate (size,f)
-  end;
+  end
+
+fun random_split (size,nb,nbb,nrb) = 
+  let 
+    val nr = size - nb - 1
+    val nbr = nb - nbb - 1
+    val nrr = nr - nrb - 1
+    val m35b = unzip_mat (random_elem (enum.read_enum nbb (3,5)))
+    val m44b = unzip_mat (random_elem (enum.read_enum nbr (4,4)))
+    val m45b0 = valOf (fst (complete_graph (4,5) (diag_mat m35b m44b)))
+    val m45b1 = mat_shift1 m45b0
+    val mvb = mat_vertex0 nb nbb
+    val m45b2 = valOf (mat_merge mvb m45b1)
+    val m44r = swap_colors (unzip_mat (random_elem (enum.read_enum nrb (4,4))))
+    val m53r = swap_colors (unzip_mat (random_elem (enum.read_enum nrr (3,5))))
+    val m54r0 = valOf (fst (complete_graph (5,4) (diag_mat m44r m53r))) 
+    val m54r1 = mat_shift1 m54r0
+    val mvr = mat_vertex0 nr nrb
+    val m54r2 = valOf (mat_merge mvr m54r1)
+  in
+    (m45b2,m54r2)
+  end
   
-val rbmincl = merge_mat 42 bmincl rmincl;  
+fun prove_cone (m45,m54) cone =
+  let
+    val m55 = diag_mat m45 m54;
+    val edgecl = map (fn (x,b) => ((0,20+x), if b then 1 else 2)) cone;
+    val m55cone = edgecl_to_mat (mat_size m55) edgecl;
+    val m55e = valOf (mat_merge m55cone m55);
+    val (r,t) = complete_graph (5,5) m55e
+  in
+    (m55e,(r,t))
+  end
 
-val m55incl = merge_mat 42 m55 rbmincl;
-
-val neigh = mat_tabulate (42, fn (i,j) => 
-  if i = 0 andalso dmem j bd then 1
-  else if i = 0 andalso dmem j rd then 2
-  else 0);
-  
-val m55incl2 = merge_mat 42 m55incl neigh;  
-
-val (x,t) = add_time (complete_graph (5,5)) m55incl;
-val (x,t) = add_time (complete_graph (5,5)) m55incl2;
-
-(* todo generalization with binary clauses *)
-
-blue blue
-red blue
-red red
-
-3/4 better generalization
-2/4 
-
-but equality do not make sense if one can just generalize
-one of them
-
-(* let's try distinct support for now *)
-(* the generalization must work for all edgecll *)
-
-Do the process in the most stupid way.
-
-Have a tester for Ramsey (4,5) maybe with edges
-
-Delete a color
-Add a color
-And split a
-
-it's possible to have a conflict with the predecessor and
-not put them as clauses (or one can put them as clauses).
-
-fun gen_bin mi edgecll = 
-  
-  
+(* todo: make it faster to create the clauses *)
+fun prove_55 m =
+  let val (r,t) = complete_graph (5,5) m in
+    (m,(r,t))
+  end
 
 
 
-Test the idea: on 4,5 first if it is good it should be
-speeding up 4,5. Evaluate the idea of double splitting.
-maybe a concept of distance to keep only the ones that are close
+
+(*
+load "satio"; load "enum"; load "nauty"; load "gen";
+open aiLib kernel graph enum glue satio nauty gen;
+val ERR = mk_HOL_ERR "test";
+
+val (m45,m54) = random_split (43,20,9,10);
+val m55 = diag_mat m45 m54;
+
+val (conel,t1) = add_time all_cones54 m54;
+val cone = random_elem conel;
+val (m55e,(r,t2)) = prove_cone (m45,m54) cone;
+print_mat m55e;
+
+val mv = mat_vertex0 43 20;
+val m55es1 = mat_shift1 m55e;
+val m55f = valOf (mat_merge mv m55es1);
+
+val (m55fo,t3) = complete_graph (5,5) m55f;
+
+val edgel = all_cedges m55f;
+
+
+val ((r1,t1),t2) = add_time (complete_graph (5,5)) m55;
+
+(the top matrix, list of generalized matrix)
+
+
+fun prove_gen m edge =
+  let
+    val mc = mat_copy m
+    val _ = mat_update_sym (mc,fst edge,snd edge,0)
+    val (r,t) = add_time (complete_graph (5,5)) mc;
+  in
+    (mc,(r,t))
+  end
+
+(* 
+todo use perf for comparing speeds 
+todo do not generalize over impossible graphs?
+*)
+
 *)
 
 

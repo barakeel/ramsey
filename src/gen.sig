@@ -12,6 +12,9 @@ sig
   val mincover : real ref
   val select_basic : bool ref
   
+  (* model counter *)
+  val model_counter : 
+    int -> (int * int) list -> (((int * int) * int) list) list -> int
   
   (* scoring number of shapes *)
   val get_average35 : IntInf.int list -> ((int * int) * real) list

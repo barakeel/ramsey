@@ -1,8 +1,12 @@
 signature graph =
 sig
 
-  type mat = int Array2.array
-  type coloring = ((int * int) * int) list
+  type vertex = int
+  type edge = int * int
+  type color = int
+  type mat = color Array2.array
+  type coloring = (edge * color) list
+  
   (* colors *)
   val blue : int
   val red : int
@@ -17,6 +21,7 @@ sig
   
   (* comparison functions *)
   val edge_compare : (int * int) * (int * int) -> order
+  val edgec_compare : ((int * int) * int) * ((int * int) * int) -> order
   val mat_compare : mat * mat -> order
   val mat_eq : mat -> mat -> bool
   val mat_compare_fixedsize : int -> mat * mat -> order
@@ -56,6 +61,8 @@ sig
   val symmetrify : mat -> mat
   val permutations : 'a list -> 'a list list
   val random_subgraph : int -> mat -> mat
+  val mat_merge : mat -> mat -> mat option
+  val mat_inject : int -> mat -> int list -> mat
    
   (* neighbors *)
   val neighbor_of : int -> mat -> int -> int list
@@ -65,18 +72,24 @@ sig
   (* properties *)
   val number_of_edges : mat -> int
   val number_of_holes : mat -> int
-  val all_holes : mat -> (int * int) list
+  val all_holes : mat -> edge list
   val number_of_blueedges : mat -> int
-  val all_cedges : mat -> (int * int) list
-  val all_edges : int -> (int * int) list
+  val all_cedges : mat -> edge list
+  val all_edges : int -> edge list
   val is_ramsey : (int * int) -> mat -> bool
+  val all_cliques : int -> int -> mat -> int list list
+  val all_5cliques : int -> mat -> (int * int * int * int * int) list
+  val exist_clique : int -> (int * int -> bool) -> int list -> bool
+  val exist_clique_mat : mat -> int * int -> bool
+  val exist_clique_edge : mat -> int * int -> edge -> bool
+  val can_extend_edge : int * int -> mat -> edge -> bool
   
   (* converting from matrix representation to list of edges *)
   val mat_to_edgecl : mat -> coloring
   val edgecl_to_mat : int -> coloring -> mat
   
   (* applying colorings *)
-  val all_coloring : (int * int) list -> coloring list
+  val all_coloring : edge list -> coloring list
   val apply_coloring : mat -> coloring -> mat
   val swap_colors : mat -> mat
   

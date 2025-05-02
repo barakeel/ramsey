@@ -405,25 +405,148 @@ fun test_allpairs sizev a varv edgecgenl =
     app g (first_n 10 vvll)
   end
 
-fun test_allsingleton sizev a varv edgecgenl =
+
+
+(* -------------------------------------------------------------------------
+   Inefficient model counter for graphs
+   ------------------------------------------------------------------------- *)
+
+fun contradict_clause model clause =
+  all (fn ((i,j),c) => mat_sub (model,i,j) = c) clause
+
+fun contradict_clausel clausel model = 
+  exists (contradict_clause model) clausel
+
+fun model_counter msize edgel clausel =
   let 
-    fun conflicts v = 
-      let val clausel = Vector.sub (varv,v) in
-        length (
-        filter (fn x => Array.sub (a, x) + 1 >= Vector.sub(sizev,x)) clausel)
-      end
-    val vlopp = map (enc_edgec o opposite) edgecgenl
-    fun f (v,cn) = 
-      print_endline (string_of_edgec (dec_edgec v) ^ ": " ^ its cn)
-    val l = dict_sort compare_imin (map_assoc conflicts vlopp)   
+    val modell1 = cartesian_productl (map (fn x => [(x,1),(x,2)]) edgel) 
+    val modell2 = map (edgecl_to_mat msize) modell1 
+    val modell3 = filter (not o contradict_clausel clausel) modell2 
   in
-    print_endline ("variable: conflict number");
-    app f l
+    length modell3
   end
+  handle Subscript => raise ERR "model_counter" ""
 
 (* -------------------------------------------------------------------------
    Cover for transverse edges
    ------------------------------------------------------------------------- *)
+
+fun conflict_clauses numbera sizev varv v =
+  let 
+    val clausel = Vector.sub (varv,v) 
+    fun test x = Array.sub (numbera, x) + 1 >= Vector.sub(sizev,x)
+  in
+    filter test clausel
+  end
+  
+fun conflict_clauses2 numbera sizev varv (v1,v2) =
+  let 
+    val clausel1 = Vector.sub (varv,v1)
+    val clausel2 = Vector.sub (varv,v2)
+    val clauseu = mk_fast_set Int.compare (clausel1 @ clausel2)
+    val d2 = enew Int.compare clausel2
+    val clausei = filter (fn x => emem x d2) clausel1
+    fun test1 x = Array.sub (numbera,x) + 1 >= Vector.sub(sizev,x)
+    fun test2 x = Array.sub (numbera,x) + 2 >= Vector.sub(sizev,x)
+  in
+    filter test1 clauseu @ filter test2 clausei 
+  end  
+
+fun test_allsingleton size holeedgel prevccl numbera sizev varv clausev vlopp =
+  let
+    val _ = print_endline "compute conflicts"
+    val vccl = map_assoc (conflict_clauses numbera sizev varv) vlopp
+    fun score_edge (v,ccl) = 
+      let
+        val (holedge,_) = dec_edgec v
+        val clausel = map (fn x => Vector.sub (clausev,x)) 
+          (mk_fast_set Int.compare (prevccl @ ccl)) 
+        val newholeedgel = holedge :: holeedgel
+        val holed = enew edge_compare newholeedgel
+        val clausel' = map (filter (fn (x,_) => emem x holed)) clausel 
+      in
+        model_counter size newholeedgel clausel'
+      end
+    val vccli = map_assoc score_edge vccl
+    fun f ((v,ccl),i) = 
+      print_endline (
+        (string_of_edgec o dec_edgec) v ^ " " ^
+        its (length ccl) ^ " " ^
+        its i
+      )
+  in
+    print_endline ("edge conflicts cover");
+    app f vccli
+  end
+  
+fun best_vlopp size holeedgel prevccl numbera sizev varv clausev vlopp =
+  let
+    val vccl = map_assoc (conflict_clauses numbera sizev varv) vlopp
+    fun score_edge (v,ccl) = 
+      let
+        val (holedge,_) = dec_edgec v
+        val newccl = mk_fast_set Int.compare (prevccl @ ccl)
+        val clausel = map (fn x => Vector.sub (clausev,x)) newccl
+        val newholeedgel = holedge :: holeedgel
+        val holed = enew edge_compare newholeedgel
+        val clausel' = map (filter (fn (x,_) => emem x holed)) clausel
+      in
+        ((v,newccl), model_counter size (holedge :: holeedgel) clausel')
+      end
+    val vccli = map score_edge vccl
+    val ((v,finalccl),covern) = hd (dict_sort compare_imax vccli)
+    val _ = print_endline (
+      its (length holeedgel + 1) ^ ":  " ^ 
+      string_of_edgec (dec_edgec v) ^ " " ^
+      its (length (finalccl)) ^ " " ^ its covern
+      )
+  in
+    (v,finalccl)
+  end
+  
+fun best_vvlopp size holeedgel prevccl numbera sizev varv clausev vlopp =
+  let
+    val vccl = map_assoc (conflict_clauses2 numbera sizev varv) 
+      (all_pairs vlopp)
+    fun score_edge ((v1,v2),ccl) = 
+      let
+        val (edge1,edge2) = (fst (dec_edgec v1), fst (dec_edgec v2))
+        val newccl = mk_fast_set Int.compare (prevccl @ ccl)
+        val clausel = map (fn x => Vector.sub (clausev,x)) newccl
+        val newholeedgel = edge1 :: edge2 :: holeedgel
+        val holed = enew edge_compare newholeedgel
+        val clausel' = map (filter (fn (x,_) => emem x holed)) clausel
+      in
+        (((v1,v2),newccl), model_counter size newholeedgel clausel')
+      end
+    val vccli = map score_edge vccl
+    val ((vv,finalccl),covern) = hd (dict_sort compare_imax vccli)
+    val _ = print_endline (
+      its (length holeedgel + 1) ^ ":  " ^ 
+      string_of_edgec (dec_edgec (fst vv)) ^ " " ^
+      string_of_edgec (dec_edgec (snd vv)) ^ " " ^
+      its (length (finalccl)) ^ " " ^ its covern
+      )
+  in
+    (vv,finalccl)
+  end  
+  
+(*
+todo: make a incremental model counter for faster counting
+(this kind of does not work unless components are sperated)
+(maybe don't care about the exact number)
+(maybe remove two at a time)
+
+fun conflict_var numbera v = 
+  let 
+    val clausel = Vector.sub (varv,v) 
+    fun has_conflict x = Array.sub (numbera, x) + 1 >= Vector.sub(sizev,x)
+  in
+    filter has_conflict clausel
+  end
+
+select the highest var with highest model count
+*)
 
 fun reduce_clause mat acc clause = case clause of
     [] => SOME (rev acc)
@@ -437,26 +560,56 @@ fun reduce_clause mat acc clause = case clause of
 
 fun ramsey_clauses_mat (bluen,redn) mat =
   List.mapPartial (reduce_clause mat []) 
-    (ramsey_clauses_bare (mat_size mat) (bluen,redn));
+    (ramsey_clauses_bare (mat_size mat) (bluen,redn))
+  handle Subscript => raise ERR "ramsey_clauses_mat" ""
 
 val extra_clausel = ref ([]: ((int * int) * int) list list)
   
-fun init_sgen_reduce size (bluen,redn) mat = 
+fun init_sgen_reduce (bluen,redn) mat = 
   let
-    val clauses1 = map (map_fst edge_to_var) 
-      (ramsey_clauses_mat (bluen,redn) mat @ !extra_clausel)
-    val clauses2 = map (map enc_color) clauses1
-    val clausev = Vector.fromList clauses2;
+    val size = mat_size mat
+    val vsize = size * (size - 1) (* div 2 times 2 *)
+    (* val clauses0 = ramsey_clauses_mat (bluen,redn) mat @ !extra_clausel *)
+    val clauses0 = 
+      map (map_fst var_to_edge) (sat.ramsey_clauses size (bluen,redn)) @ 
+      !extra_clausel
+    val clausev = Vector.fromList clauses0
+    val clauses2 = map (map enc_edgec) clauses0
     val claused = dnew (list_compare Int.compare) (number_snd 0 clauses2)
     fun g clause = map_assoc (fn _ => clause) clause
     val clauses3 = List.concat (map g clauses2)
     val clauses4 = dlist (dregroup Int.compare clauses3)
     val clauses5 = map_snd (map (fn x => dfind x claused)) clauses4
-    val clauses6 = map_snd (dict_sort Int.compare) clauses5
-    val varv = Vector.fromList (map snd clauses6)
+    val clausesd = dnew Int.compare clauses5
+    val varv = Vector.tabulate (vsize, fn x => (dfind x clausesd
+      handle NotFound => []))
   in
     (varv,clausev)
   end;
+
+(* 
+todo: rank all variables by the number of conflict 
+
+1) write the function for the ranking of edges.
+4) prefer edges that maximize the size of the cover (greedily)
+   tie-break minimum number of conflict
+   (maybe this will build too large clauses)
+   (maybe limit the size of clauses to 2 or 3).
+*)
+
+(*
+fun rank_var sizev a varv var =
+  let 
+    
+    val vlopp = map (enc_edgec o opposite) edgecgenl
+    fun f (v,cn) = 
+      print_endline (string_of_edgec (dec_edgec v) ^ ": " ^ its cn)
+    val l = dict_sort compare_imin (map_assoc conflicts vlopp)   
+  in
+    print_endline ("variable: conflict number");
+    app f l
+  end
+*)
 
 fun gen_simple (bluen,redn) edgecgenl nhole parenti leafi ntry =
   let
@@ -464,18 +617,23 @@ fun gen_simple (bluen,redn) edgecgenl nhole parenti leafi ntry =
     val parent = unzip_mat parenti
     val size = mat_size leaf
     (* initalization *)
-    val (varv,clausev) = init_sgen_reduce size (bluen,redn) parent
-    val sizev = Vector.map (fn x => length x) clausev (* changed *)
+    val _ = print_endline "initialization"
+    val (varv,clausev) = init_sgen_reduce (bluen,redn) parent
+    val sizev = Vector.map (fn x => length x) clausev
     val inita = Array.array (Vector.length clausev,0)
-    val edgecl = list_diff (mat_to_edgecl leaf) (mat_to_edgecl parent)
-    val _ = app (incr_numbera inita varv) (map enc_edgec edgecl)
-    val _ = test_allsingleton sizev inita varv edgecgenl
+    val holea = Array.array (Vector.length clausev,[])
+    (* val baseedgecl = list_diff (mat_to_edgecl leaf) (mat_to_edgecl parent) *)
+    val _ = app (incr_numbera inita varv) (map enc_edgec (mat_to_edgecl leaf))
+    val vlopp = map (enc_edgec o opposite) edgecgenl
+    val holeedgel = ref []
+    val prevccl = ref []
+    (* val _ = test_allsingleton size (!holeedgel) (!prevccl) 
+        inita sizev varv clausev vlopp *)
     (* generalization loop *)
     fun gen_loop () = 
       let
         val locala = Array.tabulate 
           (Array.length inita, fn i => Array.sub (inita,i))
-        val vlopp = shuffle (map (enc_edgec o opposite) edgecgenl)
         fun test v = 
           let val clausel = Vector.sub (varv,v) in
             all 
@@ -484,14 +642,23 @@ fun gen_simple (bluen,redn) edgecgenl nhole parenti leafi ntry =
         fun sgen_loop vl result = 
           if length result >= nhole then rev result else
           case vl of
-            [] => (test_allsingleton sizev locala varv edgecgenl; rev result)
-          | v :: rem => 
-            let val edge = fst (dec_edgec v) in
-              incr_numbera locala varv v;
-              sgen_loop (filter test rem) (edge :: result)
+            [] => rev result
+          | _ => 
+            let 
+              val ((v1,v2),ccl) = best_vvlopp size (!holeedgel) (!prevccl) 
+                locala sizev varv clausev vl
+              val (edge1,edge2) = (fst (dec_edgec v1),fst (dec_edgec v2))
+              val _ = prevccl := mk_fast_set Int.compare (ccl @ !prevccl)
+              val _ = holeedgel := edge1 :: edge2 :: !holeedgel
+              val newvl = filter (fn x => x <> v1 andalso x <> v2) vl
+              val newresult = edge1 :: edge2 :: result
+            in
+              incr_numbera locala varv v1; 
+              incr_numbera locala varv v2;
+              sgen_loop newvl newresult
             end   
       in
-        sgen_loop (filter test vlopp) []
+        sgen_loop vlopp []
       end 
     val rl = List.tabulate (ntry, fn _ => gen_loop ())
     val rli = map_assoc length rl

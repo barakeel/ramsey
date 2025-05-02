@@ -17,8 +17,11 @@ fun search_order_undirected size =
    ------------------------------------------------------------------------- *)
 
 val vartoedgev = Vector.fromList (search_order_undirected 50);
+
 fun var_to_edge x = Vector.sub (vartoedgev,x) 
   (* handle Subscript => raise ERR "var_to_edge" (its x) *)
+
+(* could be slightly faster if stored in matrix *)
 fun edge_to_var (x,y) = 
   if x < y then x + ((y * (y - 1)) div 2) else 
   raise ERR "edge_to_var" (its x ^ "-" ^ its y)
