@@ -83,6 +83,7 @@ sig
   val exist_clique_mat : mat -> int * int -> bool
   val exist_clique_edge : mat -> int * int -> edge -> bool
   val can_extend_edge : int * int -> mat -> edge -> bool
+  val all_clique_mat : mat -> int * int -> (int list) list
   
   (* converting from matrix representation to list of edges *)
   val mat_to_edgecl : mat -> coloring

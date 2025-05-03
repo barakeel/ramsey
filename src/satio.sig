@@ -19,7 +19,10 @@ sig
   val prove_cone : 
     graph.mat * graph.mat -> (int * bool) list -> 
     graph.mat * (graph.mat option * (real * int))
-  
-  val ramsey_clauses5_mat : graph.mat -> ((int * int) * int) list list
+    
+  val count_graph : int * int -> graph.mat -> int
+  val ramsey_clauses_fast : 
+    int * int -> graph.mat -> ((int * int) * int) list list
+
   
 end

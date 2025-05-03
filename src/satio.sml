@@ -12,6 +12,8 @@ val ERR = mk_HOL_ERR "satio"
    Exporting problems in the dimacs format (number the edges)
    ------------------------------------------------------------------------- *)
 
+val nvaro_glob = ref NONE  
+
 fun write_dimacs file clausel = 
   let
     val edgel = mk_fast_set edge_compare (map fst (List.concat clausel))
@@ -22,7 +24,10 @@ fun write_dimacs file clausel =
       else if c = 2 then its (dfind (i,j) edged)
       else raise ERR "write_dimacs" "unexpected color"       
     fun f clause = String.concatWith " " (map g clause) ^ " 0"
-    val header = "p cnf " ^ its (dlength edged) ^ " " ^ its (length clausel)
+    val nvar = case !nvaro_glob of 
+        NONE => dlength edged
+      | SOME n => n
+    val header = "p cnf " ^ its nvar ^ " " ^ its (length clausel)
     fun h ((i,j),v) = its i ^ "," ^ its j ^ " " ^ its v
   in
     writel file (header :: map f clausel);
@@ -70,27 +75,36 @@ fun read_sol file =
 (* sometimes completion does not complete fully ?? *)
 fun full m = ignore (assert null (all_holes m));
 
-fun reduce_clause_err mat acc clause = case clause of
-    [] => rev acc
-  | (lit as ((i,j),color)) :: m => 
-    let val newcolor = mat_sub (mat,i,j) in
-      if newcolor = 0 then reduce_clause_err mat (lit :: acc) m
-      else if color = newcolor then reduce_clause_err mat acc m 
-      else raise ERR "reduce_clause_err" ""
-    end;
 
-fun mk_clause5 mat color (a,b,c,d,e) = 
-  reduce_clause_err mat [] (map_assoc (fn _ => color) (all_pairs [a,b,c,d,e]));
+fun all_pairs_f f l = case l of
+    [] => ()
+  | a :: m => (app (f a) m; all_pairs_f f m);
 
-fun ramsey_clauses5_mat m = 
+fun ramsey_clause m color clique = 
   let 
-    val clb = all_5cliques blue m
-    val clb2 = map (mk_clause5 m blue) clb
-    val clr = all_5cliques red m  
-    val clr2 = map (mk_clause5 m red) clr
+    val clause = ref []
+    fun ramsey_lit i j =   
+      let val newcolor = mat_sub (m,i,j) in
+        if newcolor = 0 
+          then clause := (if i < j then (i,j) else (j,i), color) :: !clause
+        else if newcolor = color then ()
+        else raise ERR "ramsey_clause" ""
+      end
+  in
+    all_pairs_f ramsey_lit clique;
+    rev (!clause)
+  end
+   
+fun ramsey_clauses_fast (bluen,redn) m = 
+  let 
+    val clb = all_clique_mat m (blue,bluen)
+    val clb2 = map (ramsey_clause m blue) clb
+    val clr = all_clique_mat m (red,redn)
+    val clr2 = map (ramsey_clause m red) clr
   in
     clb2 @ clr2
   end
+   
 
 fun read_instructions file = 
   let 
@@ -103,14 +117,11 @@ fun read_instructions file =
     t
   end 
 
-fun complete_graph (bsize,rsize) m = 
+fun complete_graph (bluen,redn) m = 
   let
     val file = selfdir ^ "/aaa_complete"
     val statfile = selfdir ^ "/perf_stat_out"
-    val clausel = 
-      if (bsize,rsize) = (5,5)
-      then ramsey_clauses5_mat m
-      else ramsey_clauses_mat (bsize,rsize) m
+    val clausel = ramsey_clauses_fast (bluen,redn) m
     val _ = write_dimacs file clausel
     val cmd = "perf stat -e instructions:u cadical -q " ^ 
       file ^ " > " ^ file ^ "_sol" ^ " 2> " ^ statfile
@@ -124,15 +135,45 @@ fun complete_graph (bsize,rsize) m =
         full newm; (SOME newm,(t1,t2))
       end
   end
+  
+(* -------------------------------------------------------------------------
+   Model counter
+   ------------------------------------------------------------------------- *)  
+
+fun count_graph (bluen,redn) m = 
+  let
+    val file = selfdir ^ "/aaa_count"
+    val clausel = ramsey_clauses_fast (bluen,redn) m
+    val _ = nvaro_glob := SOME (number_of_holes m)
+    val _ = write_dimacs file clausel
+    val _ = nvaro_glob := NONE
+    val cmd = "ganak --verb 0 " ^ file ^ " > " ^ file ^ "_out"
+    val _ = cmd_in_dir selfdir cmd
+    val sl = readl (file ^ "_out")
+    val s1 = last (butlast sl)
+    val s2 = last sl
+    val _ = if not (String.isPrefix "c s exact arb int" s1)
+            then raise ERR "count_graph" ""
+            else ()
+    val _ = if not (String.isPrefix "c o exact arb" s2)
+            then raise ERR "count_graph" ""
+            else ()
+    val i1 = string_to_int (last (String.tokens Char.isSpace s1))
+    val i2 = string_to_int (last (String.tokens Char.isSpace s2))
+  in
+    if i1 <> i2 then raise ERR "count_graph" "" else i1
+  end
 
 (* -------------------------------------------------------------------------
    Write sat problems (without edge correspondance) + 
    shift the indices by 1
    ------------------------------------------------------------------------- *)
-   
+
 fun write_pdimacs file clausel = 
   let
-    val nvar = list_imax (map fst (List.concat clausel)) + 1
+    val nvar = case !nvaro_glob of 
+        NONE => list_imax (map fst (List.concat clausel)) + 1
+      | SOME n => n
     fun g (i,b) = (if not b then "-" else "") ^ its (i+1)     
     fun f clause = String.concatWith " " (map g clause) ^ " 0"
     val header = "p cnf " ^ its nvar ^ " " ^ its (length clausel)
@@ -152,11 +193,8 @@ fun read_pdimacs file = map (read_pclause) (readl file)
 (* maybe: do this with edge variables *)
 fun all_cones54 m = 
   let
-    val cliqueb = all_cliques 4 blue m;
-    (* val cliquer = all_cliques 3 red m; *)
-    val satclauseb = map (map_assoc (fn _ => false)) cliqueb;
-    (* val satclauser = map (map_assoc (fn _ => true)) cliquer; *)
-    val clausel = satclauseb (* @ satclauser *)
+    val cliqueb =  all_clique_mat m (blue,4)
+    val clausel = map (map_assoc (fn _ => false)) cliqueb;
     val filein = selfdir ^ "/aaa_cones54"
     val fileout = filein ^ "_all"
     val filedebug = filein ^ "_debug"
@@ -234,7 +272,11 @@ open aiLib kernel graph enum glue satio nauty gen;
 val ERR = mk_HOL_ERR "test";
 
 val (m45,m54) = random_split (43,20,9,10);
+(* todo: reveals the regions *)
+
 val m55 = diag_mat m45 m54;
+val (l1,t) = add_time (all_clique_mat m55) (blue,5);
+val (l3,t) = add_time (all_5cliques blue) m55;
 
 val (conel,t1) = add_time all_cones54 m54;
 val cone = random_elem conel;
@@ -245,15 +287,44 @@ val mv = mat_vertex0 43 20;
 val m55es1 = mat_shift1 m55e;
 val m55f = valOf (mat_merge mv m55es1);
 
-val (m55fo,t3) = complete_graph (5,5) m55f;
-
+fun prepare_m m = 
+  let 
+    fun f (i,j) = 
+      if i=j then 0 else 
+      let val color = mat_sub (m,i,j) in
+        if color = 0 then 3 else color
+      end
+  in
+    mat_tabulate (mat_size m,f)
+  end;
+  
+val m55f3 = prepare_m m55f;
 val edgel = all_cedges m55f;
 
 
-val ((r1,t1),t2) = add_time (complete_graph (5,5)) m55;
+val (a,b) = random_elem edgel;
+val mc = mat_copy m55f3;
+val _ = mat_update_sym (mc,a,b,0);
+val clb = all_5cliques blue mc;
+val clr = all_5cliques red mc;
+mat_sub (m55f3,a,b);
+val (r,t) = add_time (count_graph (5,5)) mc;
 
-(the top matrix, list of generalized matrix)
 
+fun count_gen m (a,b) =
+  let
+    val mc = mat_copy m
+    val _ = mat_update_sym (mc,a,b,0)
+    val (r,t) = add_time (count_graph (5,5)) mc;
+  in
+    ((a,b),r)
+  end;
+
+val edgerl = map (count_gen m55f3) edgel;
+
+val edgerl2 = dict_sort compare_imax edgerl;
+
+val x = length (filter (fn x => snd x > 1) edgerl);
 
 fun prove_gen m edge =
   let
@@ -268,6 +339,14 @@ fun prove_gen m edge =
 todo use perf for comparing speeds 
 todo do not generalize over impossible graphs?
 *)
+
+(* 
+- better counting by enumerating solutions and removing duplicates 
+- prevent from generalizing in the splits
+(0,anything) or (1,<20) (20,>21)
+
+*)
+
 
 *)
 

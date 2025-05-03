@@ -528,7 +528,7 @@ fun all_5cliques color m =
   end
 
 (* -------------------------------------------------------------------------
-   Efficiently checking if a graph contains a k-clique or not
+   Cliques
    ------------------------------------------------------------------------- *)
 
 fun exist_withtail f l = case l of 
@@ -573,7 +573,31 @@ fun can_extend_edge (bsize,rsize) m (a,b) =
     exist_clique_edge m (color,size) (a,b)
   end
 
+(* -------------------------------------------------------------------------
+   List all cliques of size n
+   ------------------------------------------------------------------------- *)
 
+fun all_withtail f l = case l of 
+    [] => []
+  | a :: m => (f a m @ all_withtail f m)
 
+fun all_clique_v n f v l =
+  map (fn x => v :: x) (all_clique (n-1) f (filter (fn x => f(v,x)) l))
+
+and all_clique n f l = 
+  if n = 0 then [[]] else
+  if length l < n then [] else
+  all_withtail (all_clique_v n f) l
+;  
+
+fun all_clique_mat m (color,size) =
+  let 
+    fun f (i,j) = let val newcolor = mat_sub (m,i,j) in
+                    newcolor = color orelse newcolor = 0
+                  end
+    val vl = List.tabulate (mat_size m,I)
+  in
+    all_clique size f vl
+  end
 
 end (* struct *)
