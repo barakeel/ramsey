@@ -242,8 +242,11 @@ fun random_split (size,nb,nbb,nrb) =
     val m54r1 = mat_shift1 m54r0
     val mvr = mat_vertex0 nr nrb
     val m54r2 = valOf (mat_merge mvr m54r1)
+    val m55diag = diag_mat m45b2 m54r2
+    val mv = mat_vertex0 size nb
+    val m55 = valOf (mat_merge mv (mat_shift1 m55diag))
   in
-    (m45b2,m54r2)
+    m55
   end
   
 fun prove_cone (m45,m54) cone =
@@ -274,7 +277,7 @@ val ERR = mk_HOL_ERR "test";
 val (m45,m54) = random_split (43,20,9,10);
 (* todo: reveals the regions *)
 
-val m55 = diag_mat m45 m54;
+
 val (l1,t) = add_time (all_clique_mat m55) (blue,5);
 val (l3,t) = add_time (all_5cliques blue) m55;
 

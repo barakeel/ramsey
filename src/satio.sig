@@ -15,7 +15,7 @@ sig
   
   val mat_shift1 : graph.mat -> graph.mat
   val mat_vertex0 : int -> int -> graph.mat
-  val random_split : int * int * int * int -> graph.mat * graph.mat
+  val random_split : int * int * int * int -> graph.mat
   val prove_cone : 
     graph.mat * graph.mat -> (int * bool) list -> 
     graph.mat * (graph.mat option * (real * int))
