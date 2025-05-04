@@ -37,10 +37,10 @@ sig
   val unzip_full_edgecl : int -> IntInf.int -> ((int * int) * int) list
   
   (* debug *)
-  val string_of_edge : (int * int) -> string
-  val string_of_edgel : (int * int) list -> string
-  val string_of_edgec : ((int * int) * int) -> string
-  val string_of_edgecl : ((int * int) * int) list -> string
+  val string_of_edge : edge -> string
+  val string_of_edgel : edge list -> string
+  val string_of_edgec : (edge * color) -> string
+  val string_of_edgecl : coloring -> string
   val string_of_graph : mat -> string
   val string_of_bluegraph : mat -> string
   val string_of_mat : mat -> string
@@ -68,7 +68,8 @@ sig
   val neighbor_of : int -> mat -> int -> int list
   val commonneighbor_of : int -> mat -> int * int -> int list
   val inneighbor_of : int -> mat -> int -> int list
-  
+  val neighborm_of : int -> mat -> int -> mat
+ 
   (* properties *)
   val number_of_edges : mat -> int
   val number_of_holes : mat -> int

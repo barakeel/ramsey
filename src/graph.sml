@@ -333,6 +333,11 @@ fun mk_permf perm =
     f 
   end
 
+fun neighborm_of color m v =
+  let val vl = neighbor_of color m v in
+    mat_permute (m,length vl) (mk_permf vl)
+  end
+
 (* only works for full perm *)
 fun invert_perm perm = 
   let val permd = dnew Int.compare (number_snd 0 perm) in
