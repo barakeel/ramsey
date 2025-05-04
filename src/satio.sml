@@ -375,10 +375,10 @@ fun loop_gen mc edgel (((gen,cover),(tr,ta)),sc) =
     val l2 = map (fn x => gen @ [x]) l1
     val (l3,t) = add_time (map_assoc (count_gen mc)) l2
     val l4 = filter (fn x => snd x > cover) l3
-    val _ = print_endline ("count: " ^ rts_round 2 t ^ " " ^ 
-              its (length l4) ^ "/" ^ its (length l3))
+    val _ = log ("count: " ^ rts_round 2 t ^ " " ^ 
+      its (length l4) ^ "/" ^ its (length l3))
     val (l5,t) = add_time (map_assoc (fn x => prove_gen limit mc 0 (fst x))) l4
-    val _ = print_endline ("prove: " ^ rts_round 2 t)
+    val _ = log ("prove: " ^ rts_round 2 t)
     val l6 = map_snd valOf (filter (fn x => isSome (snd x)) l5)
     fun score ((a,b),(c,d)) = int_div d b
     val l7 = dict_sort compare_rmin (map_assoc score l6)
@@ -386,7 +386,7 @@ fun loop_gen mc edgel (((gen,cover),(tr,ta)),sc) =
     if null l7 then (((gen,cover),(tr,ta)),sc) else
     let  
       val (((newgen,newcover),(newtr,newta)),newsc) = hd l7
-      val _ = print_endline (its (length newgen) ^ ": " ^
+      val _ = log (its (length newgen) ^ ": " ^
               string_of_edgel newgen ^ " " ^
               its newcover ^ " " ^ rts_round 2 newtr ^ " " ^ 
               its newta ^ " " ^ rts_round 2 sc)   
@@ -409,6 +409,8 @@ val (tr,ta) = prove_cone m55 cone;
 val m55c = valOf (mat_merge m55 (edgecl_to_mat (mat_size m55) cone));
 val edgel = generalizable_edgel m55 m55c;
 val gen0 = ((([]: (int * int) list,1),(tr,ta)), int_div ta 1);
+store_log := true;
+log_file := selfdir ^ "/aaa_log_loop_gen";
 val r = loop_gen m55c edgel gen0;
 
 *)
