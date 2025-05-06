@@ -141,5 +141,56 @@ val timer_glob3 = ref 0.0
 val timer_glob4 = ref 0.0
 val timer_glob5 = ref 0.0
 
+(* -------------------------------------------------------------------------
+   General parallelizer for function : unit -> string -> string
+   as long as the function can be named
+   ------------------------------------------------------------------------- *)
+
+fun write_string file s = writel file [s]
+fun read_string file = singleton_of_list (readl file)
+fun write_unit file () = ()
+fun read_unit file = ()
+
+fun stringspec_fun_default (s:string) = "default"
+val stringspec_fun_glob = ref stringspec_fun_default
+val stringspec_funname_glob = ref "kernel.stringspec_fun_default"
+
+val stringspec : (unit, string, string) smlParallel.extspec =
+  {
+  self_dir = selfdir,
+  self = "kernel.stringspec",
+  parallel_dir = selfdir ^ "/parallel_search",
+  reflect_globals = (fn () => "(" ^
+    String.concatWith "; "
+    [
+    "smlExecScripts.buildheap_dir := " ^ 
+       mlquote (!smlExecScripts.buildheap_dir),
+    "kernel.stringspec_fun_glob := " ^ (!stringspec_funname_glob)
+    ]
+    ^ ")"),
+  function = let fun f () s = (!stringspec_fun_glob) s in f end,
+  write_param = write_unit,
+  read_param = read_unit,
+  write_arg = write_string,
+  read_arg = read_string,
+  write_result = write_string,
+  read_result = read_string
+  }
+
+fun parmap_sl ncore funname sl =
+  let
+    val dir = selfdir ^ "/exp/reserved_stringspec"
+    val _ = app mkDir_err [(selfdir ^ "/exp"), dir] 
+    val _ = stringspec_funname_glob := funname
+    val _ = smlExecScripts.buildheap_dir := dir
+    val slo = smlParallel.parmap_queue_extern ncore stringspec () sl
+  in
+    slo
+  end
+
+fun test_fun s = (implode o rev o explode) s
+
+
+
 
 end (* struct *)

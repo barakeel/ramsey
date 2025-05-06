@@ -45,4 +45,13 @@ sig
   val timer_glob4 : real ref
   val timer_glob5 : real ref
   
+  (* parallelization of function of the type string to string *)
+  val stringspec_fun_default : string -> string
+  val stringspec_fun_glob : (string -> string) ref
+  val stringspec_funname_glob : string ref
+  val stringspec : (unit, string, string) smlParallel.extspec
+  val parmap_sl : int -> string -> string list -> string list
+  val test_fun : string -> string
+
+  
 end

@@ -142,8 +142,11 @@ fun inneighbor_of color graph x =
    ------------------------------------------------------------------------- *)
 
 fun string_of_edge (i,j) = its i ^ "-" ^ its j
+fun edge_of_string s = pair_of_list (map string_to_int 
+  (String.tokens (fn x => x = #"-") s))
 
 fun string_of_edgel edgel = String.concatWith " " (map string_of_edge edgel)
+fun edgel_of_string s = map edge_of_string (String.tokens Char.isSpace s)
 
 fun string_of_edgec ((i,j),x) = its i ^ "-" ^ its j ^ ":" ^ its x
 
@@ -259,6 +262,27 @@ end (* local *)
 
 fun szip_mat m = IntInf.toString (zip_mat m)
 fun sunzip_mat s = unzip_mat (valOf (IntInf.fromString s))
+
+
+val base64chars = Vector.fromList (
+  List.tabulate (26, fn i => Char.chr (i + Char.ord #"A")) @
+  List.tabulate (26, fn i => Char.chr (i + Char.ord #"a")) @
+  List.tabulate (10, fn i => Char.chr (i + Char.ord #"0")) @
+  [#"-", #"_"])
+
+local open IntInf in
+
+fun base10to64rev i = 
+  if i < 0 then raise ERR "base10to64rev" "negative" 
+  else if i < 64 then [IntInf.toInt i] 
+  else IntInf.toInt (i mod 64) :: base10to64rev (i div 64) 
+
+end
+
+fun name_mat m = 
+  let val l = rev (base10to64rev (zip_mat m)) in 
+    implode (map (fn x => Vector.sub (base64chars,x)) l)
+  end
 
 
 local open IntInf in

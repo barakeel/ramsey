@@ -35,10 +35,13 @@ sig
   val zip_full : mat -> IntInf.int
   val unzip_full : int -> IntInf.int -> mat
   val unzip_full_edgecl : int -> IntInf.int -> ((int * int) * int) list
+  val name_mat : mat -> string
   
   (* debug *)
   val string_of_edge : edge -> string
+  val edge_of_string : string -> edge
   val string_of_edgel : edge list -> string
+  val edgel_of_string : string -> edge list
   val string_of_edgec : (edge * color) -> string
   val string_of_edgecl : coloring -> string
   val string_of_graph : mat -> string

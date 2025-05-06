@@ -31,14 +31,18 @@ sig
   val prove_cone : mat -> coloring -> (real * int)
   
   (* generalization *)  
-  val count_graph : int * int -> mat -> int
-  val count_gen : mat -> edge list -> int
+  val count_graph : int * int -> mat -> IntInf.int
+  val count_gen : mat -> edge list -> IntInf.int
   val prove_gen : real ->  mat -> int -> edge list -> (real * int) option
   val generalizable_edgel : mat -> mat -> edge list
   val loop_gen : mat -> edge list ->
-    ((edge list * int) * (real * int)) * real ->
-    ((edge list * int) * (real * int)) * real
+    ((edge list * IntInf.int) * (real * int)) * IntInf.int ->
+    ((edge list * IntInf.int) * (real * int)) * IntInf.int
 
-  
+  val generalize_string : string -> string
+  val para_loop_gen : int -> mat -> edge list ->
+    ((edge list * IntInf.int) * (real * int)) * IntInf.int ->
+    ((edge list * IntInf.int) * (real * int)) * IntInf.int
+
   
 end
