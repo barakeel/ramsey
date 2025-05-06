@@ -229,36 +229,35 @@ fun complete_graph_all (bluen,redn) m =
     r
   end  
 
+fun read_count fileout = 
+  stinf (last (String.tokens Char.isSpace (last (readl fileout))))
+
+val model_counter = "d4"
+
 fun count_graph (bluen,redn) m = 
   let
     val dir = selfdir ^ "/sat_calls"
     val _ = mkDir_err dir
-    val file = dir ^ "/gan_" ^ name_mat m
+    val prefix = implode (first_n 3 (explode model_counter))
+    val file = dir ^ "/" ^ prefix ^ "_" ^ name_mat m
     val filemap = file ^ "_map"
     val fileout = file ^ "_out"
-    fun clean () = app remove_file [file,filemap,fileout]
+    val filedbg = file ^ "_dbg"
+    fun clean () = app remove_file [file,filemap,fileout,filedbg]
     val _ = clean ()
     val clausel = ramsey_clauses_fast (bluen,redn) m
     val _ = nvaro_glob := SOME (number_of_holes m)
     val _ = write_dimacs file clausel
     val _ = nvaro_glob := NONE
-    val cmd = "ganak --verb 0 " ^ file ^ " > " ^ fileout
+    val cmd = (if model_counter = "ganak" then "ganak --verb 0"
+               else if model_counter = "d4" then "d4 -mc" else
+               raise ERR "count_graph" model_counter) ^
+              " " ^ file ^ " > " ^ fileout ^ " 2> " ^ filedbg
     val _ = cmd_in_dir selfdir cmd
-    val sl = readl fileout
+    val count = read_count fileout 
     val _ = clean ()
-    val s1 = last (butlast sl)
-    val s2 = last sl
-    val _ = if not (String.isPrefix "c s exact arb int" s1)
-            then raise ERR "count_graph" ""
-            else ()
-    val _ = if not (String.isPrefix "c o exact arb" s2)
-            then raise ERR "count_graph" ""
-            else ()
-    val i1 = stinf (last (String.tokens Char.isSpace s1))
-    val i2 = stinf (last (String.tokens Char.isSpace s2))
-    
   in
-    if i1 <> i2 then raise ERR "count_graph" "" else i1
+    count
   end
 
 (* -------------------------------------------------------------------------
@@ -557,7 +556,7 @@ fun score ((_,coverloc),(_,taloc)) =
 val gen0 = (([]: (int * int) list,IntInf.fromInt 1),(tr,ta));
 val sc = score gen0;
 
-val r = para_loop_gen 2 m55c pool (gen0,sc);
+val r = para_loop_gen 64 m55c pool (gen0,sc);
 
 val r = loop_gen m55c pool (gen0,sc);
 *)
