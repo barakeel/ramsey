@@ -464,7 +464,8 @@ fun generalize limit mcone edgel =
     case r1 of NONE => (IntInf.fromInt 0,0.0,0) | SOME _ =>
     let 
       val covera = if nocount_flag then 0 else count_graph (5,5) mcount
-      val _ = if covera <= 0 then raise ERR "generalize" "" else ()
+      val _ = if (not nocount_flag andalso covera <= 0) 
+        then raise ERR "generalize" "" else ()
       val mprove = mk_mprove mcone edgel
       val r2 = SOME (complete_graph (SOME limit) (5,5) mprove)
                handle ProofTimeout => NONE
@@ -575,22 +576,25 @@ open aiLib kernel graph enum glue satio nauty gen;
 val ERR = mk_HOL_ERR "test";
 
 store_log := true;
-logfile := selfdir ^ "/aaa_log_ramsey_d4";
+logfile := selfdir ^ "/aaa_log_ramsey_nocount";
 val _ = erase_file (!logfile);
 
 val (m55s,m55cs) = pair_of_list (readl (selfdir ^ "/aaa_m_1"));
 val m55 = sunzip_mat m55s;
 val m55c = sunzip_mat m55cs;
-
 val pool = generalizable_edgel m55 m55c;
-fun score ((_,coverloc),(_,taloc)) = 
-      IntInf.div (IntInf.fromInt taloc * IntInf.pow(10,100), coverloc);
-val gen0 = (([]: (int * int) list,IntInf.fromInt 1),(0.5,valOf (Int.maxInt)));
-val sc = score gen0;
+
+val gen0 = ((([]: (int * int) list,IntInf.fromInt 1),(0.5,valOf (Int.maxInt))),IntInf.fromInt 0);
 
 
 
-val r = para_loop_gen 64 m55c pool (gen0,sc);
+val edgel = edgel_of_string "28-42 2-19 3-15 25-31 2-11 18-19 7-19 5-7 2-12 26-33 29-31 4-20 29-30 2-16 22-38 4-16 6-8 3-9 7-13 31-42 28-34 8-9 29-38 8-12 7-14 17-18 5-12 6-14 8-16 3-10 8-19 8-11 35-36 2-9 9-11 6-20 5-19 29-33 15-20 10-16 2-8 14-19 26-34 11-18 34-37 5-13 1-28 6-16 9-16 7-20 10-17 7-17 4-14 10-11 2-13 2-10 7-11 8-17 2-4 5-17 1-31 39-41 13-19 33-34 7-16 12-15 3-13 32-35 3-5 1-39 30-31 36-38 7-15 10-18 27-31 17-20 26-31 23-26 24-28 24-37 1-37 1-33 32-33 9-20 16-17 8-14 22-24 10-19 3-12 4-13 10-20 15-19 6-13 3-11 3-16 9-19 4-5 1-32 1-40 18-20 23-42";
+
+val arb0 = IntInf.fromInt 0;
+val arb1 = IntInf.fromInt 1;
+val gen101 = (((edgel,arb1),(0.33,1)),arb0);
+
+val r = para_loop_gen 64 m55c pool gen101;
 
 *)
 
