@@ -459,11 +459,12 @@ val nocount_flag = true
 fun generalize limit mcone edgel =
   let
     val mcount = mk_mcount mcone edgel
-    val (r1,_) = complete_graph NONE (5,5) mcount
+    val (r1,(tr',ta')) = complete_graph NONE (5,5) mcount
+    val _ = print_endline ("filter: " ^ rts_round 2 tr')
   in
     case r1 of NONE => (IntInf.fromInt 0,0.0,0) | SOME _ =>
     let 
-      val covera = if nocount_flag then 0 else count_graph (5,5) mcount
+      val covera = if nocount_flag then 1 else count_graph (5,5) mcount
       val _ = if (not nocount_flag andalso covera <= 0) 
         then raise ERR "generalize" "" else ()
       val mprove = mk_mprove mcone edgel
@@ -472,7 +473,9 @@ fun generalize limit mcone edgel =
     in
       case r2 of 
         NONE => (IntInf.fromInt (~1),0.0,0) 
-      | SOME (_,(tr,ta)) => (covera,tr,ta)
+      | SOME (_,(tr,ta)) =>
+        (print_endline ("prove: " ^ rts_round 2 tr');
+         (covera,tr,ta))
     end
   end
   
@@ -487,14 +490,15 @@ fun generalize_string s =
     String.concatWith " " [infts covera, rts tr, its ta]
   end
 
-fun stats_list l1 =
+fun stats_list l =
   let
-    val lconfig = filter (fn (_,(x,_,_)) => x = 0) l1
-    val _ = log ("noconfig: " ^ its (length lconfig)) 
-    val ltimeout = filter (fn (_,(x,_,_)) => x = ~1) l1
-    val _ = log ("timeout: " ^ its (length ltimeout)) 
+    val l1 = filter (fn (_,(x,_,_)) => x > 0) l
+    val l2 = filter (fn (_,(x,_,_)) => x = 0) l
+    val l3 = filter (fn (_,(x,_,_)) => x < 0) l
   in
-    ()
+    log ("positive count: " ^ its (length l1) ^
+         ", null count: " ^ its (length l2) ^
+         ", timeout: " ^ its (length l3))
   end
  
 fun stats_best (((newgen,newcover),(newtr,newta)),newsc) =
@@ -521,20 +525,21 @@ fun para_loop_gen ncore mcone pool (genorg as (((gen,cover),(tr,ta)),sc)) =
     val _ = stats_list l1
     val l2 = filter (fn (_,(x,_,_)) => x > 0) l1
     val l3 = map (fn (a,(b,c,d)) => ((a, 
-      if nocount_flag then b * 2 else b + cover),(c,d))) l2
+      if nocount_flag then cover * 2 else b + cover),(c,d))) l2
     fun score ((_,coverloc),(_,taloc)) = 
       IntInf.div (IntInf.fromInt taloc * IntInf.pow(10,100), coverloc)
     val l4 = dict_sort (snd_compare IntInf.compare) (map_assoc score l3)
+    val _ = print_endline (its (length l4))
   in
-    if null l4 then genorg else
+    if null l4 then (print_endline "end1"; genorg) else
     let  
       val best = hd l4
       val newtr = fst (snd (fst best))
       val _ = stats_best best
     in
       if (not nocount_flag andalso sc < snd best) orelse
-         (nocount_flag andalso newtr > 10.0)
-      then genorg
+         (nocount_flag andalso newtr > 20.0)
+      then (print_endline "end2"; genorg)
       else para_loop_gen ncore mcone pool best
     end 
   end;
@@ -575,6 +580,8 @@ load "satio"; load "enum"; load "nauty"; load "gen";
 open aiLib kernel graph enum glue satio nauty gen;
 val ERR = mk_HOL_ERR "test";
 
+val arb0 = IntInf.fromInt 0;
+val arb1 = IntInf.fromInt 1;
 store_log := true;
 logfile := selfdir ^ "/aaa_log_ramsey_nocount";
 val _ = erase_file (!logfile);
@@ -584,14 +591,8 @@ val m55 = sunzip_mat m55s;
 val m55c = sunzip_mat m55cs;
 val pool = generalizable_edgel m55 m55c;
 
-val gen0 = ((([]: (int * int) list,IntInf.fromInt 1),(0.5,valOf (Int.maxInt))),IntInf.fromInt 0);
-
-
-
+val gen0 = ((([]: (int * int) list,arb1),(0.5,valOf (Int.maxInt))),arb0);
 val edgel = edgel_of_string "28-42 2-19 3-15 25-31 2-11 18-19 7-19 5-7 2-12 26-33 29-31 4-20 29-30 2-16 22-38 4-16 6-8 3-9 7-13 31-42 28-34 8-9 29-38 8-12 7-14 17-18 5-12 6-14 8-16 3-10 8-19 8-11 35-36 2-9 9-11 6-20 5-19 29-33 15-20 10-16 2-8 14-19 26-34 11-18 34-37 5-13 1-28 6-16 9-16 7-20 10-17 7-17 4-14 10-11 2-13 2-10 7-11 8-17 2-4 5-17 1-31 39-41 13-19 33-34 7-16 12-15 3-13 32-35 3-5 1-39 30-31 36-38 7-15 10-18 27-31 17-20 26-31 23-26 24-28 24-37 1-37 1-33 32-33 9-20 16-17 8-14 22-24 10-19 3-12 4-13 10-20 15-19 6-13 3-11 3-16 9-19 4-5 1-32 1-40 18-20 23-42";
-
-val arb0 = IntInf.fromInt 0;
-val arb1 = IntInf.fromInt 1;
 val gen101 = (((edgel,arb1),(0.33,1)),arb0);
 
 val r = para_loop_gen 64 m55c pool gen101;
