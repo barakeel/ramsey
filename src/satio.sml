@@ -454,6 +454,8 @@ fun mk_mprove mcone edgel =
     mprove
   end
 
+val nocount_flag = true
+
 fun generalize limit mcone edgel =
   let
     val mcount = mk_mcount mcone edgel
@@ -461,9 +463,8 @@ fun generalize limit mcone edgel =
   in
     case r1 of NONE => (IntInf.fromInt 0,0.0,0) | SOME _ =>
     let 
-      val covera = count_graph (5,5) mcount
-      val _ = if covera <= IntInf.fromInt 0 
-        then raise ERR "generalize" "" else ()
+      val covera = if nocount_flag then 0 else count_graph (5,5) mcount
+      val _ = if covera <= 0 then raise ERR "generalize" "" else ()
       val mprove = mk_mprove mcone edgel
       val r2 = SOME (complete_graph (SOME limit) (5,5) mprove)
                handle ProofTimeout => NONE
@@ -501,7 +502,7 @@ fun stats_best (((newgen,newcover),(newtr,newta)),newsc) =
        infts newcover ^ " " ^ rts_round 2 newtr ^ " " ^ 
        its newta ^ " " ^ infts newsc)   
  
-fun para_loop_gen ncore mcone pool (((gen,cover),(tr,ta)),sc) =
+fun para_loop_gen ncore mcone pool (genorg as (((gen,cover),(tr,ta)),sc)) =
   let
     val limit = tr * 2.0
     val pool' = filter (fn x => not (mem x gen)) pool
@@ -518,18 +519,22 @@ fun para_loop_gen ncore mcone pool (((gen,cover),(tr,ta)),sc) =
     val l1 = map_snd g (combine (genl,slout))
     val _ = stats_list l1
     val l2 = filter (fn (_,(x,_,_)) => x > 0) l1
-    val l3 = map (fn (a,(b,c,d)) => ((a,b + cover),(c,d))) l2
+    val l3 = map (fn (a,(b,c,d)) => ((a, 
+      if nocount_flag then b * 2 else b + cover),(c,d))) l2
     fun score ((_,coverloc),(_,taloc)) = 
       IntInf.div (IntInf.fromInt taloc * IntInf.pow(10,100), coverloc)
     val l4 = dict_sort (snd_compare IntInf.compare) (map_assoc score l3)
   in
-    if null l4 then (((gen,cover),(tr,ta)),sc) else
+    if null l4 then genorg else
     let  
       val best = hd l4
+      val newtr = fst (snd (fst best))
       val _ = stats_best best
     in
-      if sc < snd best then (((gen,cover),(tr,ta)),sc) else
-      para_loop_gen ncore mcone pool best
+      if (not nocount_flag andalso sc < snd best) orelse
+         (nocount_flag andalso newtr > 10.0)
+      then genorg
+      else para_loop_gen ncore mcone pool best
     end 
   end;
 
@@ -558,8 +563,37 @@ val sc = score gen0;
 
 val r = para_loop_gen 64 m55c pool (gen0,sc);
 
+
+
+
 val r = loop_gen m55c pool (gen0,sc);
 *)
+
+(*
+load "satio"; load "enum"; load "nauty"; load "gen";
+open aiLib kernel graph enum glue satio nauty gen;
+val ERR = mk_HOL_ERR "test";
+
+store_log := true;
+logfile := selfdir ^ "/aaa_log_ramsey_d4";
+val _ = erase_file (!logfile);
+
+val (m55s,m55cs) = pair_of_list (readl (selfdir ^ "/aaa_m_1"));
+val m55 = sunzip_mat m55s;
+val m55c = sunzip_mat m55cs;
+
+val pool = generalizable_edgel m55 m55c;
+fun score ((_,coverloc),(_,taloc)) = 
+      IntInf.div (IntInf.fromInt taloc * IntInf.pow(10,100), coverloc);
+val gen0 = (([]: (int * int) list,IntInf.fromInt 1),(0.5,valOf (Int.maxInt)));
+val sc = score gen0;
+
+
+
+val r = para_loop_gen 64 m55c pool (gen0,sc);
+
+*)
+
 
 
 end (* struct *)
