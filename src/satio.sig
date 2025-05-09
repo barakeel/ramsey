@@ -28,7 +28,6 @@ sig
   
   (* cones *)
   val enum_mcone : mat -> coloring list
-  val prove_cone : mat -> coloring -> (real * int)
   
   (* generalization *)  
   val count_graph : int * int -> mat -> IntInf.int
@@ -43,6 +42,9 @@ sig
   val para_loop_gen : int -> mat -> edge list ->
     ((edge list * IntInf.int) * (real * int)) * IntInf.int ->
     ((edge list * IntInf.int) * (real * int)) * IntInf.int
-
   
+  (* proving *)
+  val prove_graph_string : string -> string
+  val para_prove_cone : int -> graph.mat -> unit
+
 end

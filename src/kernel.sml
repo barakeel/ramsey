@@ -141,6 +141,9 @@ val timer_glob3 = ref 0.0
 val timer_glob4 = ref 0.0
 val timer_glob5 = ref 0.0
 
+val arb0 = IntInf.fromInt 0;
+val arb1 = IntInf.fromInt 1;
+
 (* -------------------------------------------------------------------------
    General parallelizer for function : unit -> string -> string
    as long as the function can be named

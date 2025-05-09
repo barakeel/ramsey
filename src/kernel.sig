@@ -37,6 +37,8 @@ sig
   val streal : string -> real
   val stil : string -> int list
   val ilts : int list -> string
+  val arb0 : IntInf.int
+  val arb1 : IntInf.int
   
   (* debugging timers *)
   val timer_glob1 : real ref

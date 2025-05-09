@@ -207,7 +207,6 @@ fun complete_graph limito (bluen,redn) m =
     finalr
   end
   
-  
 fun complete_graph_all (bluen,redn) m = 
   let
     val dir = selfdir ^ "/sat_calls"
@@ -327,17 +326,6 @@ fun create_mcone m =
   end;
   
 fun enum_mcone m = complete_graph_all (5,5) (create_mcone m)
-  
-fun prove_cone m edgecl =
-  let
-    val mc1 = edgecl_to_mat (mat_size m) edgecl;
-    val mc2 = valOf (mat_merge m mc1);
-    val (ro,t) = complete_graph NONE (5,5) mc2
-  in
-    case ro of 
-      SOME _ => raise ERR "prove_cone" "satisifiable"
-    | NONE => t
-  end
 
 (* -------------------------------------------------------------------------
    Generalization
@@ -526,8 +514,10 @@ fun para_loop_gen ncore mcone pool (genorg as (((gen,cover),(tr,ta)),sc)) =
     val l2 = filter (fn (_,(x,_,_)) => x > 0) l1
     val l3 = map (fn (a,(b,c,d)) => ((a, 
       if nocount_flag then cover * 2 else b + cover),(c,d))) l2
-    fun score ((_,coverloc),(_,taloc)) = 
-      IntInf.div (IntInf.fromInt taloc * IntInf.pow(10,100), coverloc)
+    fun score ((_,coverloc),(trloc,taloc)) = 
+      if nocount_flag 
+      then IntInf.fromInt taloc
+      else IntInf.div (IntInf.fromInt taloc * IntInf.pow(10,100), coverloc)
     val l4 = dict_sort (snd_compare IntInf.compare) (map_assoc score l3)
     val _ = print_endline (its (length l4))
   in
@@ -544,6 +534,48 @@ fun para_loop_gen ncore mcone pool (genorg as (((gen,cover),(tr,ta)),sc)) =
     end 
   end;
 
+(* -------------------------------------------------------------------------
+   Proving in parallel
+   ------------------------------------------------------------------------- *) 
+
+fun prove_graph_string s =
+  let val (ro,(tr,ta)) = complete_graph NONE (5,5) (sunzip_mat s) in
+    case ro of 
+      SOME _ => String.concatWith " " ["sat",rts tr,its ta]
+    | NONE => String.concatWith " " ["unsat",rts tr,its ta]
+  end
+
+fun read_prove_graph s = 
+  let val (s1,s2,s3) = triple_of_list (String.tokens Char.isSpace s) in
+    (s1,streal s2,string_to_int s3)
+  end 
+
+fun add_cone m cone = 
+  valOf (mat_merge m (edgecl_to_mat (mat_size m) cone))
+
+fun para_prove_cone ncore m =
+  let 
+    val dir = selfdir ^ "/result"
+    val _ = mkDir_err dir
+    val mem = !logfile
+    val _ = logfile := dir ^ "/cone_" ^ name_mat m ^ "_log"
+    val (conel,t) = add_time enum_mcone m
+    val _ = log ("cone: " ^ its (length conel) ^ " " ^ rts_round 2 t)
+    val ml = map (szip_mat o add_cone m) conel
+    val (sl,t) = add_time (parmap_sl ncore "satio.prove_graph_string") ml
+    val _ = log ("prove: " ^ rts_round 2 t)
+    val rl = map read_prove_graph sl
+    val lunsat = filter (fn (x,_,_) => x = "unsat") rl
+    val lsat = filter (fn (x,_,_) => x = "sat") rl
+    val _ = log ("total: " ^ its (length rl) ^ 
+                 ", unsat: " ^ its (length lunsat) ^
+                 ", sat: " ^ its (length lsat))
+    val _ = logfile := mem
+    val msl = map (fn (a,b) => a ^ " " ^ b) (combine (ml,sl))
+  in
+    writel (selfdir ^ "/result/cone_" ^ name_mat m ^ "_res") msl
+  end
+  
 (*
 load "satio"; load "enum"; load "nauty"; load "gen";
 open aiLib kernel graph enum glue satio nauty gen;
@@ -557,8 +589,9 @@ val m55 = random_split (43,20,9,10);
 val _ = log ("msplit: " ^ szip_mat m55);
 val conel = enum_mcone m55;  
 val cone = random_elem conel;
-val (tr,ta) = prove_cone m55 cone;
-val m55c = valOf (mat_merge m55 (edgecl_to_mat (mat_size m55) cone));
+val m55c = 
+val (_,(tr,ta)) = complete_graph NONE (5,5) m55c
+
 val _ = log ("mcone: " ^ szip_mat m55c);
 
 val pool = generalizable_edgel m55 m55c;
@@ -580,8 +613,7 @@ load "satio"; load "enum"; load "nauty"; load "gen";
 open aiLib kernel graph enum glue satio nauty gen;
 val ERR = mk_HOL_ERR "test";
 
-val arb0 = IntInf.fromInt 0;
-val arb1 = IntInf.fromInt 1;
+
 store_log := true;
 logfile := selfdir ^ "/aaa_log_ramsey_nocount";
 val _ = erase_file (!logfile);
@@ -598,6 +630,36 @@ val gen101 = (((edgel,arb1),(0.33,1)),arb0);
 val r = para_loop_gen 64 m55c pool gen101;
 
 *)
+
+(*
+load "satio"; load "enum"; load "nauty"; load "gen";
+open aiLib kernel graph enum glue satio nauty gen;
+val ERR = mk_HOL_ERR "test";
+
+
+store_log := true;
+logfile := selfdir ^ "/aaa_log_ramsey_nocount";
+val _ = erase_file (!logfile);
+
+val (m55s,m55cs) = pair_of_list (readl (selfdir ^ "/aaa_m_1"));
+val m55 = sunzip_mat m55s;
+val conel = enum_mcone m55; 
+
+fun prove_graph_string s = 
+  
+  
+
+val m55c = valOf (mat_merge m55 (edgecl_to_mat (mat_size m55) cone));
+
+
+
+val r = para_loop_gen 64 m55c pool gen101;
+
+*)
+
+
+
+
 
 
 
