@@ -27,6 +27,7 @@ sig
   val random_split : int * int * int * int -> mat
   
   (* cones *)
+  val add_cone : mat -> coloring -> mat
   val enum_mcone : mat -> coloring list
   
   (* generalization *)  

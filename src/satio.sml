@@ -589,7 +589,7 @@ val m55 = random_split (43,20,9,10);
 val _ = log ("msplit: " ^ szip_mat m55);
 val conel = enum_mcone m55;  
 val cone = random_elem conel;
-val m55c = 
+val m55c = add_cone m55 cone
 val (_,(tr,ta)) = complete_graph NONE (5,5) m55c
 
 val _ = log ("mcone: " ^ szip_mat m55c);
