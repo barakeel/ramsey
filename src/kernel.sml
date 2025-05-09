@@ -44,7 +44,7 @@ val abstract_time = iflag "abstract_time" 0
 val disable_log = ref false
 
 val logfile = ref (selfdir ^ "/aaa_log")
-val store_log = ref false
+val store_log = ref true
 
 fun log s = 
   if !disable_log then () 

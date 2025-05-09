@@ -581,7 +581,6 @@ load "satio"; load "enum"; load "nauty"; load "gen";
 open aiLib kernel graph enum glue satio nauty gen;
 val ERR = mk_HOL_ERR "test";
 
-store_log := true;
 logfile := selfdir ^ "/aaa_log_ramsey";
 val _ = erase_file (!logfile);
 
@@ -601,10 +600,6 @@ val gen0 = (([]: (int * int) list,IntInf.fromInt 1),(tr,ta));
 val sc = score gen0;
 
 val r = para_loop_gen 64 m55c pool (gen0,sc);
-
-
-
-
 val r = loop_gen m55c pool (gen0,sc);
 *)
 
@@ -636,25 +631,12 @@ load "satio"; load "enum"; load "nauty"; load "gen";
 open aiLib kernel graph enum glue satio nauty gen;
 val ERR = mk_HOL_ERR "test";
 
-
 store_log := true;
-logfile := selfdir ^ "/aaa_log_ramsey_nocount";
+logfile := selfdir ^ "/aaa_log_ramsey_cone";
 val _ = erase_file (!logfile);
-
 val (m55s,m55cs) = pair_of_list (readl (selfdir ^ "/aaa_m_1"));
 val m55 = sunzip_mat m55s;
-val conel = enum_mcone m55; 
-
-fun prove_graph_string s = 
-  
-  
-
-val m55c = valOf (mat_merge m55 (edgecl_to_mat (mat_size m55) cone));
-
-
-
-val r = para_loop_gen 64 m55c pool gen101;
-
+val (_,t) = add_time (para_prove_cone 100) m55;
 *)
 
 
