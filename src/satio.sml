@@ -172,6 +172,19 @@ fun ramsey_clauses_fast (bluen,redn) m =
    Calling solvers on ramsey clauses of a graph
    ------------------------------------------------------------------------- *)
 
+val jobn_glob = ref NONE
+
+fun mat_file prefix m = 
+  let 
+    val dir = selfdir ^ "/sat_calls"
+    val _ = mkDir_err dir
+    val name = if isSome (!jobn_glob) 
+               then its (valOf (!jobn_glob)) 
+               else name_mat m
+  in
+    dir ^ "/" ^ prefix ^ "_" ^ name
+  end
+
 fun read_instructions file = 
   let 
     val file2 = file ^ "2"
@@ -198,9 +211,7 @@ fun satisfiable_err (mo,(tr,ta)) =
 
 fun complete_graph unsatb limito blockl (bluen,redn) m = 
   let
-    val dir = selfdir ^ "/sat_calls"
-    val _ = mkDir_err dir
-    val file = dir ^ "/cad_" ^ name_mat m
+    val file = mat_file "cad" m
     val filemap = file ^ "_map"
     val filesol = file ^ "_sol"
     val filetim = file ^ "_tim"
@@ -234,12 +245,9 @@ fun complete_graph unsatb limito blockl (bluen,redn) m =
     finalr
   end
 
-  
 fun complete_graph_all (bluen,redn) m = 
   let
-    val dir = selfdir ^ "/sat_calls"
-    val _ = mkDir_err dir
-    val file = dir ^ "/bdd_" ^ name_mat m
+    val file = mat_file "bdd" m
     val filemap = file ^ "_map"
     val fileall = file ^ "_all"
     val filedbg = file ^ "_dbg"
@@ -259,7 +267,7 @@ fun complete_graph_all (bluen,redn) m =
 fun read_count fileout = 
   stinf (last (String.tokens Char.isSpace (last (readl fileout))))
 
-val model_counter = "approxmc"
+val model_counter = "ganak"
 
 fun write_count file blockl (bluen,redn) m =
   let
@@ -272,10 +280,8 @@ fun write_count file blockl (bluen,redn) m =
 
 fun count_graph blockl (bluen,redn) m = 
   let
-    val dir = selfdir ^ "/sat_calls"
-    val _ = mkDir_err dir
     val prefix = implode (first_n 3 (explode model_counter))
-    val file = dir ^ "/" ^ prefix ^ "_" ^ name_mat m
+    val file = mat_file prefix m
     val filemap = file ^ "_map"
     val fileout = file ^ "_out"
     val filedbg = file ^ "_dbg"
@@ -754,9 +760,11 @@ fun sample mcone edgecl =
   
 fun sample_string s =
   let 
-    val (s1,s2) = split_pair #"|" s
+    val (s1,s2,s3) = split_triple #"|" s
     val mcone = sunzip_mat s1
     val edgecl = edgecl_of_string s2
+    val jobn = string_to_int s3
+    val _ = jobn_glob := SOME jobn
     val (minst,nchoice) = sample mcone edgecl
   in
     String.concatWith " " [szip_mat minst, its nchoice] 
@@ -773,7 +781,8 @@ fun para_sample ncore nsample m edgel =
     fun random_edgecl () = 
       shuffle (map_assoc (fn x => random_int (1,2)) edgel)
     val edgecll = List.tabulate (nsample, fn _ => random_edgecl ())
-    val slin = map (fn x => ms ^ "|" ^ string_of_edgecl x) edgecll
+    val slin = map (fn (x,jobn) => 
+       ms ^ "|" ^ string_of_edgecl x ^ "|" ^ its jobn) (number_snd 0 edgecll)
     val (slout,t) = add_time (parmap_sl ncore "satio.sample_string") slin 
     fun read s = 
        let val (s1,s2) = split_pair #" " s in
@@ -828,9 +837,8 @@ val edgelgen = edgel_of_string
 "35-40 38-42 34-35 29-34 37-39 22-37 22-26 30-36 29-37 25-40 36-40 32-39 27-28 30-40 25-32 32-36 34-38 25-37 27-36 36-37 32-37 32-42 28-38 23-33 39-42 23-35 28-33 33-40 25-28 23-28 28-31 35-39 33-41 30-39 23-39 36-39 33-39 24-32 38-41 27-32 39-40 31-36 31-39 31-41 27-41 31-32 27-33 11-17 16-20 26-37 33-36 28-39 37-38 23-36 37-41 31-40 22-31 32-34 23-31 32-41 38-39 37-42 32-38 28-36 29-39 31-38 26-32 23-32 30-37 31-34 22-32 28-35 27-39 24-39 13-17 15-18 34-39 11-20 26-28 25-39 23-30 26-38 32-40 23-40 31-33 22-28 15-17 29-32 28-32 28-37 35-37 31-37 33-35 22-39 38-40 31-35 22-40 24-31 28-40 5-8 7-18 9-18 7-9 5-10 28-30 26-39 19-20 8-10 4-6 3-7 2-15 5-14 4-7 6-11 4-10 7-12 22-29 23-38 5-9 2-17 30-33 9-10 33-37 22-33 5-18 8-20 2-14 24-33 3-19 33-42 8-15 8-13 25-33 29-35 4-11 2-6 4-19 8-18 16-18 4-15 23-29 2-3 28-29 13-18 4-12 6-10 9-15 9-13 5-15 12-17 5-11 14-15 28-41 3-20 2-18 30-32 25-35 12-18 12-19 14-18 4-8 6-7 3-8 5-16 3-17 16-19 10-13 6-9 10-12 7-8 5-6 3-6 4-17 10-15 6-15 3-18 7-10 6-18 3-4 9-17 3-14 4-18 6-17 9-12 11-19 2-5 10-14 33-38 4-9 5-20 17-19 9-14 6-12 6-19 2-7 2-20 14-17 28-42 2-19 3-15 25-31 2-11 18-19 7-19 5-7 2-12 26-33 29-31 4-20 29-30 2-16 22-38 4-16 6-8 3-9 7-13 31-42 28-34 8-9 29-38 8-12 7-14 17-18 5-12 6-14 8-16 3-10 8-19 8-11 35-36 2-9 9-11 6-20 5-19 29-33 15-20 10-16 2-8 14-19 26-34 11-18 34-37 5-13 1-28 6-16 9-16 7-20 10-17 7-17 4-14 10-11 2-13 2-10 7-11 8-17 2-4 5-17 1-31 39-41 13-19 33-34 7-16 12-15 3-13 32-35 3-5 1-39 30-31 36-38 7-15 10-18 27-31 17-20 26-31 23-26 24-28 24-37 1-37 1-33 32-33 9-20 16-17 8-14 22-24 10-19 3-12 4-13 10-20 15-19 6-13 3-11 3-16 9-19 4-5 1-32 1-40 18-20 23-42";
 
 
-
-val ncore = 2;
-val nsample = 2;
+val ncore = 100;
+val nsample = 100;
 val r = para_sample ncore nsample m55cone edgelgen;
 
 val edgeclgen = shuffle (map_assoc (fn x => random_int (1,2)) edgelgen);

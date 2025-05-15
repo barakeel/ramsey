@@ -145,6 +145,7 @@ val arb0 = IntInf.fromInt 0;
 val arb1 = IntInf.fromInt 1;
 
 fun split_pair c s = pair_of_list (String.tokens (fn x => x = c) s)
+fun split_triple c s = triple_of_list (String.tokens (fn x => x = c) s)
 
 (* -------------------------------------------------------------------------
    General parallelizer for function : unit -> string -> string
