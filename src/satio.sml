@@ -8,13 +8,31 @@ struct
 open HolKernel Abbrev boolLib aiLib kernel graph glue
 val ERR = mk_HOL_ERR "satio"
 
+type clause = coloring
+type gen = ((edge list * IntInf.int) * (real * int)) * IntInf.int
+
 (* -------------------------------------------------------------------------
    Exporting problems in the dimacs format (number the edges)
    ------------------------------------------------------------------------- *)
 
 val nvaro_glob = ref NONE  
 
-(* plain without edge mapping *)
+fun reduce_clause_aux mat acc clause = case clause of
+    [] => SOME (rev acc)
+  | (lit as ((i,j),color)) :: m => 
+    let val newcolor = mat_sub (mat,i,j) in
+      if newcolor = 0 
+        then reduce_clause_aux mat (lit :: acc) m
+      else if color = newcolor 
+        then reduce_clause_aux mat acc m else NONE
+    end
+    
+fun reduce_clause mat clause = reduce_clause_aux mat [] clause
+
+fun reduce_clausel mat clausel = List.mapPartial (reduce_clause mat) clausel
+
+(* plain without edge mapping and offsetting variable them by 1,
+   use the standard encoding for clauses *)
 fun write_pdimacs file clausel = 
   let
     val nvar = case !nvaro_glob of 
@@ -170,7 +188,15 @@ fun full m =
   if null (all_holes m) then () else 
   print_endline "Warning: assignment not full";
 
-fun complete_graph limito (bluen,redn) m = 
+fun satisfiable_err (mo,(tr,ta)) =
+  if not (isSome mo) then () else 
+  let val m = valOf mo in 
+    mkDir_err (selfdir ^ "/satisfiable");
+    writel (selfdir ^ "/satisfiable") ["satisfiable: " ^ szip_mat m];
+    raise ERR "satisfiable_err" "satisfiable"
+  end
+
+fun complete_graph unsatb limito blockl (bluen,redn) m = 
   let
     val dir = selfdir ^ "/sat_calls"
     val _ = mkDir_err dir
@@ -182,7 +208,7 @@ fun complete_graph limito (bluen,redn) m =
     fun clean () = app remove_file [file,filemap,filesol,filetim,filetim2]
     val _ = clean ()
     val clausel = ramsey_clauses_fast (bluen,redn) m
-    val _ = write_dimacs file clausel
+    val _ = write_dimacs file (clausel @ reduce_clausel m blockl)
     val precmd = case limito of NONE => "" | 
        SOME r => "timeout " ^  rts_round 3 r ^ " "
     val cmd =  precmd ^ "perf stat -e instructions:u cadical -q " ^ 
@@ -203,9 +229,11 @@ fun complete_graph limito (bluen,redn) m =
           full newm; (SOME newm,(t1,t2))
         end
     val _ = clean ()
+    val _ = if unsatb then satisfiable_err finalr else ()
   in
     finalr
   end
+
   
 fun complete_graph_all (bluen,redn) m = 
   let
@@ -231,9 +259,18 @@ fun complete_graph_all (bluen,redn) m =
 fun read_count fileout = 
   stinf (last (String.tokens Char.isSpace (last (readl fileout))))
 
-val model_counter = "d4"
+val model_counter = "approxmc"
 
-fun count_graph (bluen,redn) m = 
+fun write_count file blockl (bluen,redn) m =
+  let
+    val filemap = file ^ "_map"
+    val clausel = ramsey_clauses_fast (bluen,redn) m
+    val _ = nvaro_glob := SOME (number_of_holes m)
+  in
+    write_dimacs file (clausel @ reduce_clausel m blockl)
+  end
+
+fun count_graph blockl (bluen,redn) m = 
   let
     val dir = selfdir ^ "/sat_calls"
     val _ = mkDir_err dir
@@ -246,9 +283,10 @@ fun count_graph (bluen,redn) m =
     val _ = clean ()
     val clausel = ramsey_clauses_fast (bluen,redn) m
     val _ = nvaro_glob := SOME (number_of_holes m)
-    val _ = write_dimacs file clausel
+    val _ = write_dimacs file (clausel @ reduce_clausel m blockl)
     val _ = nvaro_glob := NONE
-    val cmd = (if model_counter = "ganak" then "ganak --verb 0"
+    val cmd = (if model_counter = "approxmc" then "approxmc --verb 0" 
+               else if model_counter = "ganak" then "ganak --verb 0"
                else if model_counter = "d4" then "d4 -mc" else
                raise ERR "count_graph" model_counter) ^
               " " ^ file ^ " > " ^ fileout ^ " 2> " ^ filedbg
@@ -289,13 +327,15 @@ fun random_split (size,nb,nbb,nrb) =
     val nrr = nr - nrb - 1
     val m35b = unzip_mat (random_elem (enum.read_enum nbb (3,5)))
     val m44b = unzip_mat (random_elem (enum.read_enum nbr (4,4)))
-    val m45b0 = valOf (fst (complete_graph NONE (4,5) (diag_mat m35b m44b)))
+    val m45b0 = valOf 
+      (fst (complete_graph false NONE [] (4,5) (diag_mat m35b m44b)))
     val m45b1 = mat_shift1 m45b0
     val mvb = mat_vertex0 nb nbb
     val m45b2 = valOf (mat_merge mvb m45b1)
     val m44r = swap_colors (unzip_mat (random_elem (enum.read_enum nrb (4,4))))
     val m53r = swap_colors (unzip_mat (random_elem (enum.read_enum nrr (3,5))))
-    val m54r0 = valOf (fst (complete_graph NONE (5,4) (diag_mat m44r m53r))) 
+    val m54r0 = valOf 
+      (fst (complete_graph false NONE [] (5,4) (diag_mat m44r m53r))) 
     val m54r1 = mat_shift1 m54r0
     val mvr = mat_vertex0 nr nrb
     val m54r2 = valOf (mat_merge mvr m54r1)
@@ -324,13 +364,34 @@ fun create_mcone m =
   in
     app (g mc) edgel; mc
   end;
+
+val degree_flag = false
   
-fun enum_mcone m = complete_graph_all (5,5) (create_mcone m)
+fun enum_mcone m = 
+  let 
+    val conel = complete_graph_all (5,5) (create_mcone m)
+    val bluen = length (neighbor_of blue m 1)
+    val redn = length (neighbor_of red m 1)
+    fun test cone = 
+      let 
+        val bn = length (filter (fn x => snd x = blue) cone)
+        val rn = length (filter (fn x => snd x = red) cone)
+      in
+        bluen + bn < 25 andalso redn + rn < 25
+      end
+    val conel2 = if degree_flag then filter test conel else conel
+    val conel3 = map (dict_sort (fst_compare edge_compare)) conel2
+  in
+    conel3
+  end
 
 (* -------------------------------------------------------------------------
    Generalization
    ------------------------------------------------------------------------- *) 
-   
+
+fun score_gen ((_,coverloc),(_,taloc)) = 
+  IntInf.div (IntInf.fromInt taloc * IntInf.pow(10,100), coverloc)
+
 fun erase_grey m = 
   let 
     fun f (i,j) = 
@@ -344,22 +405,22 @@ fun erase_grey m =
    
 (* assumes 5,5: maybe count graph modulo iso by generating them
    and normalizing them instead *)
-fun count_gen m edgel =
+fun count_gen blockl m edgel =
   let
-    val mc = erase_grey m
-    fun f (i,j) = mat_update_sym (mc,i,j,0)
+    val mcount = erase_grey m
+    fun f (i,j) = mat_update_sym (mcount,i,j,0)
     val _ = app f edgel
-    val r = count_graph (5,5) mc
+    val r = count_graph blockl (5,5) mcount
   in
     r
   end
 
-fun prove_gen limit mc holec gen =
+fun prove_gen limit blockl m holec gen =
   let
-    val mch = mat_copy mc
-    fun f (i,j) = mat_update_sym (mch,i,j,holec)
+    val mh = mat_copy m
+    fun f (i,j) = mat_update_sym (mh,i,j,holec)
     val _ = app f gen
-    val r = SOME (complete_graph (SOME limit) (5,5) mch)
+    val r = SOME (complete_graph true (SOME limit) blockl (5,5) mh)
                  handle ProofTimeout => NONE
   in
     case r of 
@@ -368,7 +429,7 @@ fun prove_gen limit mc holec gen =
     | NONE => NONE
   end
  
-fun generalizable_edgel m mc =
+fun generalizable_edgel m mcone =
   let 
     fun neighbore_of color graph x = 
       map (fn y => if x < y then (x,y) else (y,x)) 
@@ -382,41 +443,50 @@ fun generalizable_edgel m mc =
     val neighd = enew edge_compare (neighl @ neighla @ neighlb);
     fun is_splitting (a,b) = emem (a,b) neighd;
   in
-    filter (not o is_splitting) (all_cedges mc)
+    filter (not o is_splitting) (all_cedges mcone)
   end;
 
-fun loop_gen mc edgel (((gen,cover),(tr,ta)),sc) =
+fun loop_gen blockl m edgel (gene as (((gen,cover),(tr,ta)),sc)) =
   let
     val limit = tr * 2.0
     val l1 = filter (fn x => not (mem x gen)) edgel
-    val l2 = map (fn x => gen @ [x]) l1
-    val (l3,t) = add_time (map_assoc (count_gen mc)) l2
+    val l2 = map (fn x => x :: gen) l1
+    val (l3,t) = add_time (map_assoc (count_gen blockl m)) l2
     val l4 = filter (fn x => snd x > cover) l3
     val _ = log ("count: " ^ rts_round 2 t ^ " " ^ 
       its (length l4) ^ "/" ^ its (length l3))
-    val (l5,t) = add_time (map_assoc (fn x => prove_gen limit mc 0 (fst x))) l4
+    val (l5,t) = add_time (map_assoc (fn x => 
+      prove_gen limit blockl m 0 (fst x))) l4
     val _ = log ("prove: " ^ rts_round 2 t)
     val l6 = map_snd valOf (filter (fn x => isSome (snd x)) l5)
-    fun score ((_,coverloc),(_,taloc)) = 
-      IntInf.div (IntInf.fromInt taloc * IntInf.pow(10,100), coverloc)
-    val l7 = dict_sort (snd_compare IntInf.compare) (map_assoc score l6)
+    val l7 = dict_sort (snd_compare IntInf.compare) (map_assoc score_gen l6)
   in
-    if null l7 then (((gen,cover),(tr,ta)),sc) else
+    if null l7 then gene else
     let  
-      val (((newgen,newcover),(newtr,newta)),newsc) = hd l7
+      val newgene = hd l7
+      val (((newgen,newcover),(newtr,newta)),newsc) = newgene
       val _ = log (its (length newgen) ^ ": " ^
               string_of_edgel newgen ^ " " ^
               infts newcover ^ " " ^ rts_round 2 newtr ^ " " ^ 
-              its newta ^ " " ^ infts sc)   
+              its newta ^ " " ^ infts sc)
     in
-      if sc < newsc then (((gen,cover),(tr,ta)),sc) else
-      loop_gen mc edgel (hd l7)
+      loop_gen blockl m edgel newgene
     end 
   end;
 
 (* -------------------------------------------------------------------------
    Generalization in parallel
    ------------------------------------------------------------------------- *) 
+
+fun mk_mcount_simple mcone edgel =
+  let
+    val _ = if null edgel then raise ERR "mk_mcount" "" else ()
+    val mcount = erase_grey mcone
+    fun f (i,j) = mat_update_sym (mcount,i,j,0)
+    val _ = app f edgel
+  in
+    mcount
+  end
 
 fun mk_mcount mcone edgel =
   let
@@ -442,38 +512,40 @@ fun mk_mprove mcone edgel =
     mprove
   end
 
-val nocount_flag = true
+val nocount_flag = false
 
-fun generalize limit mcone edgel =
+fun generalize limit blockl mcone edgel =
   let
     val mcount = mk_mcount mcone edgel
-    val (r1,(tr',ta')) = complete_graph NONE (5,5) mcount
+    val (r1,(tr',ta')) = complete_graph false NONE blockl (5,5) mcount
     val _ = print_endline ("filter: " ^ rts_round 2 tr')
   in
     case r1 of NONE => (IntInf.fromInt 0,0.0,0) | SOME _ =>
     let 
-      val covera = if nocount_flag then 1 else count_graph (5,5) mcount
+      val covera = if nocount_flag then 1 else count_graph blockl (5,5) mcount
       val _ = if (not nocount_flag andalso covera <= 0) 
         then raise ERR "generalize" "" else ()
       val mprove = mk_mprove mcone edgel
-      val r2 = SOME (complete_graph (SOME limit) (5,5) mprove)
+      val r2 = SOME (complete_graph true (SOME limit) blockl (5,5) mprove)
                handle ProofTimeout => NONE
     in
       case r2 of 
         NONE => (IntInf.fromInt (~1),0.0,0) 
-      | SOME (_,(tr,ta)) =>
-        (print_endline ("prove: " ^ rts_round 2 tr');
+      | SOME (SOME m, (tr,ta)) => raise ERR "generalize" "satisfiable"
+      | SOME (NONE,(tr,ta)) => 
+         (print_endline ("prove: " ^ rts_round 2 tr');
          (covera,tr,ta))
     end
   end
   
+(* todo pass the blocking clauses *)
 fun generalize_string s =
   let 
     val (s1,s2,s3) = triple_of_list (String.tokens (fn x => x = #"|") s)
     val m = unzip_mat (stinf s1)
     val edgel = edgel_of_string s2
     val limit = streal s3
-    val (covera,tr,ta) = generalize limit m edgel
+    val (covera,tr,ta) = generalize limit [] m edgel
   in
     String.concatWith " " [infts covera, rts tr, its ta]
   end
@@ -514,10 +586,10 @@ fun para_loop_gen ncore mcone pool (genorg as (((gen,cover),(tr,ta)),sc)) =
     val l2 = filter (fn (_,(x,_,_)) => x > 0) l1
     val l3 = map (fn (a,(b,c,d)) => ((a, 
       if nocount_flag then cover * 2 else b + cover),(c,d))) l2
-    fun score ((_,coverloc),(trloc,taloc)) = 
+    fun score (gen as ((_,coverloc),(trloc,taloc))) = 
       if nocount_flag 
       then IntInf.fromInt taloc
-      else IntInf.div (IntInf.fromInt taloc * IntInf.pow(10,100), coverloc)
+      else score_gen gen
     val l4 = dict_sort (snd_compare IntInf.compare) (map_assoc score l3)
     val _ = print_endline (its (length l4))
   in
@@ -538,8 +610,9 @@ fun para_loop_gen ncore mcone pool (genorg as (((gen,cover),(tr,ta)),sc)) =
    Proving in parallel
    ------------------------------------------------------------------------- *) 
 
+(* todo: add block clauses *)
 fun prove_graph_string s =
-  let val (ro,(tr,ta)) = complete_graph NONE (5,5) (sunzip_mat s) in
+  let val (ro,(tr,ta)) = complete_graph true NONE [] (5,5) (sunzip_mat s) in
     case ro of 
       SOME _ => String.concatWith " " ["sat",rts tr,its ta]
     | NONE => String.concatWith " " ["unsat",rts tr,its ta]
@@ -575,7 +648,147 @@ fun para_prove_cone ncore m =
   in
     writel (selfdir ^ "/result/cone_" ^ name_mat m ^ "_res") msl
   end
+ 
+(* -------------------------------------------------------------------------
+   Selecting cone with shortest time for generalization
+   ------------------------------------------------------------------------- *) 
+
+(* assumes edges in clauses are ordered *)
+fun subsumes clause1 clause2 = case (clause1,clause2) of
+    ([],_) => true
+  | (_,[]) => false
+  | ((e1,c1) :: m1, (e2,c2) :: m2) =>
+    (
+    case edge_compare (e1,e2) of
+      EQUAL => if c1 <> c2 then false else subsumes m1 m2 
+    | LESS => false
+    | GREATER => subsumes clause1 m2
+    )
+
+fun select_cone (ncone,tim) blockl m conel = 
+  let
+    val sel = random_subset ncone conel
+    fun f cone = SOME (complete_graph true (SOME tim) blockl (5,5) 
+      (add_cone m cone)) handle ProofTimeout => NONE
+    val rl = map_assoc f sel
+    val rl0 = filter (isSome o snd) rl
+  in
+    if null rl0 then select_cone (ncone, 2.0 * tim) blockl m conel else
+    let
+      val rl2 = map_snd (snd o valOf) rl0
+      val rl3 = dict_sort (snd_compare (snd_compare Int.compare)) rl2;
+      val _ = if null rl3 then raise ERR "" "" else ();
+      val (cone,(tr,ta)) = hd rl3;
+      val gen0 = (([]: (int * int) list,IntInf.fromInt 1),(tr,ta));
+      val sc = score_gen gen0
+    in 
+      (cone,(gen0,sc))
+    end
+  end
+
+fun mk_block mcone pool (gen:gen) =
+  let 
+    val block1 = list_diff pool ((fst o fst o fst) gen)
+    val block2 = map_assoc (fn (i,j) => mat_sub (mcone,i,j)) block1
+  in
+    dict_sort (fst_compare edge_compare) block2
+  end
+ 
+fun prove_conel pool m blockl conel =
+  if null conel then print_endline "Unsatisfiable" else
+  let
+    val _ = log ("cones: " ^ its (length conel))
+    val ((cone,gen),t) = add_time (select_cone (10,0.5) [] m) conel
+    val _ = log ("select: " ^ rts_round 2 t ^ " " ^ string_of_edgecl cone)
+    val (newgen,t) = add_time (loop_gen blockl (add_cone m cone) pool) gen
+    val _ = log ("generalize: " ^ rts_round 2 t)
+    val block = mk_block (add_cone m cone) pool newgen
+    val _ = log ("block: " ^ string_of_edgecl block)
+    val newconel = filter (not o subsumes block) conel
+    val _ = log ("covered: " ^ its (length conel - length newconel))
+    val newblockl = block :: blockl
+  in
+    prove_conel pool m newblockl newconel 
+  end
+
+
+(* -------------------------------------------------------------------------
+   Monte carlo model counter
+   ------------------------------------------------------------------------- *) 
+
+fun is_sat m = isSome (fst (complete_graph false NONE [] (5,5) m));
+
+fun sample_one m ((i,j),c) =
+  let 
+    val _ = if mat_sub (m,i,j) <> 0 
+            then raise ERR "sample_one" "not a hole"
+            else ()
+    val mb = mat_tabulate (mat_size m, fn (i',j') =>
+       if (i',j') = (i,j) then blue else mat_sub (m,i',j'))
+    val mr =  mat_tabulate (mat_size m, fn (i',j') =>
+       if (i',j') = (i,j) then red else mat_sub (m,i',j'))
+    val mbsat = is_sat mb
+    val mrsat = is_sat mr
+  in
+    case (mbsat,mrsat) of
+      (true,true) => (true, if c=blue then mb else mr)
+    | (true,false) => (false, mb)
+    | (false,true) => (false, mr)
+    | (false,false) => raise ERR "sample_one" "unsat"
+  end;
+
+fun sample_loop nchoice m edgecl = case edgecl of 
+    [] => (m,nchoice) 
+  | edgec :: cont => 
+    let 
+      val _ = print_endline (its nchoice ^ "/" ^ its (length edgecl))
+      val (b,newm) = sample_one m edgec 
+    in
+      sample_loop (if b then nchoice + 1 else nchoice) newm cont
+    end;
+ 
+fun sample mcone edgecl = 
+  let val mmax = mk_mcount_simple mcone (map fst edgecl) in
+    sample_loop 0 mmax edgecl
+  end
   
+fun sample_string s =
+  let 
+    val (s1,s2) = split_pair #"|" s
+    val mcone = sunzip_mat s1
+    val edgecl = edgecl_of_string s2
+    val (minst,nchoice) = sample mcone edgecl
+  in
+    String.concatWith " " [szip_mat minst, its nchoice] 
+  end
+
+local open IntInf in
+  fun sum_inf il = case il of [] => 0 | a :: m => a + sum_inf m
+  fun average_inf il = sum_inf il div (IntInf.fromInt (length il))
+end
+
+fun para_sample ncore nsample m edgel = 
+  let 
+    val ms = szip_mat m
+    fun random_edgecl () = 
+      shuffle (map_assoc (fn x => random_int (1,2)) edgel)
+    val edgecll = List.tabulate (nsample, fn _ => random_edgecl ())
+    val slin = map (fn x => ms ^ "|" ^ string_of_edgecl x) edgecll
+    val (slout,t) = add_time (parmap_sl ncore "satio.sample_string") slin 
+    fun read s = 
+       let val (s1,s2) = split_pair #" " s in
+         (sunzip_mat s1, string_to_int s2)
+       end
+    val rl = map read slout
+    fun pow2 x = IntInf.pow (2,x)
+    val r = average_inf (map (pow2 o snd) rl)
+    val _ = log ("sample: " ^ its nsample ^ ", average: " ^ IntInf.toString r)
+    val _ = mkDir_err (selfdir ^ "/result")
+    val _ = writel (selfdir ^ "/result/sample_" ^ name_mat m) slout  
+  in
+    r
+  end
+    
 (*
 load "satio"; load "enum"; load "nauty"; load "gen";
 open aiLib kernel graph enum glue satio nauty gen;
@@ -589,7 +802,7 @@ val _ = log ("msplit: " ^ szip_mat m55);
 val conel = enum_mcone m55;  
 val cone = random_elem conel;
 val m55c = add_cone m55 cone
-val (_,(tr,ta)) = complete_graph NONE (5,5) m55c
+val (_,(tr,ta)) = complete_graph true NONE [] (5,5) m55c
 
 val _ = log ("mcone: " ^ szip_mat m55c);
 
@@ -601,6 +814,187 @@ val sc = score gen0;
 
 val r = para_loop_gen 64 m55c pool (gen0,sc);
 val r = loop_gen m55c pool (gen0,sc);
+*)
+
+(*
+load "satio"; load "enum"; load "nauty"; load "gen";
+open aiLib kernel graph enum glue satio nauty gen;
+val ERR = mk_HOL_ERR "test";
+val m55 = sunzip_mat (hd (readl (selfdir ^ "/aaa_split")));
+val m55cone = sunzip_mat (hd (readl (selfdir ^ "/aaa_mcone")));
+
+
+val edgelgen = edgel_of_string
+"35-40 38-42 34-35 29-34 37-39 22-37 22-26 30-36 29-37 25-40 36-40 32-39 27-28 30-40 25-32 32-36 34-38 25-37 27-36 36-37 32-37 32-42 28-38 23-33 39-42 23-35 28-33 33-40 25-28 23-28 28-31 35-39 33-41 30-39 23-39 36-39 33-39 24-32 38-41 27-32 39-40 31-36 31-39 31-41 27-41 31-32 27-33 11-17 16-20 26-37 33-36 28-39 37-38 23-36 37-41 31-40 22-31 32-34 23-31 32-41 38-39 37-42 32-38 28-36 29-39 31-38 26-32 23-32 30-37 31-34 22-32 28-35 27-39 24-39 13-17 15-18 34-39 11-20 26-28 25-39 23-30 26-38 32-40 23-40 31-33 22-28 15-17 29-32 28-32 28-37 35-37 31-37 33-35 22-39 38-40 31-35 22-40 24-31 28-40 5-8 7-18 9-18 7-9 5-10 28-30 26-39 19-20 8-10 4-6 3-7 2-15 5-14 4-7 6-11 4-10 7-12 22-29 23-38 5-9 2-17 30-33 9-10 33-37 22-33 5-18 8-20 2-14 24-33 3-19 33-42 8-15 8-13 25-33 29-35 4-11 2-6 4-19 8-18 16-18 4-15 23-29 2-3 28-29 13-18 4-12 6-10 9-15 9-13 5-15 12-17 5-11 14-15 28-41 3-20 2-18 30-32 25-35 12-18 12-19 14-18 4-8 6-7 3-8 5-16 3-17 16-19 10-13 6-9 10-12 7-8 5-6 3-6 4-17 10-15 6-15 3-18 7-10 6-18 3-4 9-17 3-14 4-18 6-17 9-12 11-19 2-5 10-14 33-38 4-9 5-20 17-19 9-14 6-12 6-19 2-7 2-20 14-17 28-42 2-19 3-15 25-31 2-11 18-19 7-19 5-7 2-12 26-33 29-31 4-20 29-30 2-16 22-38 4-16 6-8 3-9 7-13 31-42 28-34 8-9 29-38 8-12 7-14 17-18 5-12 6-14 8-16 3-10 8-19 8-11 35-36 2-9 9-11 6-20 5-19 29-33 15-20 10-16 2-8 14-19 26-34 11-18 34-37 5-13 1-28 6-16 9-16 7-20 10-17 7-17 4-14 10-11 2-13 2-10 7-11 8-17 2-4 5-17 1-31 39-41 13-19 33-34 7-16 12-15 3-13 32-35 3-5 1-39 30-31 36-38 7-15 10-18 27-31 17-20 26-31 23-26 24-28 24-37 1-37 1-33 32-33 9-20 16-17 8-14 22-24 10-19 3-12 4-13 10-20 15-19 6-13 3-11 3-16 9-19 4-5 1-32 1-40 18-20 23-42";
+
+
+
+val ncore = 2;
+val nsample = 2;
+val r = para_sample ncore nsample m55cone edgelgen;
+
+val edgeclgen = shuffle (map_assoc (fn x => random_int (1,2)) edgelgen);
+val (n,t) = add_time (sample m55cone) edgeclgen; 
+
+
+
+
+
+val r = sample_one m (hd edgeclgen);
+
+108
+
+String.size (IntInf.toString (IntInf.pow (2,107)));
+10^33 / 10^9;
+
+10^24;
+
+
+
+
+fun mk_sample mcount n =
+  let
+    val edgel = random_subset n all_holes
+    val msample = mat_copy mcount
+    fun f (i,j) = mat_update_sym (mcount,i,j,random_int (1,2))
+    val _ = app f edgel
+  in
+    
+  end
+
+fun f n = 
+  let val mcount = mk_mcount_simple m55cone (first_n n (rev edgelgen)) in
+    write_count (selfdir ^ "/count/" ^ its n) [] (5,5) mcount
+  end;
+
+app f (List.tabulate (length edgelgen - 1,fn x => x + 1));
+
+val bl = neighbor_of blue m55 0;
+val rl = neighbor_of red m55 0;
+val bbl = filter (fn x => x <> 0) (neighbor_of blue m55 (hd bl));
+val brl = filter (fn x => x <> 0) (neighbor_of red m55 (hd bl));
+val rbl = filter (fn x => x <> 0) (neighbor_of blue m55 (hd rl));
+val rrl = filter (fn x => x <> 0) (neighbor_of red m55 (hd rl));
+
+(* constraints *)
+fun enc_permv (i,j) = i * (mat_size m55) + j;
+fun pos_lit i = (i,true);
+fun neg_lit i = (i,false);
+
+fun perm_clause vl = 
+  let 
+    val clause = map pos_lit vl
+    val clausel = map (fn (x,y) => [neg_lit x, neg_lit y]) (all_pairs vl)
+  in
+    clause :: clausel
+  end;
+ 
+ val lit_compare = cpl_compare Int.compare bool_compare;
+val clause_compare = list_compare lit_compare
+fun sort_clause clause = dict_sort lit_compare clause;
+fun mk_clause_set clausel = 
+  mk_sameorder_set clause_compare (map sort_clause clausel);
+
+fun perm_clauses il = 
+  let 
+    fun f (i,il) = map (fn j => (i,j)) il
+    val horl = map f (map (fn i => (i,il)) il);
+    val verl = map (map swap) horl;
+    val linel = map (map enc_permv) (horl @ verl);
+    val clausel = List.concat (map perm_clause linel);
+  in
+    mk_clause_set clausel
+  end;
+
+val clausel_perm = List.concat 
+  (map perm_clauses [[0],[hd bl],[hd rl],bbl,brl,rbl,rrl]);
+
+
+
+fun class_of v = 
+  if v = 0 then 0
+  else if v = hd bl then 1
+  else if v = hd rl then 2
+  else if mem v bbl then 3
+  else if mem v brl then 4
+  else if mem v rbl then 5
+  else if mem v rrl then 6
+  else raise ERR "class_of" "";
+
+val edgelall = generalizable_edgel m55 m55cone;
+val edgeclall = map (fn (i,j) => ((i,j),mat_sub (m55cone,i,j))) edgelall;
+val edgelkept = list_diff edgelall edgelgen;
+val edgeclkept = map (fn (i,j) => ((i,j),mat_sub (m55cone,i,j))) edgelkept;
+
+fun renumber clausel = 
+  let 
+    val varl = mk_fast_set Int.compare (map fst (List.concat clausel))
+    val d = dnew Int.compare (number_snd 0 varl)
+    fun f clause = map_fst (fn x => dfind x d) clause
+  in
+    map f clausel
+  end;
+  
+fun clauses_of_match (((i1,j1),c1),((i2,j2),c2)) =
+  let 
+    val clause1 =
+      if class_of i1 = class_of i2 andalso
+         class_of j1 = class_of j2 andalso
+         c1 <> c2
+      then [[neg_lit (enc_permv (i1,i2)), neg_lit (enc_permv (j1,j2))]]
+      else []
+    val clause2 =
+      if class_of i1 = class_of j2 andalso
+         class_of j1 = class_of i2 andalso
+         c1 <> c2
+      then [[neg_lit (enc_permv (i1,j2)), neg_lit (enc_permv (j1,i2))]]
+      else [] 
+  in
+    clause1 @ clause2
+  end
+  
+  
+fun number_of_var clausel = length 
+  (mk_fast_set Int.compare (map fst (List.concat clausel)));
+  
+val vnl1 = map (number_of_var o perm_clauses) [[0],[hd bl],[hd rl],bbl,brl,rbl,rrl];
+
+val clausel_match = List.concat (map clauses_of_match ((cartesian_product edgeclall edgeclkept)));  
+
+val clausel = mk_clause_set (clausel_perm @ clausel_match);
+
+write_pdimacs (selfdir ^ "/aaa_test") (renumber clausel);
+  
+553648128  
+494927872
+
+
+*)
+
+
+(* statistics
+val sl = readl (selfdir ^ "/result/" ^ "cone_N_OKsp_1Y42FHAbYorYbQD_49qO4b36GRrdUoJxiP8XuP9_a6v9YWGPsOI6m-tFy3UtVQrBQRX8UO1KHI1cHPU546bHMum-liP1uN68wQW8fX-cVWT_tAa-x-2S6nMbqSIE4EBc-Pj8WeOwV6Svs0cjMw8q6MWiUqAeAPfNSoV5rJPPz2y34oYYPO9-wa_31mj9OKM8v7E50_eULiVjcXPFCVL0HeQ2lAoR59KhEmOC4h5t_res");
+length sl;
+
+fun f x = 
+  let val (a,b,c,d) = quadruple_of_list (String.tokens Char.isSpace x) in
+    streal c
+  end;
+
+val rl = map f sl;
+val interval = [0.0,0.25,0.5,1.0,2.0,4.0,8.0,16.0,32.0,64.0,128.0];
+fun mk_interval l = case l of
+    [] => []
+  | [a] => [(a,1000000000000000.0)]
+  | a :: b :: m => (a,b) :: mk_interval (b :: m);
+val il = mk_interval interval;
+fun f (a,b) = length (filter (fn x => x >= a andalso x < b) rl);
+
+val il1 = map_assoc f il;
+
+
+val rl = filter (fn x => x < 0.5) rl; length rl1;
+val rl1 = filter (fn x => x >= 0.5 andalso x < 1) rl;
 *)
 
 (*
@@ -625,24 +1019,6 @@ val gen101 = (((edgel,arb1),(0.33,1)),arb0);
 val r = para_loop_gen 64 m55c pool gen101;
 
 *)
-
-(*
-load "satio"; load "enum"; load "nauty"; load "gen";
-open aiLib kernel graph enum glue satio nauty gen;
-val ERR = mk_HOL_ERR "test";
-
-store_log := true;
-logfile := selfdir ^ "/aaa_log_ramsey_cone";
-val _ = erase_file (!logfile);
-val (m55s,m55cs) = pair_of_list (readl (selfdir ^ "/aaa_m_1"));
-val m55 = sunzip_mat m55s;
-val (_,t) = add_time (para_prove_cone 100) m55;
-*)
-
-
-
-
-
 
 
 end (* struct *)

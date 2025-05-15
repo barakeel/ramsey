@@ -149,8 +149,16 @@ fun string_of_edgel edgel = String.concatWith " " (map string_of_edge edgel)
 fun edgel_of_string s = map edge_of_string (String.tokens Char.isSpace s)
 
 fun string_of_edgec ((i,j),x) = its i ^ "-" ^ its j ^ ":" ^ its x
-
+fun edgec_of_string s = 
+  let 
+    val (s1,s2) = split_pair #":" s
+    val (s1a,s1b) = split_pair #"-" s1
+  in
+    ((string_to_int s1a, string_to_int s1b), string_to_int s2)
+  end
+  
 fun string_of_edgecl edgecl = String.concatWith " " (map string_of_edgec edgecl)
+fun edgecl_of_string s = map edgec_of_string (String.tokens Char.isSpace s)
 
 fun named_neighbor color graph = 
   let

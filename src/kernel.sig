@@ -39,6 +39,7 @@ sig
   val ilts : int list -> string
   val arb0 : IntInf.int
   val arb1 : IntInf.int
+  val split_pair : char -> string -> (string * string)
   
   (* debugging timers *)
   val timer_glob1 : real ref

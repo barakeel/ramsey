@@ -43,7 +43,9 @@ sig
   val string_of_edgel : edge list -> string
   val edgel_of_string : string -> edge list
   val string_of_edgec : (edge * color) -> string
+  val edgec_of_string : string -> (edge * color)
   val string_of_edgecl : coloring -> string
+  val edgecl_of_string : string -> coloring
   val string_of_graph : mat -> string
   val string_of_bluegraph : mat -> string
   val string_of_mat : mat -> string

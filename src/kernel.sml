@@ -144,6 +144,8 @@ val timer_glob5 = ref 0.0
 val arb0 = IntInf.fromInt 0;
 val arb1 = IntInf.fromInt 1;
 
+fun split_pair c s = pair_of_list (String.tokens (fn x => x = c) s)
+
 (* -------------------------------------------------------------------------
    General parallelizer for function : unit -> string -> string
    as long as the function can be named
