@@ -61,7 +61,7 @@ sig
   val write_count :  string -> clause list -> int * int -> mat -> unit
   val count_graph : clause list -> int * int -> mat -> IntInf.int
   val count_gen : clause list -> mat -> edge list -> IntInf.int
-  val sample : mat -> ((int * int) * int) list -> mat * int
+  val sample : mat -> ((int * int) * int) list -> mat option * int
   val sample_string : string -> string
   val para_sample : int -> int -> mat -> edge list -> IntInf.int
   
