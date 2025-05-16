@@ -441,7 +441,7 @@ fun enum_mcone m =
 fun score_gen ((_,coverloc),(_,taloc)) = 
   IntInf.div (IntInf.fromInt taloc * IntInf.pow(10,100), coverloc)
 
-fun erase_grey m = 
+fun mask_grey m = 
   let 
     fun f (i,j) = 
       if i=j then 0 else 
@@ -451,12 +451,23 @@ fun erase_grey m =
   in
     mat_tabulate (mat_size m,f)
   end
+
+fun unmask_grey m = 
+  let 
+    fun f (i,j) = 
+      if i=j then 0 else 
+      let val color = mat_sub (m,i,j) in
+        if color = 3 then 0 else color
+      end
+  in
+    mat_tabulate (mat_size m,f)
+  end 
    
 (* assumes 5,5: maybe count graph modulo iso by generating them
    and normalizing them instead *)
 fun count_gen blockl m edgel =
   let
-    val mcount = erase_grey m
+    val mcount = mask_grey m
     fun f (i,j) = mat_update_sym (mcount,i,j,0)
     val _ = app f edgel
     val r = count_graph blockl (5,5) mcount
@@ -530,7 +541,7 @@ fun loop_gen blockl m edgel (gene as (((gen,cover),(tr,ta)),sc)) =
 fun mk_mcount_simple mcone edgel =
   let
     val _ = if null edgel then raise ERR "mk_mcount" "" else ()
-    val mcount = erase_grey mcone
+    val mcount = mask_grey mcone
     fun f (i,j) = mat_update_sym (mcount,i,j,0)
     val _ = app f edgel
   in
@@ -540,7 +551,7 @@ fun mk_mcount_simple mcone edgel =
 fun mk_mcount mcone edgel =
   let
     val _ = if null edgel then raise ERR "mk_mcount" "" else ()
-    val mcount = erase_grey mcone
+    val mcount = mask_grey mcone
     fun f (i,j) = mat_update_sym (mcount,i,j,0)
     val _ = app f (tl edgel)
     val (i,j) = hd edgel
@@ -784,7 +795,7 @@ fun sample_one m ((i,j),c) =
     val mrsat = is_sat mr
   in
     case (mbsat,mrsat) of
-      (true,true) => (true, SOME (if c=blue then mb else mr))
+      (true,true) => (true, SOME (if c = blue then mb else mr))
     | (true,false) => (false, SOME mb)
     | (false,true) => (false, SOME mr)
     | (false,false) => (false, NONE)
@@ -804,11 +815,11 @@ fun sample mcone edgecl =
   let 
     val mmax = mk_mcount_simple mcone (map fst edgecl) 
     val _ = counter := 0
-    val r = sample_loop 0 mmax edgecl
+    val (mo,n) = sample_loop 0 mmax edgecl
   in
     print_endline ("timeout: " ^ its (!counter)); 
     counter := 0;
-    r
+    (Option.map unmask_grey mo, n)
   end
   
 fun szip_mato mato = case mato of
@@ -1019,7 +1030,7 @@ fun para_sample_perm expname ncore edgelgen mcoeffl =
     val rl2 = combine (rl1, map snd mcoeffl)
     val r = waverage_inf rl2
     val _ = log ("sample: " ^ its (length mcoeffl) ^
-                 "average class size: " ^ infts r)            
+                 ", average class size: " ^ infts r)            
     val _ = mkDir_err (selfdir ^ "/result")
     val _ = writel (selfdir ^ "/result/exp_" ^ expname) slout  
   in
@@ -1073,7 +1084,7 @@ val edgelgen = edgel_of_string
 
 (* model counter sample *) 
 val edgeclgen = shuffle (map_assoc (fn x => random_int (1,2)) edgelgen);
-val (n,t) = add_time (sample m55cone) edgeclgen; 
+val ((mo,r),t) = add_time (sample m55cone) edgeclgen; 
 
 (* model counter parallelized *)
 val ncore = 64;
@@ -1082,12 +1093,14 @@ val r = para_sample ncore nsample m55cone edgelgen;
 
 (* isomorphic classes *)
 val (n,t) = add_time (sample_perm edgelgen) m55cone;
-val mcoeffl = read_mcoeffl (selfdir ^ "/" ^ "");
-val r = para_sample_perm "iso" ncore edgelgen mcoeffl
 
+val mcoeffl = read_mcoeffl (selfdir ^ "/result/sample_N_OKsp_1Y42FHAbYufMRPIF-aU-GaKgK0-Wb6SAXfQl3IgXS5z2hpwhtN3ypAc44dyjH4t8EI7qwAFul_I139x-HZKOioyrTTsXj87T4Bj_bM5eii5YvTZ9VBtEGlH7FC9ffirps9zVLjHuY_6eT9skco9D0eI8O-7feqyFkBpgchyVjMSRArM-BWZ_YrjlY8i_3nrITt2MLm05XbCn9M6K7GmkZMfYVIeaSpp3_BAQFPr9");
+val ncore = length mcoeffl;
+val r = para_sample_perm "iso" ncore edgelgen mcoeffl;
+50406306739
 
-
-
+val mcone2 = sunzip_mat (hd (readl "aaa_mcone2")); 
+val msplit2 = mcone_to_msplit mcone2;
 
 (* show the matrix at different stages *)
 val bl = neighbor_of blue m55 0;
