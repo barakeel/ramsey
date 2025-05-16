@@ -63,7 +63,7 @@ sig
   val count_gen : clause list -> mat -> edge list -> IntInf.int
   val sample : mat -> coloring -> mat option * int
   val sample_string : string -> string
-  val para_sample : int -> int -> mat -> edge list -> IntInf.int
+  val para_sample : string -> int -> int -> mat -> edge list -> IntInf.int
   
   (* isomorphic classes *)
   val all_perm_clauses : edge list -> mat -> (int * bool) list list

@@ -12,6 +12,34 @@ type clause = coloring
 type gen = ((edge list * IntInf.int) * (real * int)) * IntInf.int
 
 (* -------------------------------------------------------------------------
+   Mask some edges when model counting
+   ------------------------------------------------------------------------- *)
+
+fun mask_grey m = 
+  let 
+    fun f (i,j) = 
+      if i=j then 0 else 
+      let val color = mat_sub (m,i,j) in
+        if color = 0 then 3 else color
+      end
+  in
+    mat_tabulate (mat_size m,f)
+  end
+
+fun unmask_grey m = 
+  let 
+    fun f (i,j) = 
+      if i=j then 0 else 
+      let val color = mat_sub (m,i,j) in
+        if color = 3 then 0 else color
+      end
+  in
+    mat_tabulate (mat_size m,f)
+  end
+  
+fun name_mat_nogrey m = name_mat (unmask_grey m)  
+
+(* -------------------------------------------------------------------------
    Exporting problems in the dimacs format (number the edges)
    ------------------------------------------------------------------------- *)
 
@@ -123,12 +151,12 @@ fun read_sol_cad file =
   let 
     val d = read_map (file ^ "_map")
     val sl = readl (file ^ "_sol")
-    val s = hd sl handle Empty => raise ProofTimeout
+    val s = hd sl handle Empty => (print_endline "hi1"; raise ProofTimeout)
   in
     case s of
       "s SATISFIABLE" => SOME (read_sol_one d (tl sl))
     | "s UNSATISFIABLE" => NONE
-    | _ => raise ProofTimeout
+    | _ => (print_endline "hi2"; raise ProofTimeout)
   end
 
 fun read_sol_bdd file =  
@@ -194,7 +222,7 @@ fun mat_file prefix m =
     val _ = mkDir_err dir
     val name = if isSome (!jobn_glob) 
                then its (valOf (!jobn_glob)) 
-               else name_mat m
+               else name_mat_nogrey m
   in
     dir ^ "/" ^ prefix ^ "_" ^ name
   end
@@ -219,7 +247,8 @@ fun satisfiable_err (mo,(tr,ta)) =
   if not (isSome mo) then () else 
   let val m = valOf mo in 
     mkDir_err (selfdir ^ "/satisfiable");
-    writel (selfdir ^ "/satisfiable") ["satisfiable: " ^ szip_mat m];
+    writel (selfdir ^ "/satisfiable") 
+      ["satisfiable: " ^ szip_mat (unmask_grey m)];
     raise ERR "satisfiable_err" "satisfiable"
   end
 
@@ -240,13 +269,13 @@ fun complete_graph unsatb limito blockl (bluen,redn) m =
       file ^ " > " ^ filesol ^ " 2> " ^ filetim
     val (_,t1) = add_time (cmd_in_dir selfdir) cmd
     val _ = if not (exists_file filesol) 
-            then (clean (); raise ProofTimeout) else ()
+            then (clean (); print_endline "hi3"; raise ProofTimeout) else ()
     val _ = if not (exists_file filetim) 
-            then (clean (); raise ProofTimeout) else ()
+            then (clean (); print_endline "hi4"; raise ProofTimeout) else ()
     val t2 = read_instructions filetim
     val finalr =
       case (read_sol_cad file handle ProofTimeout => 
-            (clean (); raise ProofTimeout)) 
+            (clean (); print_endline "hi5"; raise ProofTimeout)) 
       of
         NONE => (NONE,(t1,t2))
       | SOME sol => 
@@ -440,28 +469,6 @@ fun enum_mcone m =
 
 fun score_gen ((_,coverloc),(_,taloc)) = 
   IntInf.div (IntInf.fromInt taloc * IntInf.pow(10,100), coverloc)
-
-fun mask_grey m = 
-  let 
-    fun f (i,j) = 
-      if i=j then 0 else 
-      let val color = mat_sub (m,i,j) in
-        if color = 0 then 3 else color
-      end
-  in
-    mat_tabulate (mat_size m,f)
-  end
-
-fun unmask_grey m = 
-  let 
-    fun f (i,j) = 
-      if i=j then 0 else 
-      let val color = mat_sub (m,i,j) in
-        if color = 3 then 0 else color
-      end
-  in
-    mat_tabulate (mat_size m,f)
-  end 
    
 (* assumes 5,5: maybe count graph modulo iso by generating them
    and normalizing them instead *)
@@ -691,7 +698,7 @@ fun para_prove_cone ncore m =
     val dir = selfdir ^ "/result"
     val _ = mkDir_err dir
     val mem = !logfile
-    val _ = logfile := dir ^ "/cone_" ^ name_mat m ^ "_log"
+    val _ = logfile := dir ^ "/cone_" ^ name_mat_nogrey m ^ "_log"
     val (conel,t) = add_time enum_mcone m
     val _ = log ("cone: " ^ its (length conel) ^ " " ^ rts_round 2 t)
     val ml = map (szip_mat o add_cone m) conel
@@ -706,7 +713,7 @@ fun para_prove_cone ncore m =
     val _ = logfile := mem
     val msl = map (fn (a,b) => a ^ " " ^ b) (combine (ml,sl))
   in
-    writel (selfdir ^ "/result/cone_" ^ name_mat m ^ "_res") msl
+    writel (selfdir ^ "/result/cone_" ^ name_mat_nogrey m ^ "_res") msl
   end
  
 (* -------------------------------------------------------------------------
@@ -779,7 +786,7 @@ fun prove_conel pool m blockl conel =
 val counter = ref 0
 
 fun is_sat m = 
-  isSome (fst (complete_graph false (SOME 1.0) [] (5,5) m))  
+  isSome (fst (complete_graph false (SOME 40.0) [] (5,5) m))  
   handle ProofTimeout => (incr counter; false)
   
 fun sample_one m ((i,j),c) =
@@ -793,6 +800,11 @@ fun sample_one m ((i,j),c) =
        if (i',j') = (i,j) then red else mat_sub (m,i',j'))
     val mbsat = is_sat mb 
     val mrsat = is_sat mr
+    (* val _ = print_mat mb
+    val _ = if mbsat then print_endline "blue" else ()
+    val _ = print_mat mr
+    val _ = if mrsat then print_endline "red" else ()
+    val _ = print_endline "" *)
   in
     case (mbsat,mrsat) of
       (true,true) => (true, SOME (if c = blue then mb else mr))
@@ -814,6 +826,10 @@ fun sample_loop nchoice m edgecl = case edgecl of
 fun sample mcone edgecl = 
   let 
     val mmax = mk_mcount_simple mcone (map fst edgecl) 
+    (* 
+    val _ = print_endline "mmax"
+    val _ = print_mat mmax
+    *)
     val _ = counter := 0
     val (mo,n) = sample_loop 0 mmax edgecl
   in
@@ -853,7 +869,7 @@ end
 
 (* todo give more info on the number of time a branch was 
    avoided because of timeout *)
-fun para_sample ncore nsample m edgel = 
+fun para_sample expname ncore nsample m edgel = 
   let 
     val ms = szip_mat m
     fun random_edgecl () = 
@@ -874,7 +890,7 @@ fun para_sample ncore nsample m edgel =
                  ", completed: " ^ its (length terml) ^
                  ", average: " ^ IntInf.toString r)
     val _ = mkDir_err (selfdir ^ "/result")
-    val _ = writel (selfdir ^ "/result/sample_" ^ name_mat m) slout  
+    val _ = writel (selfdir ^ "/result/exp_" ^ expname) slout  
   in
     r
   end
@@ -1085,19 +1101,17 @@ val edgelgen = edgel_of_string
 (* model counter sample *) 
 val edgeclgen = shuffle (map_assoc (fn x => random_int (1,2)) edgelgen);
 val ((mo,r),t) = add_time (sample m55cone) edgeclgen; 
+(* isomorphic classes *)
+val (n,t) = add_time (sample_perm edgelgen) (valOf mo);
 
 (* model counter parallelized *)
 val ncore = 64;
 val nsample = 64;
-val r = para_sample ncore nsample m55cone edgelgen;
-
-(* isomorphic classes *)
-val (n,t) = add_time (sample_perm edgelgen) m55cone;
-
-val mcoeffl = read_mcoeffl (selfdir ^ "/result/sample_N_OKsp_1Y42FHAbYufMRPIF-aU-GaKgK0-Wb6SAXfQl3IgXS5z2hpwhtN3ypAc44dyjH4t8EI7qwAFul_I139x-HZKOioyrTTsXj87T4Bj_bM5eii5YvTZ9VBtEGlH7FC9ffirps9zVLjHuY_6eT9skco9D0eI8O-7feqyFkBpgchyVjMSRArM-BWZ_YrjlY8i_3nrITt2MLm05XbCn9M6K7GmkZMfYVIeaSpp3_BAQFPr9");
+val r = para_sample "count" ncore nsample m55cone edgelgen;
+(* isomorphic classes parallelized *)
+val mcoeffl = read_mcoeffl (selfdir ^ "/result/exp_count");
 val ncore = length mcoeffl;
 val r = para_sample_perm "iso" ncore edgelgen mcoeffl;
-50406306739
 
 val mcone2 = sunzip_mat (hd (readl "aaa_mcone2")); 
 val msplit2 = mcone_to_msplit mcone2;

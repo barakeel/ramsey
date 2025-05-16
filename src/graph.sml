@@ -262,9 +262,11 @@ local open IntInf in
 fun zip_mat m = 
   let 
     val r = ref 1
-    fun f (i,j,x) = if r > 3 orelse r < 0 
-                    then raise ERR "zip_mat" "entries must be 0,1 or 2" 
-                    else r := !r * 3 + IntInf.fromInt x
+    fun f (i,j,x) = let val xi = IntInf.fromInt x in 
+                      if xi > 3 orelse xi < 0 
+                      then raise ERR "zip_mat" "entries must be 0,1 or 2" 
+                      else r := !r * 3 + xi
+                    end
   in
     mat_traverse f m; !r
   end
