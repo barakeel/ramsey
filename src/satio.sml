@@ -15,6 +15,9 @@ type gen = ((edge list * IntInf.int) * (real * int)) * IntInf.int
    Exporting problems in the dimacs format (number the edges)
    ------------------------------------------------------------------------- *)
 
+fun number_of_var clausel = length 
+  (mk_fast_set Int.compare (map fst (List.concat clausel)))
+
 val nvaro_glob = ref NONE  
 
 fun reduce_clause_aux mat acc clause = case clause of
@@ -31,10 +34,19 @@ fun reduce_clause mat clause = reduce_clause_aux mat [] clause
 
 fun reduce_clausel mat clausel = List.mapPartial (reduce_clause mat) clausel
 
-(* plain without edge mapping and offsetting variable them by 1,
-   use the standard encoding for clauses *)
-fun write_pdimacs file clausel = 
+(* Plain encoding: todo add the mapping for decoding solutions *)
+fun renumber_clausel clausel = 
+  let 
+    val varl = mk_fast_set Int.compare (map fst (List.concat clausel))
+    val d = dnew Int.compare (number_snd 0 varl)
+    fun f clause = map_fst (fn x => dfind x d) clause
+  in
+    map f clausel
+  end
+
+fun write_pdimacs file clauseltop = 
   let
+    val clausel = renumber_clausel clauseltop
     val nvar = case !nvaro_glob of 
         NONE => list_imax (map fst (List.concat clausel)) + 1
       | SOME n => n
@@ -45,6 +57,8 @@ fun write_pdimacs file clausel =
     writel file (header :: map f clausel)
   end;
 
+(* Problem encoded from a graph. 
+   Clauses are of the from E_A=>E_B=>false, that is why blue is negated. *)
 fun write_dimacs file clausel = 
   let
     val edgel = mk_fast_set edge_compare (map fst (List.concat clausel))
@@ -278,7 +292,7 @@ fun write_count file blockl (bluen,redn) m =
     write_dimacs file (clausel @ reduce_clausel m blockl)
   end
 
-fun count_graph blockl (bluen,redn) m = 
+fun count_graph_clausel m clausel = 
   let
     val prefix = implode (first_n 3 (explode model_counter))
     val file = mat_file prefix m
@@ -287,9 +301,7 @@ fun count_graph blockl (bluen,redn) m =
     val filedbg = file ^ "_dbg"
     fun clean () = app remove_file [file,filemap,fileout,filedbg]
     val _ = clean ()
-    val clausel = ramsey_clauses_fast (bluen,redn) m
-    val _ = nvaro_glob := SOME (number_of_holes m)
-    val _ = write_dimacs file (clausel @ reduce_clausel m blockl)
+    val _ = write_dimacs file clausel
     val _ = nvaro_glob := NONE
     val cmd = (if model_counter = "approxmc" then "approxmc --verb 0" 
                else if model_counter = "ganak" then "ganak --verb 0"
@@ -301,7 +313,38 @@ fun count_graph blockl (bluen,redn) m =
     val _ = clean ()
   in
     count
+  end  
+
+fun count_graph blockl (bluen,redn) m = 
+  let
+    val _ = nvaro_glob := SOME (number_of_holes m)
+    val clausel = ramsey_clauses_fast (bluen,redn) m @ reduce_clausel m blockl
+  in
+    count_graph_clausel m clausel
   end
+
+fun count_graph_pclausel m pclausel = 
+  let
+    val prefix = implode (first_n 3 (explode model_counter))
+    val file = mat_file prefix m
+    val filemap = file ^ "_map"
+    val fileout = file ^ "_out"
+    val filedbg = file ^ "_dbg"
+    fun clean () = app remove_file [file,filemap,fileout,filedbg]
+    val _ = clean ()
+    val _ = write_pdimacs file pclausel
+    val cmd = (if model_counter = "approxmc" then "approxmc --verb 0" 
+               else if model_counter = "ganak" then "ganak --verb 0"
+               else if model_counter = "d4" then "d4 -mc" else
+               raise ERR "count_graph" model_counter) ^
+              " " ^ file ^ " > " ^ fileout ^ " 2> " ^ filedbg
+    val _ = cmd_in_dir selfdir cmd
+    val count = read_count fileout 
+    val _ = clean ()
+  in
+    count
+  end  
+
 
 (* -------------------------------------------------------------------------
    Initial split with fixed degree for the three vertices
@@ -793,6 +836,8 @@ fun sample_string s =
 local open IntInf in
   fun sum_inf il = case il of [] => 0 | a :: m => a + sum_inf m
   fun average_inf il = sum_inf il div (IntInf.fromInt (length il))
+  fun waverage_inf iil = sum_inf (map (fn (a,b) => a * b) iil) div
+                         sum_inf (map snd iil)
 end
 
 (* todo give more info on the number of time a branch was 
@@ -815,13 +860,175 @@ fun para_sample ncore nsample m edgel =
     val r = average_inf (map (pow2 o snd) rl)
     val terml = filter (isSome o fst) rl
     val _ = log ("sample: " ^ its nsample ^ 
-                 "completed: " ^ its (length terml) ^
+                 ", completed: " ^ its (length terml) ^
                  ", average: " ^ IntInf.toString r)
     val _ = mkDir_err (selfdir ^ "/result")
     val _ = writel (selfdir ^ "/result/sample_" ^ name_mat m) slout  
   in
     r
   end
+
+(* -------------------------------------------------------------------------
+   Count number of isomorphic copies
+   ------------------------------------------------------------------------- *)
+
+(* variable encoding *)
+fun enc_permv size (i,j) = i * size + j;
+fun pos_lit i = (i,true);
+fun neg_lit i = (i,false);
+
+(* subset of vertices of a split matrix *)
+fun mk_classl msplit =
+  let
+    val bl = neighbor_of blue msplit 0
+    val rl = neighbor_of red msplit 0
+    val bbl = filter (fn x => x <> 0) (neighbor_of blue msplit (hd bl))
+    val brl = filter (fn x => x <> 0) (neighbor_of red msplit (hd bl))
+    val rbl = filter (fn x => x <> 0) (neighbor_of blue msplit (hd rl))
+    val rrl = filter (fn x => x <> 0) (neighbor_of red msplit (hd rl))
+  in
+    number_snd 0 [[0],[hd bl],[hd rl],bbl,brl,rbl,rrl]
+  end
+
+fun class_of classl (v:int) = case classl of 
+    [] => raise ERR "class_of" ""  
+  | (class,n) :: cont => if mem v class then n else class_of cont v 
+
+(* sum of the variables is equal to 1 *)
+fun perm_clause vl =
+  let 
+    val clause = map pos_lit vl
+    val clausel = map (fn (x,y) => [neg_lit x, neg_lit y]) (all_pairs vl)
+  in
+    clause :: clausel
+  end
+
+val lit_compare = cpl_compare Int.compare bool_compare;
+val clause_compare = list_compare lit_compare
+fun sort_clause clause = dict_sort lit_compare clause;
+fun mk_clause_set clausel = 
+  mk_sameorder_set clause_compare (map sort_clause clausel);
+
+(* vertical and horizontal rows for that subset *)
+fun perm_clauses size il = 
+  let 
+    fun f (i,il) = map (fn j => (i,j)) il
+    val horl = map f (map (fn i => (i,il)) il);
+    val verl = map (map swap) horl;
+    val linel = map (map (enc_permv size)) (horl @ verl);
+    val clausel = List.concat (map perm_clause linel);
+  in
+    mk_clause_set clausel
+  end
+
+(* matching constraint: the image must be a subset of mmax *)
+fun clauses_of_match size classl (((i1,j1),c1),((i2,j2),c2)) =
+  let 
+    val clause1 =
+      if class_of classl (i1:int) = class_of classl i2 andalso
+         class_of classl j1 = class_of classl j2 andalso
+         c1 <> c2
+      then [[neg_lit (enc_permv size (i1,i2)), 
+             neg_lit (enc_permv size (j1,j2))]]
+      else []
+    val clause2 =
+      if class_of classl i1 = class_of classl j2 andalso
+         class_of classl j1 = class_of classl i2 andalso
+         c1 <> c2
+      then [[neg_lit (enc_permv size (i1,j2)), 
+             neg_lit (enc_permv size (j1,i2))]]
+      else [] 
+  in
+    clause1 @ clause2
+  end
+
+fun clauses_of_matchl size classl msplit mcone edgelgen = 
+  let 
+    (* colored edges in mcone *)
+    val edgelall = generalizable_edgel msplit mcone
+    val edgeclall = map (fn (i,j) => ((i,j),mat_sub (mcone,i,j))) edgelall
+    (* colored edges in mmax *)
+    val edgelkept = list_diff edgelall edgelgen
+    val edgeclkept = map (fn (i,j) => ((i,j),mat_sub (mcone,i,j))) edgelkept
+  in
+    List.concat (map (clauses_of_match size classl)
+      (cartesian_product edgeclall edgeclkept))  
+  end
+  
+fun mcone_to_msplit mcone = 
+  let
+    val bl = neighbor_of blue mcone 0
+    val rl = neighbor_of red mcone 0
+    val bv = hd bl
+    val msplit = mat_copy mcone
+    fun zero m (i,j) = mat_update_sym (m,i,j,0)
+    val edgel = map (fn x => (bv,x)) rl
+    val _ = app (zero msplit) edgel
+  in
+    msplit
+  end
+
+fun all_perm_clauses edgelgen mcone =
+  let 
+    val msplit = mcone_to_msplit mcone
+    val size = mat_size msplit
+    val classl = mk_classl msplit
+    val clausel_perm = List.concat (map (perm_clauses size) (map fst classl))
+    val clausel_match = clauses_of_matchl size classl msplit mcone edgelgen
+    val clausel = mk_clause_set (clausel_perm @ clausel_match)
+  in
+    clausel
+  end
+
+fun sample_perm edgelgen mcone =
+  let val pclausel = all_perm_clauses edgelgen mcone in
+    count_graph_pclausel mcone pclausel
+  end
+
+fun sample_perm_string s =
+  let 
+    val (s1,s2,s3) = split_triple #"|" s 
+    val edgelgen = edgel_of_string s1
+    val mcone = sunzip_mat s2
+    val jobn = string_to_int s3
+    val _ = jobn_glob := SOME jobn
+  in
+    infts (sample_perm edgelgen mcone)
+  end
+
+fun read_mcoeffl file =
+  let 
+    val sl = readl file
+    fun pow2 x = IntInf.pow (2,x)
+    fun parse_line s = 
+       let val (s1,s2) = split_pair #" " s in
+         (valOf (sunzip_mato s1), pow2 (string_to_int s2))
+       end
+    val mcoeffl = map parse_line sl
+  in
+    mcoeffl
+  end
+  
+fun para_sample_perm expname ncore edgelgen mcoeffl = 
+  let
+    val s = string_of_edgel edgelgen
+    val ml = number_snd 0 (map fst mcoeffl)
+    val slin = map (fn (m,jobn) => s ^ "|" ^ szip_mat m ^ "|" ^ its jobn) ml
+    val (slout,t) = add_time (parmap_sl ncore "satio.sample_perm_string") slin 
+    val rl1 = map stinf slout    
+    val rl2 = combine (rl1, map snd mcoeffl)
+    val r = waverage_inf rl2
+    val _ = log ("sample: " ^ its (length mcoeffl) ^
+                 "average class size: " ^ infts r)            
+    val _ = mkDir_err (selfdir ^ "/result")
+    val _ = writel (selfdir ^ "/result/exp_" ^ expname) slout  
+  in
+    r
+  end
+
+(* -------------------------------------------------------------------------
+   Initial split + cone enumeration + generalization
+   ------------------------------------------------------------------------- *)
     
 (*
 load "satio"; load "enum"; load "nauty"; load "gen";
@@ -837,7 +1044,6 @@ val conel = enum_mcone m55;
 val cone = random_elem conel;
 val m55c = add_cone m55 cone
 val (_,(tr,ta)) = complete_graph true NONE [] (5,5) m55c
-
 val _ = log ("mcone: " ^ szip_mat m55c);
 
 val pool = generalizable_edgel m55 m55c;
@@ -848,8 +1054,13 @@ val sc = score gen0;
 
 val r = para_loop_gen 64 m55c pool (gen0,sc);
 val r = loop_gen m55c pool (gen0,sc);
+
 *)
 
+(* -------------------------------------------------------------------------
+   Generalization post-processing
+   ------------------------------------------------------------------------- *)
+   
 (*
 load "satio"; load "enum"; load "nauty"; load "gen";
 open aiLib kernel graph enum glue satio nauty gen;
@@ -857,149 +1068,44 @@ val ERR = mk_HOL_ERR "test";
 val m55 = sunzip_mat (hd (readl (selfdir ^ "/aaa_split")));
 val m55cone = sunzip_mat (hd (readl (selfdir ^ "/aaa_mcone")));
 
-
 val edgelgen = edgel_of_string
 "35-40 38-42 34-35 29-34 37-39 22-37 22-26 30-36 29-37 25-40 36-40 32-39 27-28 30-40 25-32 32-36 34-38 25-37 27-36 36-37 32-37 32-42 28-38 23-33 39-42 23-35 28-33 33-40 25-28 23-28 28-31 35-39 33-41 30-39 23-39 36-39 33-39 24-32 38-41 27-32 39-40 31-36 31-39 31-41 27-41 31-32 27-33 11-17 16-20 26-37 33-36 28-39 37-38 23-36 37-41 31-40 22-31 32-34 23-31 32-41 38-39 37-42 32-38 28-36 29-39 31-38 26-32 23-32 30-37 31-34 22-32 28-35 27-39 24-39 13-17 15-18 34-39 11-20 26-28 25-39 23-30 26-38 32-40 23-40 31-33 22-28 15-17 29-32 28-32 28-37 35-37 31-37 33-35 22-39 38-40 31-35 22-40 24-31 28-40 5-8 7-18 9-18 7-9 5-10 28-30 26-39 19-20 8-10 4-6 3-7 2-15 5-14 4-7 6-11 4-10 7-12 22-29 23-38 5-9 2-17 30-33 9-10 33-37 22-33 5-18 8-20 2-14 24-33 3-19 33-42 8-15 8-13 25-33 29-35 4-11 2-6 4-19 8-18 16-18 4-15 23-29 2-3 28-29 13-18 4-12 6-10 9-15 9-13 5-15 12-17 5-11 14-15 28-41 3-20 2-18 30-32 25-35 12-18 12-19 14-18 4-8 6-7 3-8 5-16 3-17 16-19 10-13 6-9 10-12 7-8 5-6 3-6 4-17 10-15 6-15 3-18 7-10 6-18 3-4 9-17 3-14 4-18 6-17 9-12 11-19 2-5 10-14 33-38 4-9 5-20 17-19 9-14 6-12 6-19 2-7 2-20 14-17 28-42 2-19 3-15 25-31 2-11 18-19 7-19 5-7 2-12 26-33 29-31 4-20 29-30 2-16 22-38 4-16 6-8 3-9 7-13 31-42 28-34 8-9 29-38 8-12 7-14 17-18 5-12 6-14 8-16 3-10 8-19 8-11 35-36 2-9 9-11 6-20 5-19 29-33 15-20 10-16 2-8 14-19 26-34 11-18 34-37 5-13 1-28 6-16 9-16 7-20 10-17 7-17 4-14 10-11 2-13 2-10 7-11 8-17 2-4 5-17 1-31 39-41 13-19 33-34 7-16 12-15 3-13 32-35 3-5 1-39 30-31 36-38 7-15 10-18 27-31 17-20 26-31 23-26 24-28 24-37 1-37 1-33 32-33 9-20 16-17 8-14 22-24 10-19 3-12 4-13 10-20 15-19 6-13 3-11 3-16 9-19 4-5 1-32 1-40 18-20 23-42";
 
+(* model counter sample *) 
+val edgeclgen = shuffle (map_assoc (fn x => random_int (1,2)) edgelgen);
+val (n,t) = add_time (sample m55cone) edgeclgen; 
+
+(* model counter parallelized *)
 val ncore = 64;
 val nsample = 64;
 val r = para_sample ncore nsample m55cone edgelgen;
 
-val edgeclgen = shuffle (map_assoc (fn x => random_int (1,2)) edgelgen);
-val (n,t) = add_time (sample m55cone) edgeclgen; 
+(* isomorphic classes *)
+val (n,t) = add_time (sample_perm edgelgen) m55cone;
+val mcoeffl = read_mcoeffl (selfdir ^ "/" ^ "");
+val r = para_sample_perm "iso" ncore edgelgen mcoeffl
 
 
 
 
 
-val r = sample_one m (hd edgeclgen);
-
-108
-
-String.size (IntInf.toString (IntInf.pow (2,107)));
-10^33 / 10^9;
-
-10^24;
-
-
-
-
-fun mk_sample mcount n =
-  let
-    val edgel = random_subset n all_holes
-    val msample = mat_copy mcount
-    fun f (i,j) = mat_update_sym (mcount,i,j,random_int (1,2))
-    val _ = app f edgel
-  in
-    
-  end
-
-fun f n = 
-  let val mcount = mk_mcount_simple m55cone (first_n n (rev edgelgen)) in
-    write_count (selfdir ^ "/count/" ^ its n) [] (5,5) mcount
-  end;
-
-app f (List.tabulate (length edgelgen - 1,fn x => x + 1));
-
+(* show the matrix at different stages *)
 val bl = neighbor_of blue m55 0;
 val rl = neighbor_of red m55 0;
 val bbl = filter (fn x => x <> 0) (neighbor_of blue m55 (hd bl));
 val brl = filter (fn x => x <> 0) (neighbor_of red m55 (hd bl));
 val rbl = filter (fn x => x <> 0) (neighbor_of blue m55 (hd rl));
 val rrl = filter (fn x => x <> 0) (neighbor_of red m55 (hd rl));
-
-(* constraints *)
-fun enc_permv (i,j) = i * (mat_size m55) + j;
-fun pos_lit i = (i,true);
-fun neg_lit i = (i,false);
-
-fun perm_clause vl = 
-  let 
-    val clause = map pos_lit vl
-    val clausel = map (fn (x,y) => [neg_lit x, neg_lit y]) (all_pairs vl)
-  in
-    clause :: clausel
-  end;
- 
- val lit_compare = cpl_compare Int.compare bool_compare;
-val clause_compare = list_compare lit_compare
-fun sort_clause clause = dict_sort lit_compare clause;
-fun mk_clause_set clausel = 
-  mk_sameorder_set clause_compare (map sort_clause clausel);
-
-fun perm_clauses il = 
-  let 
-    fun f (i,il) = map (fn j => (i,j)) il
-    val horl = map f (map (fn i => (i,il)) il);
-    val verl = map (map swap) horl;
-    val linel = map (map enc_permv) (horl @ verl);
-    val clausel = List.concat (map perm_clause linel);
-  in
-    mk_clause_set clausel
-  end;
-
-val clausel_perm = List.concat 
-  (map perm_clauses [[0],[hd bl],[hd rl],bbl,brl,rbl,rrl]);
-
-
-
-fun class_of v = 
-  if v = 0 then 0
-  else if v = hd bl then 1
-  else if v = hd rl then 2
-  else if mem v bbl then 3
-  else if mem v brl then 4
-  else if mem v rbl then 5
-  else if mem v rrl then 6
-  else raise ERR "class_of" "";
-
-val edgelall = generalizable_edgel m55 m55cone;
-val edgeclall = map (fn (i,j) => ((i,j),mat_sub (m55cone,i,j))) edgelall;
-val edgelkept = list_diff edgelall edgelgen;
-val edgeclkept = map (fn (i,j) => ((i,j),mat_sub (m55cone,i,j))) edgelkept;
-
-fun renumber clausel = 
-  let 
-    val varl = mk_fast_set Int.compare (map fst (List.concat clausel))
-    val d = dnew Int.compare (number_snd 0 varl)
-    fun f clause = map_fst (fn x => dfind x d) clause
-  in
-    map f clausel
-  end;
-  
-fun clauses_of_match (((i1,j1),c1),((i2,j2),c2)) =
-  let 
-    val clause1 =
-      if class_of i1 = class_of i2 andalso
-         class_of j1 = class_of j2 andalso
-         c1 <> c2
-      then [[neg_lit (enc_permv (i1,i2)), neg_lit (enc_permv (j1,j2))]]
-      else []
-    val clause2 =
-      if class_of i1 = class_of j2 andalso
-         class_of j1 = class_of i2 andalso
-         c1 <> c2
-      then [[neg_lit (enc_permv (i1,j2)), neg_lit (enc_permv (j1,i2))]]
-      else [] 
-  in
-    clause1 @ clause2
-  end
-  
-  
-fun number_of_var clausel = length 
-  (mk_fast_set Int.compare (map fst (List.concat clausel)));
-  
-val vnl1 = map (number_of_var o perm_clauses) [[0],[hd bl],[hd rl],bbl,brl,rbl,rrl];
-
-val clausel_match = List.concat (map clauses_of_match ((cartesian_product edgeclall edgeclkept)));  
-
-val clausel = mk_clause_set (clausel_perm @ clausel_match);
-
-write_pdimacs (selfdir ^ "/aaa_test") (renumber clausel);
-  
-553648128  
-494927872
-
+val edgel = cartesian_product bbl brl @ cartesian_product brl bbl @
+            cartesian_product rbl rrl @ cartesian_product rrl rbl;         
+val mcopy = mat_copy m55;
+app (zero mcopy) edgel;
+fun zero m (i,j) = mat_update_sym (m,i,j,0)
+val m55max = mat_copy m55cone; app (zero m55max) edgelgen;
+write_latexmat (dir ^ "/r0") mcopy;
+write_latexmat (dir ^ "/p0") m55;
+write_latexmat (dir ^ "/q0") m55cone;
+write_latexmat (dir ^ "/qmax") m55max;
 
 *)
 
@@ -1049,6 +1155,9 @@ val edgel = edgel_of_string "28-42 2-19 3-15 25-31 2-11 18-19 7-19 5-7 2-12 26-3
 val gen101 = (((edgel,arb1),(0.33,1)),arb0);
 
 val r = para_loop_gen 64 m55c pool gen101;
+
+
+
 
 *)
 

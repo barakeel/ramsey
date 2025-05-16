@@ -50,6 +50,7 @@ sig
   val string_of_bluegraph : mat -> string
   val string_of_mat : mat -> string
   val print_mat : mat -> unit
+  val write_latexmat : string -> mat -> unit
   
   (* matrices *)
   val mat_empty : int -> mat

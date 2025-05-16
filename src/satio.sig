@@ -28,17 +28,16 @@ sig
   val mat_vertex0 : int -> int -> mat
   val random_split : int * int * int * int -> mat
   
+  
   (* cones *)
   val add_cone : mat -> coloring -> mat
   val enum_mcone : mat -> coloring list
   val select_cone : int * real -> clause list -> mat -> coloring list ->
      graph.coloring * gen
-  
-
+  val mcone_to_msplit : mat -> mat
   
   (* generalization *)
   val score_gen : ('a * IntInf.int) * ('b * int) -> IntInf.int
-  
   val prove_gen : real -> clause list -> mat -> int -> 
     edge list -> (real * int) option
   val generalizable_edgel : mat -> mat -> edge list
@@ -55,14 +54,23 @@ sig
   val prove_graph_string : string -> string
   val para_prove_cone : int -> graph.mat -> unit
 
-
   (* model counting  *)
   val mk_mcount_simple : mat -> edge list -> mat
   val write_count :  string -> clause list -> int * int -> mat -> unit
+  val count_graph_clausel : mat -> clause list -> IntInf.int
+  val count_graph_pclausel : mat -> (int * bool) list list -> IntInf.int
   val count_graph : clause list -> int * int -> mat -> IntInf.int
   val count_gen : clause list -> mat -> edge list -> IntInf.int
-  val sample : mat -> ((int * int) * int) list -> mat option * int
+  val sample : mat -> coloring -> mat option * int
   val sample_string : string -> string
   val para_sample : int -> int -> mat -> edge list -> IntInf.int
+  
+  (* isomorphic classes *)
+  val all_perm_clauses : edge list -> mat -> (int * bool) list list
+  val sample_perm : edge list -> mat -> IntInf.int
+  val sample_perm_string : string -> string
+  val read_mcoeffl : string -> (mat * IntInf.int) list
+  val para_sample_perm : string ->
+    int -> edge list -> (mat * IntInf.int) list -> IntInf.int
   
 end

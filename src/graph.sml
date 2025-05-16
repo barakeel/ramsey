@@ -189,6 +189,28 @@ fun string_of_mat m = String.concatWith "\n" (map ilts (mat_to_ll m))
 
 fun print_mat m = print_endline (string_of_mat m); 
   
+fun mat_to_ll_nodiag m = 
+  let val size = mat_size m in
+    List.tabulate (size, fn i => List.tabulate (size,fn j => 
+      if i = j then ~1 else mat_sub (m,i,j)))
+  end
+
+fun mat_to_latex m =
+  let
+    val size = mat_size m
+    val linel = mat_to_ll_nodiag m
+    fun f c = if c = ~1 then "\\#"
+              else if c = 0 then "\\*" 
+              else if c = 1 then "o" 
+              else if c = 2 then "-" 
+              else raise ERR "mat_to_latex" ""
+    fun fline line = String.concatWith "," (map f line)
+  in
+    map fline linel 
+  end
+  
+fun write_latexmat file m = writel file (mat_to_latex m)
+   
 
 (* -------------------------------------------------------------------------
    Switching between representations
